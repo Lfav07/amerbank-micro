@@ -2,6 +2,8 @@ package com.amerbank.customer.customer;
 
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -27,7 +29,7 @@ public class Customer {
     @Column(nullable = false)
     private String password;
 
-    @Valid
+    @Email
     @Column(unique = true, nullable = false)
     private String email;
 
