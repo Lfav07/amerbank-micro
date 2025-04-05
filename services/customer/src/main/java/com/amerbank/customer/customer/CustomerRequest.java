@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 
 public record CustomerRequest(
-        Long id,
 
         @NotNull(message = "Customer first name is required")
         String firstName,
