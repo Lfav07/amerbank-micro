@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -11,6 +12,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
+@AllArgsConstructor
 @NoArgsConstructor
 @Entity
 @Table(name = "customers")
@@ -45,4 +47,16 @@ public class Customer {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
+
+    public Customer(String firstName, String lastName, String password,
+                    String email, LocalDate dateOfBirth, Boolean kycVerified) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.password = password;
+        this.email = email;
+        this.dateOfBirth = dateOfBirth;
+        this.kycVerified = kycVerified;
+    }
+
+
 }
