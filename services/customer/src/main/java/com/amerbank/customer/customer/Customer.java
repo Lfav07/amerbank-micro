@@ -3,6 +3,7 @@ package com.amerbank.customer.customer;
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -38,14 +39,25 @@ public class Customer {
     @Column(nullable = false)
     private LocalDate dateOfBirth;
 
+    @Column(nullable = false)
     private boolean kycVerified;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
+    }
+
+    public Customer(String firstName, String lastName, String password,
+                    String email, LocalDate dateOfBirth) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.password = password;
+        this.email = email;
+        this.dateOfBirth = dateOfBirth;
     }
 
     public Customer(String firstName, String lastName, String password,

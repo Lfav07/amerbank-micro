@@ -1,7 +1,4 @@
-package com.amerbank.customer.customer;
-
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotNull;
+package com.amerbank.customer.customer.dto;
 
 import java.time.LocalDate;
 
@@ -18,6 +15,5 @@ public record CustomerResponse(
 
         LocalDate dateOfBirth,
 
-        boolean kycVerified
-) {
+        boolean kycVerified) {
 }
