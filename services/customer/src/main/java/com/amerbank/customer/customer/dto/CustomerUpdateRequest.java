@@ -12,7 +12,7 @@ public record CustomerUpdateRequest(
     String firstName,
 
     @NotBlank
-    String lastname,
+    String lastName,
 
     @NotBlank
     @Email
