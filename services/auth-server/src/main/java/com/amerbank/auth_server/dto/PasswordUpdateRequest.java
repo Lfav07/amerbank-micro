@@ -1,11 +1,11 @@
-package com.amerbank.customer.customer.dto;
+package com.amerbank.auth_server.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public record PasswordUpdateRequest(
         @NotNull
-        Long customerId,
+        Long userId,
 
         @NotBlank
         String oldPassword,

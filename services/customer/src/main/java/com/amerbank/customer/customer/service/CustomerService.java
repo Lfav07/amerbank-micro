@@ -1,13 +1,14 @@
-package com.amerbank.customer.customer;
+package com.amerbank.customer.customer.service;
 
+import com.amerbank.customer.customer.CustomerNotFoundException;
+import com.amerbank.customer.customer.repository.CustomerRepository;
 import com.amerbank.customer.customer.dto.CustomerRequest;
 import com.amerbank.customer.customer.dto.CustomerResponse;
 import com.amerbank.customer.customer.dto.CustomerUpdateRequest;
 import com.amerbank.customer.customer.dto.PasswordUpdateRequest;
+import com.amerbank.customer.customer.model.Customer;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
-import org.springframework.context.annotation.Bean;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -39,16 +40,15 @@ public class CustomerService {
         return customerMapper.fromCustomer(findCustomerById(id));
     }
 
-    public CustomerResponse registerCustomer(CustomerRequest customerRequest) {
+    public CustomerResponse registerCustomer(CustomerRequest customerRequest, Long userId) {
 
-        if (isEmailTaken(customerRequest.email())) {
-            throw new IllegalArgumentException("Email is already taken");
+        if (customerRepository.existsByUserId(userId)) {
+            throw new IllegalArgumentException("Customer already exists for userId " + userId);
         }
 
         String encodedPassword = passwordEncoder.encode(customerRequest.password());
 
         Customer customer = customerMapper.toCustomer(customerRequest);
-        customer.setPassword(encodedPassword);
 
         Customer saved = customerRepository.save(customer);
         return customerMapper.fromCustomer(saved);
@@ -61,15 +61,9 @@ public class CustomerService {
         Customer customer = findCustomerById(request.customerId());
         customer.setFirstName(request.firstName());
         customer.setLastName(request.lastName());
-        customer.setEmail(request.email());
         customerRepository.save(customer);
         return customerMapper.fromCustomer(customer);
     }
-
-    public boolean isEmailTaken(String email) {
-        return customerRepository.existsByEmail(email);
-    }
-
 
     @Transactional
     public void verifyKyc(Long customerId) {
@@ -78,19 +72,6 @@ public class CustomerService {
         customerRepository.save(customer);
     }
 
-    public void editCustomerPassword(PasswordUpdateRequest request) {
-        Long id = request.customerId();
-        Customer customer = customerRepository.findById(id)
-                .orElseThrow(() -> new CustomerNotFoundException("Customer not found with ID " + id));
-
-        boolean matches = passwordEncoder.matches(request.oldPassword(), customer.getPassword());
-
-        if (!matches) {
-            throw new IllegalArgumentException("Old password does not match");
-        }
-
-        customer.setPassword(passwordEncoder.encode(request.newPassword()));
-    }
 
     @Transactional
     public void deleteCustomerById(Long id) {

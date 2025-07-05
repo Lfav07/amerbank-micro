@@ -1,21 +1,16 @@
 package com.amerbank.customer.customer.dto;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public record CustomerUpdateRequest(
-    @NotNull
-    Long customerId,
 
-    @NotBlank
-    String firstName,
+        @NotNull
+        Long customerId,
 
-    @NotBlank
-    String lastName,
+        @NotBlank
+        String firstName,
 
-    @NotBlank
-    @Email
-    String email
-){
-}
+        @NotBlank
+        String lastName
+) {}

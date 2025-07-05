@@ -9,9 +9,6 @@ public record CustomerResponse(
 
         String lastName,
 
-        String password,
-
-        String email,
 
         LocalDate dateOfBirth,
 
