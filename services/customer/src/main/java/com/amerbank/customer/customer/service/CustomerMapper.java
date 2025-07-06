@@ -8,33 +8,33 @@ import org.springframework.stereotype.Component;
 @Component
 public class CustomerMapper {
 
-    public Customer toCustomer(CustomerRequest request) {
+    public Customer toCustomer(CustomerRequest request, Long userId) {
         if (request == null) {
             return null;
         }
-        return new Customer(
-                request.firstName(),
-                request.lastName(),
-                request.password(),
-                request.email(),
-                request.dateOfBirth()
-        );
+
+        Customer customer = new Customer();
+        customer.setUserId(userId);
+        customer.setFirstName(request.firstName());
+        customer.setLastName(request.lastName());
+        customer.setDateOfBirth(request.dateOfBirth());
+        customer.setKycVerified(false);
+        return customer;
     }
 
     public CustomerResponse fromCustomer(Customer customer) {
         if (customer == null) {
             return null;
         }
+
         return new CustomerResponse(
                 customer.getId(),
+                customer.getUserId(),
                 customer.getFirstName(),
                 customer.getLastName(),
-                customer.getPassword(),
-                customer.getEmail(),
                 customer.getDateOfBirth(),
-                customer.isKycVerified()
+                customer.isKycVerified(),
+                customer.getCreatedAt()
         );
     }
-
-
 }

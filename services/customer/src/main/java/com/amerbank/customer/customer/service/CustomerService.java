@@ -1,63 +1,52 @@
 package com.amerbank.customer.customer.service;
 
 import com.amerbank.customer.customer.CustomerNotFoundException;
-import com.amerbank.customer.customer.repository.CustomerRepository;
 import com.amerbank.customer.customer.dto.CustomerRequest;
 import com.amerbank.customer.customer.dto.CustomerResponse;
 import com.amerbank.customer.customer.dto.CustomerUpdateRequest;
-import com.amerbank.customer.customer.dto.PasswordUpdateRequest;
 import com.amerbank.customer.customer.model.Customer;
+import com.amerbank.customer.customer.repository.CustomerRepository;
 import jakarta.transaction.Transactional;
-import lombok.AllArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class CustomerService {
 
     private final CustomerRepository customerRepository;
     private final CustomerMapper customerMapper;
 
-    private final PasswordEncoder passwordEncoder;
-
-
     public Customer findCustomerById(Long id) {
-        return customerRepository.findById(id).orElseThrow(() -> new CustomerNotFoundException("Customer not found with ID " + id));
+        return customerRepository.findById(id)
+                .orElseThrow(() -> new CustomerNotFoundException("Customer not found with ID " + id));
     }
 
-    private void validateCustomerExistsOrThrow(Long id) {
-        if (!customerRepository.existsById(id)) {
-            throw new CustomerNotFoundException("Customer not found with ID " + id);
-        }
+    public Customer findCustomerByUserId(Long userId) {
+        return customerRepository.findByUserId(userId)
+                .orElseThrow(() -> new CustomerNotFoundException("Customer not found for User ID " + userId));
     }
 
-    public Customer findCustomerByEmail(String email) {
-        return customerRepository.findCustomerByEmail(email).orElseThrow(() -> new CustomerNotFoundException("Customer not found with Email " + email));
+    public CustomerResponse getCustomerInfo(Long customerId) {
+        return customerMapper.fromCustomer(findCustomerById(customerId));
     }
 
-    public CustomerResponse getCustomerInfo(Long id) {
-        return customerMapper.fromCustomer(findCustomerById(id));
+    public CustomerResponse getCustomerInfoByUserId(Long userId) {
+        return customerMapper.fromCustomer(findCustomerByUserId(userId));
     }
 
-    public CustomerResponse registerCustomer(CustomerRequest customerRequest, Long userId) {
-
+    public CustomerResponse registerCustomer(CustomerRequest request, Long userId) {
         if (customerRepository.existsByUserId(userId)) {
-            throw new IllegalArgumentException("Customer already exists for userId " + userId);
+            throw new IllegalArgumentException("Customer already exists for userId: " + userId);
         }
 
-        String encodedPassword = passwordEncoder.encode(customerRequest.password());
-
-        Customer customer = customerMapper.toCustomer(customerRequest);
-
+        Customer customer = customerMapper.toCustomer(request, userId);
         Customer saved = customerRepository.save(customer);
         return customerMapper.fromCustomer(saved);
     }
 
-
     @Transactional
     public CustomerResponse editCustomerInfo(CustomerUpdateRequest request) {
-        validateCustomerExistsOrThrow(request.customerId());
         Customer customer = findCustomerById(request.customerId());
         customer.setFirstName(request.firstName());
         customer.setLastName(request.lastName());
@@ -72,12 +61,11 @@ public class CustomerService {
         customerRepository.save(customer);
     }
 
-
     @Transactional
     public void deleteCustomerById(Long id) {
-        validateCustomerExistsOrThrow(id);
+        if (!customerRepository.existsById(id)) {
+            throw new CustomerNotFoundException("Customer not found with ID " + id);
+        }
         customerRepository.deleteById(id);
     }
-
-
 }

@@ -5,12 +5,12 @@ import jakarta.validation.constraints.NotNull;
 
 public record CustomerUpdateRequest(
 
-        @NotNull
+        @NotNull(message = "Customer ID is required")
         Long customerId,
 
-        @NotBlank
+        @NotBlank(message = "First name is required")
         String firstName,
 
-        @NotBlank
+        @NotBlank(message = "Last name is required")
         String lastName
 ) {}

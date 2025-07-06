@@ -1,5 +1,6 @@
 package com.amerbank.auth_server.service;
 
+import com.amerbank.auth_server.UserNotFoundException;
 import com.amerbank.auth_server.model.User;
 import com.amerbank.auth_server.repository.UserRepository;
 import com.amerbank.auth_server.dto.UserRegisterRequest;
@@ -45,5 +46,9 @@ public class UserService {
 
         user.setPassword(passwordEncoder.encode(request.newPassword()));
         userRepository.save(user);
+    }
+
+    public User findByEmail(String email) throws UserNotFoundException {
+        return  userRepository.findByEmailIgnoreCase(email).orElseThrow(() -> new UserNotFoundException("User not found!"));
     }
 }

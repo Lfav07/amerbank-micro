@@ -1,9 +1,7 @@
 package com.amerbank.customer.customer.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -19,7 +17,6 @@ public class Customer {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-
     @Column(nullable = false, unique = true)
     private Long userId;
 
@@ -33,7 +30,7 @@ public class Customer {
     private LocalDate dateOfBirth;
 
     @Column(nullable = false)
-    private boolean kycVerified;
+    private boolean kycVerified = false;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

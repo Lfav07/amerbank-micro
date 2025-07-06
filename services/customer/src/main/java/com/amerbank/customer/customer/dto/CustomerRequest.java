@@ -10,10 +10,10 @@ public record CustomerRequest(
         @NotNull(message = "User ID is required")
         Long userId,
 
-        @NotBlank(message = "Customer first name is required")
+        @NotBlank(message = "First name is required")
         String firstName,
 
-        @NotBlank(message = "Customer last name is required")
+        @NotBlank(message = "Last name is required")
         String lastName,
 
         @NotNull(message = "Date of birth is required")
