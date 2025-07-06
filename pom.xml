@@ -17,7 +17,6 @@
         <module>services/audit-logging</module>
         <module>services/gateway</module>
         <module>services/discovery</module>
-        <module>services/config-server</module>
     </modules>
 
     <dependencyManagement>

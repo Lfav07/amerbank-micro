@@ -1,9 +1,22 @@
+server:
+  port: 8081
 spring:
   application:
     name: auth-server
-  config:
-    import: configserver:http://localhost:8888
+  datasource:
+    url: jdbc:postgresql://localhost:5432/amerbank
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+jpa:
+  hibernate:
+    ddl-auto: update
+    show-sql: true
+  flyway:
+    enabled: false
   cloud:
     config:
       fail-fast: true
       label: main
+jwt:
+  secret: myVerySecretKey1234567890
