@@ -1,5 +1,6 @@
 package com.amerbank.auth_server.service;
 
+import com.amerbank.auth_server.EmailAlreadyTakenException;
 import com.amerbank.auth_server.UserNotFoundException;
 import com.amerbank.auth_server.model.User;
 import com.amerbank.auth_server.repository.UserRepository;
@@ -8,6 +9,8 @@ import com.amerbank.auth_server.dto.PasswordUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -20,9 +23,10 @@ public class UserService {
         return userRepository.existsByEmailIgnoreCase(email.trim().toLowerCase());
     }
 
+
     public User registerUser(UserRegisterRequest request) {
         if (isEmailTaken(request.email())) {
-            throw new IllegalArgumentException("Email already taken");
+            throw new EmailAlreadyTakenException("Email already taken");
         }
 
         User user = User.builder()
@@ -35,20 +39,29 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public void updatePassword(PasswordUpdateRequest request) {
-        User user = userRepository.findById(request.userId())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-        boolean matches = passwordEncoder.matches(request.oldPassword(), user.getPassword());
-        if (!matches) {
-            throw new IllegalArgumentException("Old password does not match");
-        }
-
-        user.setPassword(passwordEncoder.encode(request.newPassword()));
+    public void updateEmail( Long id, String email)  {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        user.setEmail(email);
         userRepository.save(user);
     }
 
-    public User findByEmail(String email) throws UserNotFoundException {
-        return  userRepository.findByEmailIgnoreCase(email).orElseThrow(() -> new UserNotFoundException("User not found!"));
+    public void updatePassword(Long id, String newPassword )  {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+    public void deleteUser(Long id) throws UserNotFoundException {
+        if (!userRepository.existsById(id)) {
+            throw new UserNotFoundException("User not found");
+        }
+        userRepository.deleteById(id);
+    }
+
+    public User findByEmail(String email){
+        return userRepository.findByEmailIgnoreCase(email).orElseThrow(() -> new UserNotFoundException("User not found!"));
     }
 }
