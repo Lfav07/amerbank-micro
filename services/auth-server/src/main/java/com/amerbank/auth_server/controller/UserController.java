@@ -1,10 +1,10 @@
 package com.amerbank.auth_server.controller;
 
-import com.amerbank.auth_server.UserNotFoundException;
 import com.amerbank.auth_server.dto.*;
 import com.amerbank.auth_server.model.User;
 import com.amerbank.auth_server.security.JwtService;
 import com.amerbank.auth_server.service.UserService;
+import com.amerbank.common_dto.UserRegisterRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;

@@ -4,13 +4,11 @@ import com.amerbank.auth_server.EmailAlreadyTakenException;
 import com.amerbank.auth_server.UserNotFoundException;
 import com.amerbank.auth_server.model.User;
 import com.amerbank.auth_server.repository.UserRepository;
-import com.amerbank.auth_server.dto.UserRegisterRequest;
-import com.amerbank.auth_server.dto.PasswordUpdateRequest;
+
+import com.amerbank.common_dto.UserRegisterRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor

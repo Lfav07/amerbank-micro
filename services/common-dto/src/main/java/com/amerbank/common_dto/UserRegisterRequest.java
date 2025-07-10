@@ -1,6 +1,6 @@
-package com.amerbank.auth_server.dto;
+package com.amerbank.common_dto;
 
-import com.amerbank.auth_server.model.Role;
+import  com.amerbank.common_dto.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
