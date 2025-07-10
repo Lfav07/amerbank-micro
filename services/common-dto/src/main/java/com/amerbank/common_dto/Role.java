@@ -1,4 +1,4 @@
-package com.amerbank.auth_server.model;
+package com.amerbank.common_dto;
 
 public enum Role {
     ROLE_USER,
