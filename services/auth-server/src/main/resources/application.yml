@@ -10,13 +10,10 @@ spring:
     driver-class-name: org.postgresql.Driver
 jpa:
   hibernate:
-    ddl-auto: update
+    ddl-auto:
     show-sql: true
   flyway:
-    enabled: false
-  cloud:
-    config:
-      fail-fast: true
-      label: main
+    enabled: true
+    locations: classpath:db/migration
 jwt:
-  secret: myVerySecretKey1234567890
+  secret: u7SKcmP9z3LfA6NvTyExB1QdReGmZx2W
