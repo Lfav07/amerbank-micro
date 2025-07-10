@@ -7,6 +7,7 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="common-dto" />
         <module name="discovery" />
         <module name="auth-server" />
       </profile>
@@ -35,6 +36,7 @@
       <module name="account" options="-parameters" />
       <module name="audit-logging" options="-parameters" />
       <module name="auth-server" options="-parameters" />
+      <module name="common-dto" options="-parameters" />
       <module name="config-server" options="-parameters" />
       <module name="customer" options="-parameters" />
       <module name="discovery" options="-parameters" />
