@@ -1,3 +1,5 @@
+server:
+  port: 8082
 spring:
   application:
     name: customer
@@ -11,7 +13,8 @@ jpa:
     ddl-auto: update
     show-sql: true
   flyway:
-    enabled: false
+    schemas: public
+    enabled: true
   cloud:
     config:
       enabled: false
