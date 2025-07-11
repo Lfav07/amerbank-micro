@@ -6,9 +6,11 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 
 public record CustomerRequest(
+        @NotBlank(message = "Email is required")
+        String email,
 
-        @NotNull(message = "User ID is required")
-        Long userId,
+        @NotBlank(message = "Password is required")
+        String password,
 
         @NotBlank(message = "First name is required")
         String firstName,
