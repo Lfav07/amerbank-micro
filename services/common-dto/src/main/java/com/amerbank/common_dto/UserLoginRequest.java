@@ -1,4 +1,4 @@
-package com.amerbank.auth_server.dto;
+package com.amerbank.common_dto;
 
 public record UserLoginRequest(
         String email,
