@@ -1,9 +1,9 @@
 CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    active BOOLEAN DEFAULT TRUE,
-    customer_id BIGINT
+        id SERIAL PRIMARY KEY,
+        email VARCHAR(255) NOT NULL UNIQUE,
+        password VARCHAR(255) NOT NULL,
+        active BOOLEAN DEFAULT TRUE,
+        customer_id BIGINT
 
 
 );
