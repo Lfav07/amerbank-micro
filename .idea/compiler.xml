@@ -37,6 +37,7 @@
       <module name="audit-logging" options="-parameters" />
       <module name="auth-server" options="-parameters" />
       <module name="common-dto" options="-parameters" />
+      <module name="common-security" options="-parameters" />
       <module name="config-server" options="-parameters" />
       <module name="customer" options="-parameters" />
       <module name="discovery" options="-parameters" />

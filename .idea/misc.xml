@@ -8,6 +8,7 @@
         <option value="$PROJECT_DIR$/services/auth-server/pom.xml" />
         <option value="$PROJECT_DIR$/services/config-server/pom.xml" />
         <option value="$PROJECT_DIR$/services/common-dto/pom.xml" />
+        <option value="$PROJECT_DIR$/services/common-security/pom.xml" />
       </list>
     </option>
     <option name="ignoredFiles">
