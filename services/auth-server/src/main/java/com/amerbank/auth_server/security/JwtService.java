@@ -1,6 +1,6 @@
 package com.amerbank.auth_server.security;
 
-import com.amerbank.auth_server.model.User;
+import com.amerbank.common_dto.User;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;

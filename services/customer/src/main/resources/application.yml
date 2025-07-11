@@ -1,22 +1,29 @@
 server:
   port: 8082
+
 spring:
   application:
     name: customer
   datasource:
-    url: jdbc:postgresql://localhost:5432/amerbank
+    url: jdbc:postgresql://localhost:5432/amerbank?currentSchema=customer
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
-jpa:
-  hibernate:
-    ddl-auto: update
+  jpa:
+    hibernate:
+      ddl-auto: update
     show-sql: true
   flyway:
-    schemas: public
+    outOfOrder: true
+    schemas: customer
     enabled: true
-  cloud:
-    config:
-      enabled: false
-      fail-fast: true
-      label: main
+    locations: classpath:db/migration/customer
+
+cloud:
+  config:
+    enabled: false
+    fail-fast: true
+    label: main
+
+jwt:
+  secret: u7SKcmP9z3LfA6NvTyExB1QdReGmZx2W

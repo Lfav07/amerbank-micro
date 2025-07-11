@@ -1,5 +1,6 @@
 package com.amerbank.auth_server.repository;
 
+
 import com.amerbank.auth_server.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 

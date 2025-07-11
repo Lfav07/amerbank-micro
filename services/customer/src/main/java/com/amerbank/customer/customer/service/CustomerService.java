@@ -1,14 +1,25 @@
 package com.amerbank.customer.customer.service;
 
+import com.amerbank.common_dto.AuthenticationResponse;
+import com.amerbank.common_dto.Role;
+import com.amerbank.common_dto.UserLoginRequest;
+import com.amerbank.common_dto.UserRegisterRequest;
 import com.amerbank.customer.customer.CustomerNotFoundException;
 import com.amerbank.customer.customer.dto.CustomerRequest;
 import com.amerbank.customer.customer.dto.CustomerResponse;
 import com.amerbank.customer.customer.dto.CustomerUpdateRequest;
+import com.amerbank.common_dto.UserResponse;
 import com.amerbank.customer.customer.model.Customer;
 import com.amerbank.customer.customer.repository.CustomerRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -16,6 +27,7 @@ public class CustomerService {
 
     private final CustomerRepository customerRepository;
     private final CustomerMapper customerMapper;
+    private final RestTemplate restTemplate;
 
     public Customer findCustomerById(Long id) {
         return customerRepository.findById(id)
@@ -35,12 +47,31 @@ public class CustomerService {
         return customerMapper.fromCustomer(findCustomerByUserId(userId));
     }
 
-    public CustomerResponse registerCustomer(CustomerRequest request, Long userId) {
+    public CustomerResponse registerCustomer(CustomerRequest request) {
+        // 1. Register user via UserService
+        UserRegisterRequest userRegisterRequest = new UserRegisterRequest(
+                request.email(),
+                request.password(),
+                Set.of(Role.ROLE_USER)
+        );
+
+        UserResponse userResponse = restTemplate.postForObject(
+                "http://auth-server/auth/register",
+                userRegisterRequest,
+                UserResponse.class
+        );
+
+        assert userResponse != null;
+        Long userId = userResponse.id();
+
+
         if (customerRepository.existsByUserId(userId)) {
             throw new IllegalArgumentException("Customer already exists for userId: " + userId);
         }
 
+
         Customer customer = customerMapper.toCustomer(request, userId);
+        customer.setKycVerified(true);
         Customer saved = customerRepository.save(customer);
         return customerMapper.fromCustomer(saved);
     }
@@ -68,4 +99,26 @@ public class CustomerService {
         }
         customerRepository.deleteById(id);
     }
+
+    public AuthenticationResponse login(UserLoginRequest request) {
+        String authUrl = "http://auth-server/auth/login";
+
+        try {
+            ResponseEntity<AuthenticationResponse> response = restTemplate.postForEntity(
+                    authUrl,
+                    request,
+                    AuthenticationResponse.class
+            );
+
+            return response.getBody();
+
+        } catch (HttpClientErrorException.Unauthorized ex) {
+            throw new IllegalArgumentException("Invalid credentials");
+        } catch (RestClientException ex) {
+            throw new IllegalStateException("Authentication service is unavailable");
+        }
+    }
+
+
+
 }

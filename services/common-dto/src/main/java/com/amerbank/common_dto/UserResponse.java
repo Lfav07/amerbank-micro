@@ -1,4 +1,4 @@
-package com.amerbank.customer.customer.dto;
+package com.amerbank.common_dto;
 
 public record UserResponse(
         Long id,

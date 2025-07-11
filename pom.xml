@@ -9,8 +9,10 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>services/common-dto</module>
+        <module>services/auth-server</module>
         <module>services/customer</module>
-        <module>services/account</module>
+       <module>services/account</module>
         <module>services/transaction</module>
         <module>services/loan</module>
         <module>services/notification</module>

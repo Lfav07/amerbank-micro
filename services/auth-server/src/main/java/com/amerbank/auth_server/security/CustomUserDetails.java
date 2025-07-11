@@ -9,8 +9,7 @@ import java.util.stream.Collectors;
 
 public class CustomUserDetails implements UserDetails {
 
-    private final User user; // your entity
-
+    private final User user;
     public CustomUserDetails(User user) {
         this.user = user;
     }
@@ -32,7 +31,7 @@ public class CustomUserDetails implements UserDetails {
         return user.getEmail();
     }
 
-    // Implement other methods, returning true or delegating as needed
+
     @Override public boolean isAccountNonExpired() { return true; }
     @Override public boolean isAccountNonLocked() { return true; }
     @Override public boolean isCredentialsNonExpired() { return true; }

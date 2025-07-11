@@ -4,7 +4,7 @@ spring:
   application:
     name: auth-server
   datasource:
-    url: jdbc:postgresql://localhost:5432/amerbank
+    url: jdbc:postgresql://localhost:5432/amerbank?currentSchema=auth
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
@@ -13,8 +13,13 @@ jpa:
     ddl-auto:
     show-sql: true
   flyway:
-    schemas: public
+    schemas: auth
     enabled: true
-    locations: classpath:db/migration
+    locations: classpath:db/migration/auth
 jwt:
   secret: u7SKcmP9z3LfA6NvTyExB1QdReGmZx2W
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/

@@ -4,7 +4,10 @@ import com.amerbank.auth_server.dto.*;
 import com.amerbank.auth_server.model.User;
 import com.amerbank.auth_server.security.JwtService;
 import com.amerbank.auth_server.service.UserService;
+import com.amerbank.common_dto.AuthenticationResponse;
+import com.amerbank.common_dto.UserLoginRequest;
 import com.amerbank.common_dto.UserRegisterRequest;
+import com.amerbank.common_dto.UserResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -12,6 +15,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -22,11 +26,14 @@ public class UserController {
     private final UserService userService;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private  final UserDetailsService userDetailsService;
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody UserRegisterRequest request) {
+    public ResponseEntity<UserResponse> register(@RequestBody UserRegisterRequest request) {
         User user = userService.registerUser(request);
-        return ResponseEntity.ok("User registered successfully");
+
+        UserResponse response = new UserResponse(user.getId(), user.getEmail()); // fill as needed
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/login")
@@ -36,8 +43,10 @@ public class UserController {
                     new UsernamePasswordAuthenticationToken(request.email(), request.password())
             );
 
-            User user = userService.findByEmail(request.email());
-            String token = jwtService.generateToken(user);
+            UserDetails userDetails = userDetailsService.loadUserByUsername(request.email());
+
+            String token = jwtService.generateToken(userDetails);
+
             return ResponseEntity.ok(new AuthenticationResponse(token));
 
         } catch (AuthenticationException ex) {
