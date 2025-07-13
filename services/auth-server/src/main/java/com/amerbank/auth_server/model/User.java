@@ -31,6 +31,5 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Set<Role> roles;
 
-    @Column(name = "customer_id", nullable = true)
-    private Long customerId;
+
 }
