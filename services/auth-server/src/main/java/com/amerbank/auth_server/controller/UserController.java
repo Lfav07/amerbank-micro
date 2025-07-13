@@ -32,13 +32,12 @@ public class UserController {
     public ResponseEntity<UserResponse> register(@RequestBody UserRegisterRequest request) {
         User user = userService.registerUser(request);
 
-        UserResponse response = new UserResponse(user.getId(), user.getEmail()); // fill as needed
+        UserResponse response = new UserResponse(user.getId(), user.getEmail());
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody UserLoginRequest request) {
-        try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.email(), request.password())
             );
@@ -49,16 +48,13 @@ public class UserController {
 
             return ResponseEntity.ok(new AuthenticationResponse(token));
 
-        } catch (AuthenticationException ex) {
-            return ResponseEntity.status(401).body("Unauthorized Access");
         }
-    }
 
     @PatchMapping("/update-email")
     public ResponseEntity<?> updateEmail(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody EmailUpdateRequest request) {
-        try {
+
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(userDetails.getUsername(), request.password())
             );
@@ -66,18 +62,16 @@ public class UserController {
             User user = userService.findByEmail(userDetails.getUsername());
             userService.updateEmail(user.getId(), request.newEmail());
 
-            return ResponseEntity.noContent().build();
+            return ResponseEntity.ok("Email updated successfully");
 
-        } catch (AuthenticationException ex) {
-            return ResponseEntity.status(401).body("Unauthorized Access");
         }
-    }
+
 
     @PatchMapping("/update-password")
     public ResponseEntity<?> updatePassword(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody PasswordUpdateRequest request) {
-        try {
+
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(userDetails.getUsername(), request.oldPassword())
             );
@@ -87,16 +81,12 @@ public class UserController {
 
             return ResponseEntity.noContent().build();
 
-        } catch (AuthenticationException ex) {
-            return ResponseEntity.status(401).body("Unauthorized Access");
-        }
     }
 
-    @PostMapping("/delete")
+    @DeleteMapping("/delete")
     public ResponseEntity<?> deleteUser(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody PasswordRequest request) {
-        try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(userDetails.getUsername(), request.password())
             );
@@ -104,10 +94,32 @@ public class UserController {
             User user = userService.findByEmail(userDetails.getUsername());
             userService.deleteUser(user.getId());
 
-            return ResponseEntity.noContent().build();
+            return  ResponseEntity.ok("User deleted successfully");
 
-        } catch (AuthenticationException ex) {
-            return ResponseEntity.status(401).body("Unauthorized Access");
         }
+
+
+
+
+    @DeleteMapping("/manage/delete/{id}")
+    public  ResponseEntity<?> deleteUserById(@PathVariable Long id) {
+        userService.deleteUser(id);
+        return  ResponseEntity.ok("User deleted successfully");
     }
+
+
+
+    @GetMapping("/manage/by-id/{id}")
+    public  ResponseEntity<User> getUserById(@PathVariable Long id) {
+        User user = userService.findById(id);
+        return  ResponseEntity.ok(user);
+    }
+
+    @GetMapping("/manage/by-email/{email}")
+    public  ResponseEntity<?> getUserByEmail(@PathVariable String email) {
+     User user  = userService.findByEmail(email);
+     return  ResponseEntity.ok(user);
+    }
+
+
 }
