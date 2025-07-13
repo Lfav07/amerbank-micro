@@ -1,4 +1,4 @@
-package com.amerbank.customer.customer;
+package com.amerbank.customer.customer.exception;
 
 public class CustomerNotFoundException extends  RuntimeException {
 
