@@ -5,10 +5,13 @@ import com.amerbank.auth_server.UserNotFoundException;
 import com.amerbank.auth_server.model.User;
 import com.amerbank.auth_server.repository.UserRepository;
 
+import com.amerbank.common_dto.Role;
 import com.amerbank.common_dto.UserRegisterRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +33,21 @@ public class UserService {
         User user = User.builder()
                 .email(request.email().trim().toLowerCase())
                 .password(passwordEncoder.encode(request.password()))
-                .roles(request.roles())
+                .roles(Set.of(Role.ROLE_USER))
+                .active(true)
+                .build();
+
+        return userRepository.save(user);
+    }
+
+    public User registerAdmin(UserRegisterRequest request) {
+        if (isEmailTaken(request.email())) {
+            throw new EmailAlreadyTakenException("Email already taken");
+        }
+        User user = User.builder()
+                .email(request.email().trim().toLowerCase())
+                .password(passwordEncoder.encode(request.password()))
+                .roles(Set.of(Role.ROLE_ADMIN))
                 .active(true)
                 .build();
 
@@ -61,5 +78,9 @@ public class UserService {
 
     public User findByEmail(String email){
         return userRepository.findByEmailIgnoreCase(email).orElseThrow(() -> new UserNotFoundException("User not found!"));
+    }
+
+    public  User findById(Long id) {
+        return  userRepository.findById(id).orElseThrow(() -> new UserNotFoundException("User not found!"));
     }
 }
