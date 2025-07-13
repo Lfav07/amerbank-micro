@@ -1,5 +1,6 @@
 package com.amerbank.customer.customer.service;
 
+import com.amerbank.customer.customer.dto.CustomerInfo;
 import com.amerbank.customer.customer.dto.CustomerRequest;
 import com.amerbank.customer.customer.dto.CustomerResponse;
 import com.amerbank.customer.customer.model.Customer;
@@ -35,6 +36,19 @@ public class CustomerMapper {
                 customer.getDateOfBirth(),
                 customer.isKycVerified(),
                 customer.getCreatedAt()
+        );
+    }
+
+    public CustomerInfo getInfoFromCustomer(CustomerResponse response) {
+        if (response == null) {
+            return null;
+        }
+
+        return new CustomerInfo(
+
+                response.firstName(),
+                response.lastName(),
+                response.dateOfBirth()
         );
     }
 }
