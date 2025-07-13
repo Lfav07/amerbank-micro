@@ -23,8 +23,9 @@ public class SecurityConfig {
     SecurityFilterChain chain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/customer/register").permitAll()
-                        .anyRequest().authenticated())
+                        .requestMatchers("/customer/register", "/customer/login").permitAll()
+                        .requestMatchers("/customer/me").permitAll()
+                        .anyRequest().hasRole("ADMIN"))
                 .sessionManagement(sess -> sess
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthFilter,
