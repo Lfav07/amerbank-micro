@@ -110,15 +110,17 @@ public class UserController {
 
 
     @GetMapping("/manage/by-id/{id}")
-    public  ResponseEntity<User> getUserById(@PathVariable Long id) {
+    public  ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
         User user = userService.findById(id);
-        return  ResponseEntity.ok(user);
+        UserResponse response = new UserResponse(user.getId(), user.getEmail());
+        return  ResponseEntity.ok(response);
     }
 
     @GetMapping("/manage/by-email/{email}")
-    public  ResponseEntity<?> getUserByEmail(@PathVariable String email) {
+    public  ResponseEntity<UserResponse> getUserByEmail(@PathVariable String email) {
      User user  = userService.findByEmail(email);
-     return  ResponseEntity.ok(user);
+        UserResponse response = new UserResponse(user.getId(), user.getEmail());
+     return  ResponseEntity.ok(response);
     }
 
 
