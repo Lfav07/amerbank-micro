@@ -1,10 +1,9 @@
 package com.amerbank.customer.customer.service;
 
 import com.amerbank.common_dto.AuthenticationResponse;
-import com.amerbank.common_dto.Role;
 import com.amerbank.common_dto.UserLoginRequest;
 import com.amerbank.common_dto.UserRegisterRequest;
-import com.amerbank.customer.customer.CustomerNotFoundException;
+import com.amerbank.customer.customer.exception.CustomerNotFoundException;
 import com.amerbank.customer.customer.dto.CustomerRequest;
 import com.amerbank.customer.customer.dto.CustomerResponse;
 import com.amerbank.customer.customer.dto.CustomerUpdateRequest;
@@ -13,13 +12,17 @@ import com.amerbank.customer.customer.model.Customer;
 import com.amerbank.customer.customer.repository.CustomerRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriUtils;
 
-import java.util.Set;
+import java.nio.charset.StandardCharsets;
 
 @Service
 @RequiredArgsConstructor
@@ -43,16 +46,17 @@ public class CustomerService {
         return customerMapper.fromCustomer(findCustomerById(customerId));
     }
 
+
+
     public CustomerResponse getCustomerInfoByUserId(Long userId) {
         return customerMapper.fromCustomer(findCustomerByUserId(userId));
     }
 
     public CustomerResponse registerCustomer(CustomerRequest request) {
-        // 1. Register user via UserService
+
         UserRegisterRequest userRegisterRequest = new UserRegisterRequest(
                 request.email(),
-                request.password(),
-                Set.of(Role.ROLE_USER)
+                request.password()
         );
 
         UserResponse userResponse = restTemplate.postForObject(
@@ -74,6 +78,25 @@ public class CustomerService {
         customer.setKycVerified(true);
         Customer saved = customerRepository.save(customer);
         return customerMapper.fromCustomer(saved);
+    }
+
+    public AuthenticationResponse login(UserLoginRequest request) {
+        String authUrl = "http://auth-server/auth/login";
+
+        try {
+            ResponseEntity<AuthenticationResponse> response = restTemplate.postForEntity(
+                    authUrl,
+                    request,
+                    AuthenticationResponse.class
+            );
+
+            return response.getBody();
+
+        } catch (HttpClientErrorException.Unauthorized ex) {
+            throw new IllegalArgumentException("Invalid credentials");
+        } catch (RestClientException ex) {
+            throw new IllegalStateException("Authentication service is unavailable");
+        }
     }
 
     @Transactional
@@ -100,25 +123,33 @@ public class CustomerService {
         customerRepository.deleteById(id);
     }
 
-    public AuthenticationResponse login(UserLoginRequest request) {
-        String authUrl = "http://auth-server/auth/login";
 
+    public CustomerResponse getCustomerInfoByEmail(String email, String jwtToken) {
+
+        String url = "http://auth-server/auth/manage/by-email/" + email;
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(jwtToken);
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<UserResponse> response;
         try {
-            ResponseEntity<AuthenticationResponse> response = restTemplate.postForEntity(
-                    authUrl,
-                    request,
-                    AuthenticationResponse.class
-            );
-
-            return response.getBody();
-
-        } catch (HttpClientErrorException.Unauthorized ex) {
-            throw new IllegalArgumentException("Invalid credentials");
-        } catch (RestClientException ex) {
-            throw new IllegalStateException("Authentication service is unavailable");
+            response = restTemplate.exchange(url, HttpMethod.GET, entity, UserResponse.class);
+        } catch (RestClientException e) {
+            throw new IllegalStateException("Auth service unavailable");
         }
+
+        UserResponse userResponse = response.getBody();
+
+        if (userResponse == null || userResponse.id() == null) {
+            throw new CustomerNotFoundException("User not found with email: " + email);
+        }
+
+        Customer customer = customerRepository.findByUserId(userResponse.id())
+                .orElseThrow(() -> new CustomerNotFoundException("Customer not found for user with email: " + email));
+
+        return customerMapper.fromCustomer(customer);
     }
-
-
 
 }
