@@ -1,14 +1,11 @@
 package com.amerbank.common_dto;
 
-import  com.amerbank.common_dto.Role;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-
-
-import java.util.Set;
+import jakarta.validation.constraints.Size;
 
 public record UserRegisterRequest(
         @Email String email,
-        @NotBlank String password,
-        Set<Role> roles
+        @NotBlank  @Size(min = 7, message = "Password too short")  String password
 ) {}
