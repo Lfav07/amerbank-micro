@@ -24,7 +24,7 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/customer/register", "/customer/login").permitAll()
-                        .requestMatchers("/customer/me").permitAll()
+                        .requestMatchers("/customer/me").authenticated()
                         .anyRequest().hasRole("ADMIN"))
                 .sessionManagement(sess -> sess
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
