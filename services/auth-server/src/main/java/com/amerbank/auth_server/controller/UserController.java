@@ -107,6 +107,19 @@ public class UserController {
         return  ResponseEntity.ok("User deleted successfully");
     }
 
+    @PatchMapping("/manage/update-password/{id}")
+    public ResponseEntity<?> updatePasswordById(Long id,
+            @RequestBody String password) {
+
+
+
+        User user = userService.findById(id);
+        userService.updatePassword(user.getId(), password);
+
+        return ResponseEntity.noContent().build();
+
+    }
+
 
 
     @GetMapping("/manage/by-id/{id}")
