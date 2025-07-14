@@ -102,6 +102,12 @@ public class CustomerController {
         return ResponseEntity.ok("KYC verified successfully");
     }
 
+    @PatchMapping("/{id}/unverify-kyc")
+    public ResponseEntity<String> unVerifyKyc(@PathVariable Long id) {
+        service.verifyKyc(id);
+        return ResponseEntity.ok("KYC unverified successfully");
+    }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteCustomer(@PathVariable Long id) {
