@@ -20,10 +20,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriUtils;
 
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Service layer for handling customer-related operations such as registration,
+ * authentication, KYC verification, and information updates.
+ */
 @Service
 @RequiredArgsConstructor
 public class CustomerService {
@@ -32,28 +35,58 @@ public class CustomerService {
     private final CustomerMapper customerMapper;
     private final RestTemplate restTemplate;
 
+    /**
+     * Retrieves a customer by their database ID.
+     *
+     * @param id the customer's ID
+     * @return the found Customer entity
+     * @throws CustomerNotFoundException if no customer is found with the given ID
+     */
     public Customer findCustomerById(Long id) {
         return customerRepository.findById(id)
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found with ID " + id));
     }
 
+    /**
+     * Retrieves a customer using their associated user ID.
+     *
+     * @param userId the user's ID
+     * @return the corresponding Customer entity
+     * @throws CustomerNotFoundException if no customer is found for the user
+     */
     public Customer findCustomerByUserId(Long userId) {
         return customerRepository.findByUserId(userId)
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found for User ID " + userId));
     }
 
+    /**
+     * Returns customer information as a response DTO using the customer's ID.
+     *
+     * @param customerId the customer's ID
+     * @return a response DTO with customer information
+     */
     public CustomerResponse getCustomerInfo(Long customerId) {
         return customerMapper.fromCustomer(findCustomerById(customerId));
     }
 
-
-
+    /**
+     * Returns customer information as a response DTO using the user ID.
+     *
+     * @param userId the user's ID
+     * @return a response DTO with customer information
+     */
     public CustomerResponse getCustomerInfoByUserId(Long userId) {
         return customerMapper.fromCustomer(findCustomerByUserId(userId));
     }
 
+    /**
+     * Registers a new customer and links them to a user in the auth server.
+     *
+     * @param request the registration data
+     * @return a response DTO of the newly registered customer
+     * @throws IllegalArgumentException if a customer already exists for the user
+     */
     public CustomerResponse registerCustomer(CustomerRequest request) {
-
         UserRegisterRequest userRegisterRequest = new UserRegisterRequest(
                 request.email(),
                 request.password()
@@ -68,11 +101,9 @@ public class CustomerService {
         assert userResponse != null;
         Long userId = userResponse.id();
 
-
         if (customerRepository.existsByUserId(userId)) {
             throw new IllegalArgumentException("Customer already exists for userId: " + userId);
         }
-
 
         Customer customer = customerMapper.toCustomer(request, userId);
         customer.setKycVerified(true);
@@ -80,6 +111,14 @@ public class CustomerService {
         return customerMapper.fromCustomer(saved);
     }
 
+    /**
+     * Authenticates a user using the auth server.
+     *
+     * @param request login credentials
+     * @return a JWT-based authentication response
+     * @throws IllegalArgumentException if the credentials are invalid
+     * @throws IllegalStateException if the auth service is unavailable
+     */
     public AuthenticationResponse login(UserLoginRequest request) {
         String authUrl = "http://auth-server/auth/login";
 
@@ -99,6 +138,12 @@ public class CustomerService {
         }
     }
 
+    /**
+     * Edits customer profile information.
+     *
+     * @param request the update request containing new first and last name
+     * @return an updated customer response
+     */
     @Transactional
     public CustomerResponse editCustomerInfo(CustomerUpdateRequest request) {
         Customer customer = findCustomerById(request.customerId());
@@ -108,6 +153,12 @@ public class CustomerService {
         return customerMapper.fromCustomer(customer);
     }
 
+    /**
+     * Sets the customer's KYC verification status to true.
+     *
+     * @param customerId the customer's ID
+     * @throws CustomerNotFoundException if the customer is not found
+     */
     @Transactional
     public void verifyKyc(Long customerId) {
         Customer customer = findCustomerById(customerId);
@@ -115,6 +166,25 @@ public class CustomerService {
         customerRepository.save(customer);
     }
 
+    /**
+     * Sets the customer's KYC verification status to false.
+     *
+     * @param customerId the customer's ID
+     * @throws CustomerNotFoundException if the customer is not found
+     */
+    @Transactional
+    public void unVerifyKyc(Long customerId) {
+        Customer customer = findCustomerById(customerId);
+        customer.setKycVerified(false);
+        customerRepository.save(customer);
+    }
+
+    /**
+     * Deletes a customer by ID.
+     *
+     * @param id the customer's ID
+     * @throws CustomerNotFoundException if no customer is found
+     */
     @Transactional
     public void deleteCustomerById(Long id) {
         if (!customerRepository.existsById(id)) {
@@ -123,9 +193,16 @@ public class CustomerService {
         customerRepository.deleteById(id);
     }
 
-
+    /**
+     * Retrieves customer info using the user's email, authenticated via JWT.
+     *
+     * @param email the user's email
+     * @param jwtToken the JWT token for authorization
+     * @return the corresponding CustomerResponse
+     * @throws CustomerNotFoundException if the user or customer is not found
+     * @throws IllegalStateException if the auth service is unavailable
+     */
     public CustomerResponse getCustomerInfoByEmail(String email, String jwtToken) {
-
         String url = "http://auth-server/auth/manage/by-email/" + email;
 
         HttpHeaders headers = new HttpHeaders();
@@ -151,5 +228,4 @@ public class CustomerService {
 
         return customerMapper.fromCustomer(customer);
     }
-
 }
