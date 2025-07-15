@@ -3,6 +3,7 @@ package com.amerbank.customer.customer.service;
 import com.amerbank.common_dto.AuthenticationResponse;
 import com.amerbank.common_dto.UserLoginRequest;
 import com.amerbank.common_dto.UserRegisterRequest;
+import com.amerbank.customer.customer.exception.AuthServiceUnavailableException;
 import com.amerbank.customer.customer.exception.CustomerNotFoundException;
 import com.amerbank.customer.customer.dto.CustomerRequest;
 import com.amerbank.customer.customer.dto.CustomerResponse;
@@ -194,13 +195,48 @@ public class CustomerService {
     }
 
     /**
-     * Retrieves customer info using the user's email, authenticated via JWT.
+     * Retrieves customer info for the authenticated user by calling /auth/manage/me.
+     *
+     * @param jwtToken the JWT token for authorization
+     * @return the corresponding CustomerResponse
+     * @throws CustomerNotFoundException if the user or customer is not found
+     * @throws AuthServiceUnavailableException if the auth service is unavailable
+     */
+    public CustomerResponse getMyCustomerInfo(String jwtToken) {
+        String url = "http://auth-server/auth/manage/me";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(jwtToken);
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<UserResponse> response;
+        try {
+            response = restTemplate.exchange(url, HttpMethod.GET, entity, UserResponse.class);
+        } catch (RestClientException e) {
+            throw new AuthServiceUnavailableException("Auth service unavailable");
+        }
+
+        UserResponse userResponse = response.getBody();
+
+        if (userResponse == null || userResponse.id() == null) {
+            throw new CustomerNotFoundException("Authenticated user not found");
+        }
+
+        Customer customer = customerRepository.findByUserId(userResponse.id())
+                .orElseThrow(() -> new CustomerNotFoundException("Customer not found for authenticated user"));
+
+        return customerMapper.fromCustomer(customer);
+    }
+
+    /**
+     * Retrieves customer info by email. Intended for admin users only.
      *
      * @param email the user's email
      * @param jwtToken the JWT token for authorization
      * @return the corresponding CustomerResponse
      * @throws CustomerNotFoundException if the user or customer is not found
-     * @throws IllegalStateException if the auth service is unavailable
+     * @throws AuthServiceUnavailableException if the auth service is unavailable
      */
     public CustomerResponse getCustomerInfoByEmail(String email, String jwtToken) {
         String url = "http://auth-server/auth/manage/by-email/" + email;
@@ -214,7 +250,7 @@ public class CustomerService {
         try {
             response = restTemplate.exchange(url, HttpMethod.GET, entity, UserResponse.class);
         } catch (RestClientException e) {
-            throw new IllegalStateException("Auth service unavailable");
+            throw new AuthServiceUnavailableException("Auth service unavailable");
         }
 
         UserResponse userResponse = response.getBody();
