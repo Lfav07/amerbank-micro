@@ -59,7 +59,7 @@ public class CustomerController {
         String jwtToken = authHeader.substring(7);
 
 
-        CustomerResponse resp = service.getCustomerInfoByEmail(email, jwtToken);
+        CustomerResponse resp = service.getMyCustomerInfo(jwtToken);
         CustomerInfo info = mapper.getInfoFromCustomer(resp);
 
         return ResponseEntity.ok(info);
