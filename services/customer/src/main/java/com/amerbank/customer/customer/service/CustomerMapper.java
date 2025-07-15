@@ -45,7 +45,7 @@ public class CustomerMapper {
         }
 
         return new CustomerInfo(
-
+               response.id(),
                 response.firstName(),
                 response.lastName(),
                 response.dateOfBirth()
