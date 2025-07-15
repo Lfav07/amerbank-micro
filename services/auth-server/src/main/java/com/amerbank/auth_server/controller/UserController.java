@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -127,6 +128,14 @@ public class UserController {
         User user = userService.findById(id);
         UserResponse response = new UserResponse(user.getId(), user.getEmail());
         return  ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/manage/me")
+    public ResponseEntity<UserResponse> getMyUserInfo(Authentication authentication) {
+        String email = authentication.getName();
+        User user = userService.findByEmail(email);
+        UserResponse resp = new UserResponse(user.getId(), user.getEmail());
+        return ResponseEntity.ok(resp);
     }
 
     @GetMapping("/manage/by-email/{email}")
