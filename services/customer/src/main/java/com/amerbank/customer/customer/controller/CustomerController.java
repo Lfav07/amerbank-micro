@@ -2,7 +2,7 @@ package com.amerbank.customer.customer.controller;
 
 import com.amerbank.customer.customer.dto.CustomerInfo;
 import com.amerbank.customer.customer.dto.CustomerRequest;
-import com.amerbank.customer.customer.dto.CustomerResponse;
+import com.amerbank.common_dto.CustomerResponse;
 import com.amerbank.customer.customer.dto.CustomerUpdateRequest;
 import com.amerbank.customer.customer.service.CustomerMapper;
 import com.amerbank.customer.customer.service.CustomerService;

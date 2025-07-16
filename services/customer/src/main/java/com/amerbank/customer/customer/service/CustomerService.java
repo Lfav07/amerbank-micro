@@ -6,7 +6,7 @@ import com.amerbank.common_dto.UserRegisterRequest;
 import com.amerbank.customer.customer.exception.AuthServiceUnavailableException;
 import com.amerbank.customer.customer.exception.CustomerNotFoundException;
 import com.amerbank.customer.customer.dto.CustomerRequest;
-import com.amerbank.customer.customer.dto.CustomerResponse;
+import com.amerbank.common_dto.CustomerResponse;
 import com.amerbank.customer.customer.dto.CustomerUpdateRequest;
 import com.amerbank.common_dto.UserResponse;
 import com.amerbank.customer.customer.model.Customer;
@@ -21,8 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-
-import java.nio.charset.StandardCharsets;
 
 /**
  * Service layer for handling customer-related operations such as registration,

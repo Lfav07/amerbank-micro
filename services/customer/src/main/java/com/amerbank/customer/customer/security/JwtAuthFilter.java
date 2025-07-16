@@ -45,20 +45,20 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String username = jwtService.extractUsername(token);
 
-        // Extract roles as Enum Set<Role>
+
         var roles = jwtService.extractRoles(token);
 
-        // Map Roles to GrantedAuthority
+
         List<SimpleGrantedAuthority> authorities = roles.stream()
-                .map(Role::name) // get enum name, e.g. "ROLE_ADMIN"
+                .map(Role::name)
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
 
-        // Build Authentication token without credentials (null)
+
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(username, null, authorities);
 
-        // Set the authentication in the Security Context
+
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
         filterChain.doFilter(request, response);
