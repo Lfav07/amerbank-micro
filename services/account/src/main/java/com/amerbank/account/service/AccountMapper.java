@@ -4,6 +4,7 @@ import com.amerbank.account.dto.AccountInfo;
 import com.amerbank.account.dto.AccountRequest;
 import com.amerbank.account.dto.AccountResponse;
 import com.amerbank.account.model.Account;
+import com.amerbank.account.model.AccountStatus;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -11,8 +12,8 @@ public class AccountMapper {
 
     public Account toAccount(AccountRequest request) {
         Account account = new Account();
+        account.setStatus(AccountStatus.ACTIVE);
         account.setType(request.type());
-        account.setStatus(request.status());
         return account;
     }
 
@@ -26,8 +27,9 @@ public class AccountMapper {
                 account.getStatus()
         );
     }
+
     public AccountInfo getAccountInfo(AccountResponse response) {
-        return  new AccountInfo(
+        return new AccountInfo(
                 response.id(),
                 response.accountNumber(),
                 response.balance(),
