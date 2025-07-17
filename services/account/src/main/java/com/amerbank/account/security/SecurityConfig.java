@@ -21,10 +21,11 @@ public class SecurityConfig {
     SecurityFilterChain chain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/customer/register", "/customer/me").authenticated()
+                        .requestMatchers("/account/register", "/account/me").authenticated()
                         .anyRequest().hasRole("ADMIN"))
                 .sessionManagement(sess -> sess
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .httpBasic(httpBasic -> httpBasic.disable())
                 .addFilterBefore(jwtAuthFilter,
                         UsernamePasswordAuthenticationFilter.class);
         return http.build();
