@@ -7,7 +7,7 @@ import com.amerbank.account.model.Account;
 import com.amerbank.account.model.AccountStatus;
 import com.amerbank.account.repository.AccountRepository;
 import com.amerbank.common_dto.CustomerResponse;
-import com.amerbank.common_dto.UserResponse;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
@@ -23,7 +23,7 @@ import org.springframework.web.client.RestTemplate;
 import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.util.List;
-import java.util.UUID;
+
 
 @Service
 @RequiredArgsConstructor
@@ -62,9 +62,11 @@ public class AccountService {
      * @param request the account creation request
      * @return the created AccountResponse DTO
      */
-    public AccountResponse createAccount(AccountRequest request) {
+    public AccountResponse createAccount(AccountRequest request, String jwtToken) {
+        Long customerId = getCustomerId(jwtToken);
         Account account = accountMapper.toAccount(request);
         account.setAccountNumber(generateAccountNumber());
+        account.setCustomerId(customerId);
         account.setBalance(BigDecimal.ZERO);
         Account saved = accountRepository.save(account);
         return accountMapper.fromAccount(saved);
@@ -90,7 +92,7 @@ public class AccountService {
      * @param customerId the UUID of the customer
      * @return a list of AccountResponse DTOs
      */
-    public List<AccountResponse> getAccountsByCustomerId(UUID customerId) {
+    public List<AccountResponse> getAccountsByCustomerId(Long customerId) {
         List<Account> accounts = accountRepository.findAllByCustomerId(customerId);
         return accounts.stream()
                 .map(accountMapper::fromAccount)
@@ -112,6 +114,23 @@ public class AccountService {
         }
         return balance;
     }
+
+    /**
+     * Retrieves the balance of the authenticated user's account.
+     *
+     * @param accountNumber the account number
+     * @return the BigDecimal balance of the account
+     * @throws IllegalStateException if the balance is null
+     */
+    public BigDecimal getAccountBalanceByAccountNumber(String accountNumber) {
+        AccountResponse response = getAccountByAccountNumber(accountNumber);
+        BigDecimal balance = response.balance();
+        if (balance == null) {
+            throw new IllegalStateException("Account balance is null");
+        }
+        return balance;
+    }
+
 
     /**
      * @param accountNumber the account number
@@ -228,6 +247,36 @@ public class AccountService {
         return accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new AccountNotFoundException("Account not found with accountNumber " + accountNumber));
     }
+
+        /**
+         * Retrieves the account information of the currently authenticated user
+         * by contacting the customer service using the provided JWT token.
+         *
+         * @param jwtToken the JWT token of the authenticated user
+         * @return Long customerId
+         * @throws CustomerServiceUnavailableException if the customer service cannot be reached
+         * @throws AccountNotFoundException            if the user or account cannot be found
+         */
+        public Long getCustomerId(String jwtToken) {
+            String url = "http://customer/customer/me";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(jwtToken);
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<CustomerResponse> response;
+            try {
+                response = restTemplate.exchange(url, HttpMethod.GET, entity, CustomerResponse.class);
+            } catch (RestClientException e) {
+                throw new CustomerServiceUnavailableException("Customer service unavailable");
+            }
+
+            CustomerResponse customerResponse = response.getBody();
+            if (customerResponse == null || customerResponse.id() == null) {
+                throw new AccountNotFoundException("Authenticated customer not found");
+            }
+            return customerResponse.id();
+        }
 
     /**
      * Retrieves the account information of the currently authenticated user
