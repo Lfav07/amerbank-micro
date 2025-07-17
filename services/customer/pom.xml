@@ -114,12 +114,6 @@
             <version>0.0.1-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
-		<dependency>
-			<groupId>com.amerbank</groupId>
-			<artifactId>auth-server</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
-			<scope>compile</scope>
-		</dependency>
 	</dependencies>
 	<dependencyManagement>
 		<dependencies>
@@ -152,10 +146,6 @@
 				<artifactId>flyway-maven-plugin</artifactId>
 				<version>11.10.1</version>
 				<configuration>
-					<url>jdbc:postgresql://localhost:5432/amerbank</url>
-					<user>postgres</user>
-					<password>8V#*CFC7wy8tU</password>
-					<schemas>customer</schemas>
 				</configuration>
 			</plugin>
 
