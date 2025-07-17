@@ -1,5 +1,6 @@
 package com.amerbank.customer.customer.controller;
 
+import com.amerbank.common_dto.UserLoginRequest;
 import com.amerbank.customer.customer.dto.CustomerInfo;
 import com.amerbank.customer.customer.dto.CustomerRequest;
 import com.amerbank.common_dto.CustomerResponse;
@@ -31,7 +32,7 @@ public class CustomerController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody com.amerbank.common_dto.UserLoginRequest request) {
+    public ResponseEntity<?> login(@RequestBody UserLoginRequest request) {
         var auth = service.login(request);
         return ResponseEntity.ok(auth);
     }
@@ -48,9 +49,6 @@ public class CustomerController {
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-
-        String email = authentication.getName();
-
 
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -104,7 +102,7 @@ public class CustomerController {
 
     @PatchMapping("/{id}/unverify-kyc")
     public ResponseEntity<String> unVerifyKyc(@PathVariable Long id) {
-        service.verifyKyc(id);
+        service.unVerifyKyc(id);
         return ResponseEntity.ok("KYC unverified successfully");
     }
 
