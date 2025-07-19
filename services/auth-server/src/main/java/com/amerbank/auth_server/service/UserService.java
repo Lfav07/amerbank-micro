@@ -1,7 +1,7 @@
 package com.amerbank.auth_server.service;
 
-import com.amerbank.auth_server.EmailAlreadyTakenException;
-import com.amerbank.auth_server.UserNotFoundException;
+import com.amerbank.auth_server.exception.EmailAlreadyTakenException;
+import com.amerbank.auth_server.exception.UserNotFoundException;
 import com.amerbank.auth_server.model.User;
 import com.amerbank.auth_server.repository.UserRepository;
 import com.amerbank.common_dto.Role;
