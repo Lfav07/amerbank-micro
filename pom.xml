@@ -15,7 +15,6 @@
        <module>services/account</module>
         <module>services/transaction</module>
         <module>services/loan</module>
-        <module>services/notification</module>
         <module>services/audit-logging</module>
         <module>services/gateway</module>
         <module>services/discovery</module>

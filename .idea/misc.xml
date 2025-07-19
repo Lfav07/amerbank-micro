@@ -15,6 +15,7 @@
       <set>
         <option value="$PROJECT_DIR$/services/common-security/pom.xml" />
         <option value="$PROJECT_DIR$/services/config-server/pom.xml" />
+        <option value="$PROJECT_DIR$/services/notification/pom.xml" />
       </set>
     </option>
   </component>
