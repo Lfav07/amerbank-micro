@@ -5,6 +5,7 @@ import com.amerbank.account.exception.AccountNotFoundException;
 import com.amerbank.account.exception.CustomerServiceUnavailableException;
 import com.amerbank.account.model.Account;
 import com.amerbank.account.model.AccountStatus;
+import com.amerbank.account.model.AccountType;
 import com.amerbank.account.repository.AccountRepository;
 import com.amerbank.common_dto.CustomerResponse;
 
@@ -24,7 +25,11 @@ import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.util.List;
 
-
+/**
+ * Service class responsible for managing accounts, including creation,
+ * retrieval, updates, and deletion. It interacts with the database repository
+ * and external customer service to validate and fetch customer information.
+ */
 @Service
 @RequiredArgsConstructor
 public class AccountService {
@@ -43,27 +48,35 @@ public class AccountService {
     // -------------------------------
 
     /**
-     * Generates a unique account number with the format "ACCTXXXXXXXXXX".
+     * Generates a unique account number with a fixed prefix and a 10-digit body.
+     * Ensures that the generated account number does not already exist in the database.
      *
-     * @return a unique account number string
+     * @return a unique account number string.
      */
     public String generateAccountNumber() {
         String candidate;
         do {
-            long body = RNG.nextLong(UPPER_BOUND);
+            long body = Math.abs(RNG.nextLong()) % UPPER_BOUND;
             candidate = PREFIX + String.format("%0" + BODY_DIGITS + "d", body);
         } while (accountRepository.existsByAccountNumber(candidate));
         return candidate;
     }
 
     /**
-     * Creates a new account from the provided request.
+     * Creates a new account for the authenticated customer with the given request details.
+     * Throws an exception if the customer already has an account of the requested type.
      *
-     * @param request the account creation request
-     * @return the created AccountResponse DTO
+     * @param request the account creation request details.
+     * @param jwtToken the JWT token of the authenticated user.
+     * @return the created account response DTO.
+     * @throws IllegalStateException if account of the requested type already exists for the customer.
      */
     public AccountResponse createAccount(AccountRequest request, String jwtToken) {
         Long customerId = getCustomerId(jwtToken);
+        boolean exists = accountRepository.existsByCustomerIdAndType(customerId, request.type());
+        if (exists) {
+            throw new IllegalStateException("Customer already has an account of type: " + request.type());
+        }
         Account account = accountMapper.toAccount(request);
         account.setAccountNumber(generateAccountNumber());
         account.setCustomerId(customerId);
@@ -77,7 +90,12 @@ public class AccountService {
     // -------------------------------
 
     /**
-     * Get account by account number (cached).
+     * Retrieves an account by its account number.
+     * Uses caching to optimize repeated lookups.
+     *
+     * @param accountNumber the account number to look up.
+     * @return the account response DTO.
+     * @throws AccountNotFoundException if no account with the given number exists.
      */
     @Cacheable(value = "accounts", key = "#accountNumber")
     public AccountResponse getAccountByAccountNumber(String accountNumber) {
@@ -87,28 +105,71 @@ public class AccountService {
     }
 
     /**
-     * Retrieves all accounts associated with a customer ID.
+     * Retrieves all accounts associated with a given customer ID.
      *
-     * @param customerId the UUID of the customer
-     * @return a list of AccountResponse DTOs
+     * @param customerId the customer ID whose accounts are to be retrieved.
+     * @return a list of account response DTOs.
+     * @throws AccountNotFoundException if the customer has no accounts.
      */
     public List<AccountResponse> getAccountsByCustomerId(Long customerId) {
         List<Account> accounts = accountRepository.findAllByCustomerId(customerId);
+        if (accounts.isEmpty()) {
+            throw new AccountNotFoundException("No accounts found for customerId " + customerId);
+        }
         return accounts.stream()
                 .map(accountMapper::fromAccount)
                 .toList();
     }
 
     /**
-     * Retrieves the balance of the authenticated user's account.
+     * Retrieves accounts of the authenticated customer.
      *
-     * @param jwtToken the JWT token used for authentication
-     * @return the BigDecimal balance of the account
-     * @throws IllegalStateException if the balance is null
+     * @param jwtToken the JWT token of the authenticated user.
+     * @return a list of account info DTOs.
+     * @throws AccountNotFoundException if the authenticated customer has no accounts.
      */
-    public BigDecimal getAccountBalance(String jwtToken) {
-        AccountInfo accountInfo = getMyAccountInfo(jwtToken);
-        BigDecimal balance = accountInfo.balance();
+    public List<AccountInfo> getMyAccounts(String jwtToken) {
+        Long customerId = getCustomerId(jwtToken);
+        List<Account> accounts = accountRepository.findAllByCustomerId(customerId);
+        if (accounts.isEmpty()) {
+            throw new AccountNotFoundException("No accounts found for authenticated customer");
+        }
+        return accounts.stream()
+                .map(accountMapper::fromAccount)
+                .map(accountMapper::getAccountInfo)
+                .toList();
+    }
+
+    /**
+     * Retrieves an account by customer ID and account type.
+     *
+     * @param customerId the customer ID.
+     * @param type the type of account.
+     * @return the account response DTO.
+     * @throws AccountNotFoundException if no matching account is found.
+     */
+    public AccountResponse getAccountByCustomerIdAndType(Long customerId, AccountType type) {
+        Account account = accountRepository.findByCustomerIdAndType(customerId, type)
+                .orElseThrow(() -> new AccountNotFoundException(
+                        "No account found for customerId " + customerId + " and type " + type));
+        return accountMapper.fromAccount(account);
+    }
+
+    /**
+     * Retrieves the balance of the authenticated customer's account by account type.
+     *
+     * @param jwtToken the JWT token of the authenticated user.
+     * @param type the type of the account.
+     * @return the account balance.
+     * @throws AccountNotFoundException if no matching account is found.
+     * @throws IllegalStateException if the account balance is null.
+     */
+    public BigDecimal getAccountBalance(String jwtToken, AccountType type) {
+        Long customerId = getCustomerId(jwtToken);
+        Account account = accountRepository.findByCustomerIdAndType(customerId, type)
+                .orElseThrow(() -> new AccountNotFoundException(
+                        "No account found for authenticated customer with type " + type));
+        BigDecimal balance = account.getBalance();
         if (balance == null) {
             throw new IllegalStateException("Account balance is null");
         }
@@ -116,11 +177,33 @@ public class AccountService {
     }
 
     /**
-     * Retrieves the balance of the authenticated user's account.
+     * Retrieves balances of all accounts belonging to the authenticated customer.
      *
-     * @param accountNumber the account number
-     * @return the BigDecimal balance of the account
-     * @throws IllegalStateException if the balance is null
+     * @param jwtToken the JWT token of the authenticated user.
+     * @return a list of account balance info DTOs.
+     * @throws AccountNotFoundException if the customer has no accounts.
+     */
+    public List<AccountBalanceInfo> getAllAccountsBalances(String jwtToken) {
+        Long customerId = getCustomerId(jwtToken);
+        List<Account> accounts = accountRepository.findAllByCustomerId(customerId);
+        if (accounts.isEmpty()) {
+            throw new AccountNotFoundException("No accounts found for authenticated customer");
+        }
+        return accounts.stream()
+                .map(account -> new AccountBalanceInfo(
+                        account.getAccountNumber(),
+                        account.getType(),
+                        account.getBalance() != null ? account.getBalance() : BigDecimal.ZERO))
+                .toList();
+    }
+
+    /**
+     * Retrieves the balance of an account by account number.
+     *
+     * @param accountNumber the account number.
+     * @return the account balance.
+     * @throws AccountNotFoundException if no such account exists.
+     * @throws IllegalStateException if the account balance is null.
      */
     public BigDecimal getAccountBalanceByAccountNumber(String accountNumber) {
         AccountResponse response = getAccountByAccountNumber(accountNumber);
@@ -131,11 +214,12 @@ public class AccountService {
         return balance;
     }
 
-
     /**
-     * @param accountNumber the account number
-     * @return the current account status
-     * @throws AccountNotFoundException if no account is found
+     * Retrieves the status of an account by its account number.
+     *
+     * @param accountNumber the account number.
+     * @return the account status.
+     * @throws AccountNotFoundException if the account is not found.
      */
     public AccountStatus getAccountStatus(String accountNumber) {
         return findAccountEntity(accountNumber).getStatus();
@@ -146,26 +230,32 @@ public class AccountService {
     // -------------------------------
 
     /**
-     * Updates the account type.
+     * Updates the type of an existing account.
      *
-     * @param request the account type update request
-     * @return the updated AccountResponse
-     * @throws AccountNotFoundException if the account does not exist
+     * @param request the update request containing the account number and new type.
+     * @return the updated account response DTO.
+     * @throws IllegalStateException if customer already has an account of the new type.
+     * @throws AccountNotFoundException if the account is not found.
      */
     @CachePut(value = "accounts", key = "#request.accountNumber()")
     public AccountResponse updateAccountType(AccountUpdateTypeRequest request) {
         Account existing = findAccountEntity(request.accountNumber());
+        Long customerId = existing.getCustomerId();
+
+        if (accountRepository.existsByCustomerIdAndType(customerId, request.type())) {
+            throw new IllegalStateException("Customer already has an account of type: " + request.type());
+        }
+
         existing.setType(request.type());
         return accountMapper.fromAccount(accountRepository.save(existing));
     }
 
-
     /**
-     * Updates the account status.
+     * Updates the status of an existing account.
      *
-     * @param request the account status update request
-     * @return the updated AccountResponse
-     * @throws AccountNotFoundException if the account does not exist
+     * @param request the update request containing the account number and new status.
+     * @return the updated account response DTO.
+     * @throws AccountNotFoundException if the account is not found.
      */
     @CachePut(value = "accounts", key = "#request.accountNumber()")
     public AccountResponse updateAccountStatus(AccountUpdateStatusRequest request) {
@@ -175,11 +265,11 @@ public class AccountService {
     }
 
     /**
-     * Suspends the account by setting its status to SUSPENDED.
+     * Suspends an account by setting its status to SUSPENDED.
      *
-     * @param accountNumber the account number
-     * @return the updated AccountResponse
-     * @throws AccountNotFoundException if the account does not exist
+     * @param accountNumber the account number to suspend.
+     * @return the updated account response DTO.
+     * @throws AccountNotFoundException if the account is not found.
      */
     @CachePut(value = "accounts", key = "#accountNumber")
     public AccountResponse suspendAccount(String accountNumber) {
@@ -193,26 +283,28 @@ public class AccountService {
     // -------------------------------
 
     /**
-     * Checks whether an account is ACTIVE.
+     * Checks whether an account is currently active.
      *
-     * @param accountNumber the account number
-     * @return true if the account is ACTIVE, false otherwise
-     * @throws AccountNotFoundException if the account does not exist
+     * @param accountNumber the account number.
+     * @return true if the account status is ACTIVE, false otherwise.
+     * @throws AccountNotFoundException if the account is not found.
      */
     public boolean isAccountActive(String accountNumber) {
         return findAccountEntity(accountNumber).getStatus().equals(AccountStatus.ACTIVE);
     }
 
     /**
-     * Checks if the authenticated user has sufficient funds.
+     * Checks if the authenticated customer has sufficient funds in an account of the given type.
      *
-     * @param jwtToken         the JWT token for the authenticated user
-     * @param amountToTransfer the amount to validate
-     * @return true if the balance is greater than or equal to the transfer amount
-     * @throws IllegalStateException if the balance is null
+     * @param jwtToken the JWT token of the authenticated user.
+     * @param type the account type.
+     * @param amountToTransfer the amount to check against the balance.
+     * @return true if the account balance is greater than or equal to the amount, false otherwise.
+     * @throws AccountNotFoundException if no matching account is found.
+     * @throws IllegalStateException if the account balance is null.
      */
-    public boolean hasSufficientFunds(String jwtToken, BigDecimal amountToTransfer) {
-        BigDecimal balance = getAccountBalance(jwtToken);
+    public boolean hasSufficientFunds(String jwtToken, AccountType type, BigDecimal amountToTransfer) {
+        BigDecimal balance = getAccountBalance(jwtToken, type);
         return balance.compareTo(amountToTransfer) >= 0;
     }
 
@@ -223,8 +315,8 @@ public class AccountService {
     /**
      * Deletes an account by its account number.
      *
-     * @param accountNumber the account number
-     * @throws AccountNotFoundException if the account does not exist
+     * @param accountNumber the account number to delete.
+     * @throws AccountNotFoundException if the account is not found.
      */
     @CacheEvict(value = "accounts", key = "#accountNumber")
     public void deleteAccount(String accountNumber) {
@@ -237,59 +329,27 @@ public class AccountService {
     // -------------------------------
 
     /**
-     * Finds and returns the Account entity for the given account number.
+     * Finds an account entity by account number.
      *
-     * @param accountNumber the account number
-     * @return the corresponding Account entity
-     * @throws AccountNotFoundException if no account is found
+     * @param accountNumber the account number to find.
+     * @return the account entity.
+     * @throws AccountNotFoundException if the account is not found.
      */
     public Account findAccountEntity(String accountNumber) {
         return accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new AccountNotFoundException("Account not found with accountNumber " + accountNumber));
     }
 
-        /**
-         * Retrieves the account information of the currently authenticated user
-         * by contacting the customer service using the provided JWT token.
-         *
-         * @param jwtToken the JWT token of the authenticated user
-         * @return Long customerId
-         * @throws CustomerServiceUnavailableException if the customer service cannot be reached
-         * @throws AccountNotFoundException            if the user or account cannot be found
-         */
-        public Long getCustomerId(String jwtToken) {
-            String url = "http://customer/customer/me";
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setBearerAuth(jwtToken);
-            HttpEntity<Void> entity = new HttpEntity<>(headers);
-
-            ResponseEntity<CustomerResponse> response;
-            try {
-                response = restTemplate.exchange(url, HttpMethod.GET, entity, CustomerResponse.class);
-            } catch (RestClientException e) {
-                throw new CustomerServiceUnavailableException("Customer service unavailable");
-            }
-
-            CustomerResponse customerResponse = response.getBody();
-            if (customerResponse == null || customerResponse.id() == null) {
-                throw new AccountNotFoundException("Authenticated customer not found");
-            }
-            return customerResponse.id();
-        }
-
     /**
-     * Retrieves the account information of the currently authenticated user
-     * by contacting the customer service using the provided JWT token.
+     * Retrieves the customer ID of the authenticated user by calling the customer service.
      *
-     * @param jwtToken the JWT token of the authenticated user
-     * @return an AccountInfo DTO containing basic account data
-     * @throws CustomerServiceUnavailableException if the customer service cannot be reached
-     * @throws AccountNotFoundException            if the user or account cannot be found
+     * @param jwtToken the JWT token of the authenticated user.
+     * @return the customer ID.
+     * @throws CustomerServiceUnavailableException if the customer service is unavailable.
+     * @throws AccountNotFoundException if the authenticated customer is not found.
      */
-    public AccountInfo getMyAccountInfo(String jwtToken) {
+    public Long getCustomerId(String jwtToken) {
         String url = "http://customer/customer/me";
-
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(jwtToken);
         HttpEntity<Void> entity = new HttpEntity<>(headers);
@@ -305,12 +365,6 @@ public class AccountService {
         if (customerResponse == null || customerResponse.id() == null) {
             throw new AccountNotFoundException("Authenticated customer not found");
         }
-
-        Account account = accountRepository.findByCustomerId(customerResponse.id())
-                .orElseThrow(() -> new AccountNotFoundException("Account not found for authenticated customer"));
-
-        AccountResponse accResponse = accountMapper.fromAccount(account);
-        return accountMapper.getAccountInfo(accResponse);
+        return customerResponse.id();
     }
 }
-
