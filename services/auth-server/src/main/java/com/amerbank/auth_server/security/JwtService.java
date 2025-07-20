@@ -1,6 +1,6 @@
 package com.amerbank.auth_server.security;
 
-import com.amerbank.common_dto.User;
+import com.amerbank.auth_server.model.User;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -41,20 +41,13 @@ public class JwtService {
         return extractClaim(token, Claims::getExpiration).before(new Date());
     }
 
-    public String generateToken(UserDetails userDetails) {
-        return Jwts.builder().subject(userDetails.getUsername())
-                .claim("roles", userDetails.getAuthorities().stream()
-                        .map(auth -> auth.getAuthority())
-                        .toList()).issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expirationMs))
-                .signWith(getSigningKey())
-                .compact();
-    }
-
     public String generateToken(User user) {
-        return Jwts.builder().subject(user.getEmail())
+        return Jwts.builder()
+                .subject(user.getEmail())
+                .claim("userId", user.getId())
                 .claim("roles", user.getRoles().stream().map(Enum::name).toList())
-                .issuedAt(new Date()).expiration(new Date(System.currentTimeMillis() + expirationMs))
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(getSigningKey())
                 .compact();
     }
