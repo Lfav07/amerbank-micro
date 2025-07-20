@@ -11,6 +11,7 @@ import com.amerbank.customer.customer.dto.CustomerUpdateRequest;
 import com.amerbank.common_dto.UserResponse;
 import com.amerbank.customer.customer.model.Customer;
 import com.amerbank.customer.customer.repository.CustomerRepository;
+import com.amerbank.customer.customer.security.JwtService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
@@ -33,6 +34,7 @@ public class CustomerService {
     private final CustomerRepository customerRepository;
     private final CustomerMapper customerMapper;
     private final RestTemplate restTemplate;
+    private  final JwtService jwtService;
 
     /**
      * Retrieves a customer by their database ID.
@@ -201,27 +203,9 @@ public class CustomerService {
      * @throws AuthServiceUnavailableException if the auth service is unavailable
      */
     public CustomerResponse getMyCustomerInfo(String jwtToken) {
-        String url = "http://auth-server/auth/manage/me";
+        Long userId = jwtService.extractUserId(jwtToken);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(jwtToken);
-
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
-
-        ResponseEntity<UserResponse> response;
-        try {
-            response = restTemplate.exchange(url, HttpMethod.GET, entity, UserResponse.class);
-        } catch (RestClientException e) {
-            throw new AuthServiceUnavailableException("Auth service unavailable");
-        }
-
-        UserResponse userResponse = response.getBody();
-
-        if (userResponse == null || userResponse.id() == null) {
-            throw new CustomerNotFoundException("Authenticated user not found");
-        }
-
-        Customer customer = customerRepository.findByUserId(userResponse.id())
+        Customer customer = customerRepository.findByUserId(userId)
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found for authenticated user"));
 
         return customerMapper.fromCustomer(customer);
