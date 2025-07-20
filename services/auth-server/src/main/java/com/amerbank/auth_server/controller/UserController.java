@@ -13,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -39,17 +38,15 @@ public class UserController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody UserLoginRequest request) {
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.email(), request.password())
-            );
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.email(), request.password())
+        );
 
-            UserDetails userDetails = userDetailsService.loadUserByUsername(request.email());
+        User user = userService.findByEmail(request.email());
+        String token = jwtService.generateToken(user);
 
-            String token = jwtService.generateToken(userDetails);
-
-            return ResponseEntity.ok(new AuthenticationResponse(token));
-
-        }
+        return ResponseEntity.ok(new AuthenticationResponse(token));
+    }
 
     @PatchMapping("/update-email")
     public ResponseEntity<?> updateEmail(
