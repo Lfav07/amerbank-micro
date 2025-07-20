@@ -38,6 +38,10 @@ public class JwtService {
         return resolver.apply(extractAllClaims(token));
     }
 
+    public Long extractUserId(String token) {
+        return extractClaim(token, claims -> claims.get("userId", Long.class));
+    }
+
     public boolean isTokenValid(String token) {
         try {
             extractAllClaims(token);
@@ -46,6 +50,8 @@ public class JwtService {
             return false;
         }
     }
+
+
 
     public Set<Role> extractRoles(String token) {
         Claims claims = extractAllClaims(token);
