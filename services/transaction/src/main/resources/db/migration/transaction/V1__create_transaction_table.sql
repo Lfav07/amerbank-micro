@@ -8,5 +8,5 @@ CREATE TABLE transactions (
    status VARCHAR(20) NOT NULL,
    failure_reason VARCHAR(255),
    created_at TIMESTAMP DEFAULT now(),
-   updated_at TIMESTAMP DEFAULT now(),
+   updated_at TIMESTAMP DEFAULT now()
 );
