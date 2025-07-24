@@ -18,11 +18,15 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     List<Transaction> findByFromAccountNumber(String fromAccount);
 
+    List<Transaction> findByFromAccountNumberAndToAccountNumber(String fromAccount, String toAccount);
+
 
     List<Transaction> findByToAccountNumber(String toAccount);
 
 
     List<Transaction> findByStatus(TransactionStatus status);
+
+    List<Transaction> findByType(TransactionType type);
 
 
     List<Transaction> findByFromAccountNumberAndStatusOrderByCreatedAtDesc(String fromAccount, TransactionStatus status);
@@ -35,6 +39,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
 
     List<Transaction> findByFromAccountNumberAndStatus(String fromAccount, TransactionStatus status);
+
+    List<Transaction> findByFromAccountNumberAndType(String fromAccount, TransactionType type);
 
 
     Optional<Transaction> findByIdAndFromAccountNumber(Long id, String fromAccount);
