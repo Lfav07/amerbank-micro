@@ -5,10 +5,5 @@ public enum TransactionType {
     WITHDRAWAL,
     TRANSFER,
     PAYMENT,
-    FEE,
-    INTEREST,
-    LOAN_DISBURSEMENT,
-    LOAN_REPAYMENT,
     REFUND,
-    REVERSAL
 }
