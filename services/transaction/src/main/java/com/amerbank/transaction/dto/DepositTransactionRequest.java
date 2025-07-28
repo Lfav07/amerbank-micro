@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 public record DepositTransactionRequest(
         BigDecimal amount,
         String description,
+        String fromAccountNumber,
         String toAccountNumber
 
 
