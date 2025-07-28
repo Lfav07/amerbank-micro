@@ -6,6 +6,7 @@ import com.amerbank.account.model.Account;
 import com.amerbank.account.model.AccountStatus;
 import com.amerbank.account.model.AccountType;
 import com.amerbank.account.service.AccountService;
+import com.amerbank.common_dto.UpdateBalanceRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -62,6 +63,31 @@ public class AccountController {
         accountService.createAccount(accountRequest, jwtToken);
         return ResponseEntity.ok("Account successfully registered");
     }
+    /**
+     * Checks if the specified account number belongs to the currently authenticated customer.
+     *
+     * @param accountNumber the account number to verify ownership of
+     * @param request the HttpServletRequest, used to extract the Authorization header
+     * @param authentication the Spring Security Authentication object representing the current user
+     * @return a ResponseEntity containing true if the account belongs to the current customer,
+     *         false otherwise; returns 401 Unauthorized if JWT token is missing or invalid
+     */
+    @GetMapping("/manage/owned")
+    public ResponseEntity<Boolean> isAccountOwnedByCurrentCustomer(
+            @RequestParam String accountNumber,
+            HttpServletRequest request,
+            Authentication authentication) {
+
+        ResponseEntity<String> tokenResponse = extractJwtToken(request, authentication);
+        if (!tokenResponse.getStatusCode().is2xxSuccessful()) {
+            return ResponseEntity.status(tokenResponse.getStatusCode()).build();
+        }
+        String jwtToken = tokenResponse.getBody();
+
+        boolean owned = accountService.isAccountOwnedByCurrentCustomer(jwtToken, accountNumber);
+        return ResponseEntity.ok(owned);
+    }
+
 
     /**
      * Retrieves account details by account number.
@@ -73,6 +99,8 @@ public class AccountController {
     public ResponseEntity<AccountResponse> getAccountByAccountNumber(@PathVariable String accountNumber) {
         return ResponseEntity.ok(accountService.getAccountByAccountNumber(accountNumber));
     }
+
+
 
     /**
      * Retrieves account(s) by customer ID and optionally filters by type.
@@ -202,6 +230,33 @@ public class AccountController {
         AccountResponse updated = accountService.updateAccountType(request);
         return ResponseEntity.ok(updated);
     }
+
+    /**
+     * Endpoint to deposit funds into an account.
+     * Expects a valid JWT and a payload with account number and amount.
+     *
+     * @param request the HttpServletRequest, used to extract the Authorization header
+     * @param authentication the Spring Security Authentication object representing the current user
+     *
+     * @param updateBalanceRequest the deposit request containing account number and amount
+     * @return 200 OK if deposit is successful
+     */
+    @PostMapping("/deposit")
+    public ResponseEntity<Void> depositToAccount(
+            @RequestBody UpdateBalanceRequest updateBalanceRequest,
+            HttpServletRequest request,
+            Authentication authentication){
+        ResponseEntity<String> tokenResponse = extractJwtToken(request, authentication);
+        if (!tokenResponse.getStatusCode().is2xxSuccessful()) {
+            return ResponseEntity.status(tokenResponse.getStatusCode()).build();
+        }
+
+        String jwtToken = tokenResponse.getBody();
+
+        accountService.depositToAccount(jwtToken, updateBalanceRequest);
+        return ResponseEntity.ok().build();
+    }
+
 
     /**
      * Updates the status of an account.
