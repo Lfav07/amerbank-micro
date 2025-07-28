@@ -9,6 +9,7 @@ import com.amerbank.account.model.AccountType;
 import com.amerbank.account.repository.AccountRepository;
 import com.amerbank.common_dto.CustomerResponse;
 
+import com.amerbank.common_dto.UpdateBalanceRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
@@ -230,7 +231,7 @@ public class AccountService {
     // -------------------------------
 
     /**
-     * Updates the type of an existing account.
+     * Updates the type of existing account.
      *
      * @param request the update request containing the account number and new type.
      * @return the updated account response DTO.
@@ -276,6 +277,30 @@ public class AccountService {
         Account account = findAccountEntity(accountNumber);
         account.setStatus(AccountStatus.SUSPENDED);
         return accountMapper.fromAccount(accountRepository.save(account));
+    }
+
+    /**
+     * Deposits a specified amount into the given account if the account belongs to the authenticated user.
+     *
+     * @param jwtToken JWT token of the current user
+     * @param request  contains account number and amount to deposit
+     * @throws AccountNotFoundException if the account does not exist or does not belong to the user
+     * @throws IllegalArgumentException if the deposit amount is negative or zero
+     */
+    public void depositToAccount(String jwtToken, UpdateBalanceRequest request) {
+        if (request.amount() == null || request.amount().signum() <= 0) {
+            throw new IllegalArgumentException("Deposit amount must be positive");
+        }
+
+        Account account = findAccountEntity(request.accountNumber());
+
+        Long customerId = getCustomerId(jwtToken);
+        if (!account.getCustomerId().equals(customerId)) {
+            throw new AccountNotFoundException("Account does not belong to authenticated customer");
+        }
+
+        account.setBalance(account.getBalance().add(request.amount()));
+        accountRepository.save(account);
     }
 
     // -------------------------------
@@ -339,6 +364,21 @@ public class AccountService {
         return accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new AccountNotFoundException("Account not found with accountNumber " + accountNumber));
     }
+    /**
+     * Finds an account entity by account number.
+     *
+     * @param accountNumber the account number to find.
+     * @return true if the given accountNumber belongs to logged in customer
+     * @throws AccountNotFoundException if the account is not found.
+     */
+    public boolean isAccountOwnedByCurrentCustomer(String jwtToken, String accountNumber) {
+        Long customerId = getCustomerId(jwtToken);
+
+        Account account = findAccountEntity(accountNumber);
+
+        return account.getCustomerId().equals(customerId);
+    }
+
 
     /**
      * Retrieves the customer ID of the authenticated user by calling the customer service.
