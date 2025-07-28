@@ -11,6 +11,7 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Data
 @AllArgsConstructor
@@ -19,9 +20,9 @@ import java.time.LocalDateTime;
 public class Transaction {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(columnDefinition = "UUID")
+    private UUID id;
     @Column(nullable = false)
     private BigDecimal amount;
 
