@@ -9,8 +9,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
-public interface TransactionRepository extends JpaRepository<Transaction, Long> {
+public interface TransactionRepository extends JpaRepository<Transaction, UUID> {
 
 
     List<Transaction> findByFromAccountNumberOrToAccountNumber(String fromAccount, String toAccount);
@@ -43,7 +44,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Transaction> findByFromAccountNumberAndType(String fromAccount, TransactionType type);
 
 
-    Optional<Transaction> findByIdAndFromAccountNumber(Long id, String fromAccount);
+    Optional<Transaction> findByIdAndFromAccountNumber(UUID id, String fromAccount);
 
 
     List<Transaction> findTop5ByFromAccountNumberOrderByCreatedAtDesc(String fromAccount);
