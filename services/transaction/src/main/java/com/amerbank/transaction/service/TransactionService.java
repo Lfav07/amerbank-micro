@@ -1,7 +1,9 @@
 package com.amerbank.transaction.service;
 
-import com.amerbank.common_dto.UpdateBalanceRequest;
+import com.amerbank.common_dto.DepositBalanceRequest;
+import com.amerbank.common_dto.PaymentBalanceRequest;
 import com.amerbank.transaction.dto.DepositTransactionRequest;
+import com.amerbank.transaction.dto.PaymentTransactionRequest;
 import com.amerbank.transaction.dto.TransactionResponse;
 import com.amerbank.transaction.exception.AccountServiceUnavailableException;
 import com.amerbank.transaction.exception.TransactionNotFoundException;
@@ -68,11 +70,23 @@ public class TransactionService {
 
 
         Transaction transaction = transactionMapper.toTransaction(request);
+
+
+        performDeposit(jwtToken, request.toAccountNumber(), request.amount());
         transactionRepository.save(transaction);
+        return transactionMapper.toResponse(transaction);
+    }
+    public TransactionResponse createPaymentTransaction(String jwtToken, PaymentTransactionRequest request){
+        if (!isAccountOwnedByCurrentCustomer(jwtToken, request.fromAccountNumber())) {
+            throw new RuntimeException("Account does not belong to current user");
+        }
 
-        updateAccountBalance(jwtToken, request.toAccountNumber(), request.amount());
+        Transaction transaction = transactionMapper.toTransaction(request);
 
-        return TransactionMapper.toResponse(transaction);
+        performPayment(jwtToken, request.fromAccountNumber(), request.toAccountNumber(), request.amount());
+        transactionRepository.save(transaction);
+        return transactionMapper.toResponse(transaction);
+
     }
 
 
@@ -95,7 +109,7 @@ public class TransactionService {
         return owned != null && owned;
     }
 
-    private void updateAccountBalance(String jwtToken, String accountNumber, BigDecimal amount) {
+    private void performDeposit(String jwtToken, String accountNumber, BigDecimal amount) {
         String url = "http://account-service/account/manage/deposit";
 
         HttpHeaders headers = new HttpHeaders();
@@ -103,8 +117,26 @@ public class TransactionService {
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         // Create request body (DTO)
-        UpdateBalanceRequest body = new UpdateBalanceRequest(accountNumber, amount);
-        HttpEntity<UpdateBalanceRequest> entity = new HttpEntity<>(body, headers);
+        DepositBalanceRequest body = new DepositBalanceRequest(accountNumber, amount);
+        HttpEntity<DepositBalanceRequest> entity = new HttpEntity<>(body, headers);
+
+        try {
+            restTemplate.exchange(url, HttpMethod.POST, entity, Void.class);
+        } catch (RestClientException e) {
+            throw new AccountServiceUnavailableException("Failed to update account balance");
+        }
+    }
+
+    private void performPayment(String jwtToken, String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
+        String url = "http://account-service/account/manage/payment";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(jwtToken);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        // Create request body (DTO)
+        PaymentBalanceRequest body = new PaymentBalanceRequest(fromAccountNumber, toAccountNumber, amount);
+        HttpEntity<PaymentBalanceRequest> entity = new HttpEntity<>(body, headers);
 
         try {
             restTemplate.exchange(url, HttpMethod.POST, entity, Void.class);
