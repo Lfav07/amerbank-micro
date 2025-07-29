@@ -1,12 +1,11 @@
 package com.amerbank.account.controller;
 
 import com.amerbank.account.dto.*;
-import com.amerbank.account.exception.AccountNotFoundException;
-import com.amerbank.account.model.Account;
 import com.amerbank.account.model.AccountStatus;
 import com.amerbank.account.model.AccountType;
 import com.amerbank.account.service.AccountService;
-import com.amerbank.common_dto.UpdateBalanceRequest;
+import com.amerbank.common_dto.DepositBalanceRequest;
+import com.amerbank.common_dto.PaymentBalanceRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -238,12 +237,12 @@ public class AccountController {
      * @param request the HttpServletRequest, used to extract the Authorization header
      * @param authentication the Spring Security Authentication object representing the current user
      *
-     * @param updateBalanceRequest the deposit request containing account number and amount
+     * @param depositBalanceRequest the deposit request containing account number and amount
      * @return 200 OK if deposit is successful
      */
     @PostMapping("/deposit")
-    public ResponseEntity<Void> depositToAccount(
-            @RequestBody UpdateBalanceRequest updateBalanceRequest,
+    public ResponseEntity<Void> performDeposit(
+            @RequestBody DepositBalanceRequest depositBalanceRequest,
             HttpServletRequest request,
             Authentication authentication){
         ResponseEntity<String> tokenResponse = extractJwtToken(request, authentication);
@@ -253,7 +252,33 @@ public class AccountController {
 
         String jwtToken = tokenResponse.getBody();
 
-        accountService.depositToAccount(jwtToken, updateBalanceRequest);
+        accountService.performDeposit(jwtToken, depositBalanceRequest);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Endpoint to transfer funds between accounts.
+     * Expects a valid JWT and a payload with accounts numbers and amount.
+     *
+     * @param request the HttpServletRequest, used to extract the Authorization header
+     * @param authentication the Spring Security Authentication object representing the current user
+     *
+     * @param paymentBalanceRequest the payment request containing accounts numbers and amount
+     * @return 200 OK if payment is successful
+     */
+    @PostMapping("/payment")
+    public ResponseEntity<Void> performPayment(
+            @RequestBody PaymentBalanceRequest paymentBalanceRequest,
+            HttpServletRequest request,
+            Authentication authentication){
+        ResponseEntity<String> tokenResponse = extractJwtToken(request, authentication);
+        if (!tokenResponse.getStatusCode().is2xxSuccessful()) {
+            return ResponseEntity.status(tokenResponse.getStatusCode()).build();
+        }
+
+        String jwtToken = tokenResponse.getBody();
+
+        accountService.performPayment(jwtToken, paymentBalanceRequest);
         return ResponseEntity.ok().build();
     }
 
@@ -304,7 +329,7 @@ public class AccountController {
      * @return true if sufficient funds are available, false otherwise
      */
     @GetMapping("/manage/me/has-funds")
-    public ResponseEntity<Boolean> hasSufficientFunds(
+    public ResponseEntity<Boolean> hasSufficientFundsByType(
             @RequestParam AccountType type,
             @RequestParam BigDecimal amount,
             HttpServletRequest request,
@@ -315,9 +340,11 @@ public class AccountController {
             return ResponseEntity.status(tokenResponse.getStatusCode()).build();
         }
         String jwtToken = tokenResponse.getBody();
-        boolean hasFunds = accountService.hasSufficientFunds(jwtToken, type, amount);
+        boolean hasFunds = accountService.hasSufficientFundsByType(jwtToken, type, amount);
         return ResponseEntity.ok(hasFunds);
     }
+
+
 
     /**
      * Deletes an account by its account number.
