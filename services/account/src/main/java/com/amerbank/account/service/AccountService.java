@@ -12,6 +12,7 @@ import com.amerbank.common_dto.CustomerResponse;
 
 import com.amerbank.common_dto.DepositBalanceRequest;
 import com.amerbank.common_dto.PaymentBalanceRequest;
+import com.amerbank.common_dto.RefundBalanceRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
@@ -307,10 +308,20 @@ public class AccountService {
         accountRepository.save(account);
     }
 
+    /**
+     * Transfers a specified amount from one account to another, ensuring that the sender owns the source account
+     * and has sufficient funds.
+     *
+     * @param jwtToken JWT token of the current authenticated user
+     * @param request  contains source (from) and destination (to) account numbers, and the payment amount
+     * @throws AccountNotFoundException         if the source account does not exist or is not owned by the user
+     * @throws IllegalArgumentException         if the payment amount is negative or zero
+     * @throws InsufficientFundsAvailableException if the source account has insufficient balance
+     */
     @Transactional
     public void performPayment(String jwtToken, PaymentBalanceRequest request) {
         if (request.amount() == null || request.amount().signum() <= 0) {
-            throw new IllegalArgumentException("Transfer amount must be positive");
+            throw new IllegalArgumentException("Payment amount must be positive");
         }
 
         Long customerId = getCustomerId(jwtToken);
@@ -332,6 +343,44 @@ public class AccountService {
 
         accountRepository.save(fromAccount);
         accountRepository.save(toAccount);
+    }
+
+    /**
+     * Refunds a specified amount by reversing a previous transaction, transferring funds from the recipient
+     * back to the original sender. Only the recipient of the original transaction can initiate a refund.
+     *
+     * @param jwtToken JWT token of the current authenticated user
+     * @param request  contains the account numbers involved in the original transaction and the refund amount
+     * @throws AccountNotFoundException         if the sender (original recipient) account is not owned by the user
+     * @throws IllegalArgumentException         if the refund amount is negative or zero
+     * @throws InsufficientFundsAvailableException if the sender account lacks sufficient balance for the refund
+     */
+    @Transactional
+    public void performRefund(String jwtToken, RefundBalanceRequest request) {
+        if (request.amount() == null || request.amount().signum() <= 0) {
+            throw new IllegalArgumentException("Refund amount must be positive");
+        }
+
+        BigDecimal amount = request.amount();
+        Long customerId = getCustomerId(jwtToken);
+
+        // The one sending the refund is the RECIPIENT of the original transaction
+        Account sender = findAccountEntity(request.fromAccountNumber()); // original recipient
+        Account recipient = findAccountEntity(request.toAccountNumber()); // original sender
+
+        if (!sender.getCustomerId().equals(customerId)) {
+            throw new AccountNotFoundException("Account does not belong to authenticated customer");
+        }
+
+        if (sender.getBalance().compareTo(amount) < 0) {
+            throw new InsufficientFundsAvailableException("Insufficient funds to perform refund.");
+        }
+
+        sender.setBalance(sender.getBalance().subtract(amount));
+        recipient.setBalance(recipient.getBalance().add(amount));
+
+        accountRepository.save(sender);
+        accountRepository.save(recipient);
     }
 
 

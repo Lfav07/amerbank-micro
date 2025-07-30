@@ -2,8 +2,10 @@ package com.amerbank.transaction.service;
 
 import com.amerbank.common_dto.DepositBalanceRequest;
 import com.amerbank.common_dto.PaymentBalanceRequest;
+import com.amerbank.common_dto.RefundBalanceRequest;
 import com.amerbank.transaction.dto.DepositTransactionRequest;
 import com.amerbank.transaction.dto.PaymentTransactionRequest;
+import com.amerbank.transaction.dto.RefundTransactionRequest;
 import com.amerbank.transaction.dto.TransactionResponse;
 import com.amerbank.transaction.exception.AccountServiceUnavailableException;
 import com.amerbank.transaction.exception.TransactionNotFoundException;
@@ -73,6 +75,7 @@ public class TransactionService {
 
 
         performDeposit(jwtToken, request.toAccountNumber(), request.amount());
+        transaction.setStatus(TransactionStatus.APPROVED);
         transactionRepository.save(transaction);
         return transactionMapper.toResponse(transaction);
     }
@@ -84,10 +87,47 @@ public class TransactionService {
         Transaction transaction = transactionMapper.toTransaction(request);
 
         performPayment(jwtToken, request.fromAccountNumber(), request.toAccountNumber(), request.amount());
+        transaction.setStatus(TransactionStatus.APPROVED);
         transactionRepository.save(transaction);
         return transactionMapper.toResponse(transaction);
 
     }
+
+    public TransactionResponse createRefundTransaction(String jwtToken, RefundTransactionRequest request) {
+        Transaction originalTransaction = findTransactionById(request.transactionId());
+
+        if (!isAccountOwnedByCurrentCustomer(jwtToken, originalTransaction.getFromAccountNumber())) {
+            throw new RuntimeException("Account does not belong to current user");
+        }
+
+        if (originalTransaction.getStatus() == TransactionStatus.REVERSED) {
+            throw new RuntimeException("Transaction already refunded");
+        }
+
+        // Create refund transaction
+        Transaction transaction = new Transaction();
+        transaction.setAmount(originalTransaction.getAmount());
+        transaction.setFromAccountNumber(originalTransaction.getToAccountNumber());
+        transaction.setToAccountNumber(originalTransaction.getFromAccountNumber());
+        transaction.setType(TransactionType.REFUND);
+        transaction.setStatus(TransactionStatus.WAITING);
+
+        // Perform the refund (reverse the direction)
+        performRefund(jwtToken,
+                transaction.getFromAccountNumber(),
+                transaction.getToAccountNumber(),
+                transaction.getAmount());
+
+
+        originalTransaction.setStatus(TransactionStatus.REVERSED);
+        transaction.setStatus(TransactionStatus.APPROVED);
+
+        transactionRepository.save(transaction);
+        transactionRepository.save(originalTransaction);
+
+        return transactionMapper.toResponse(transaction);
+    }
+
 
 
 
@@ -123,7 +163,7 @@ public class TransactionService {
         try {
             restTemplate.exchange(url, HttpMethod.POST, entity, Void.class);
         } catch (RestClientException e) {
-            throw new AccountServiceUnavailableException("Failed to update account balance");
+            throw new AccountServiceUnavailableException("Failed to perform deposit");
         }
     }
 
@@ -141,7 +181,25 @@ public class TransactionService {
         try {
             restTemplate.exchange(url, HttpMethod.POST, entity, Void.class);
         } catch (RestClientException e) {
-            throw new AccountServiceUnavailableException("Failed to update account balance");
+            throw new AccountServiceUnavailableException("Failed to perform payment");
+        }
+    }
+
+    private void performRefund(String jwtToken,String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
+        String url = "http://account-service/account/manage/refund";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(jwtToken);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        // Create request body (DTO)
+        RefundBalanceRequest body = new RefundBalanceRequest(amount, toAccountNumber,  fromAccountNumber);
+        HttpEntity<RefundBalanceRequest> entity = new HttpEntity<>(body, headers);
+
+        try {
+            restTemplate.exchange(url, HttpMethod.POST, entity, Void.class);
+        } catch (RestClientException e) {
+            throw new AccountServiceUnavailableException("Failed to perform refound");
         }
     }
 

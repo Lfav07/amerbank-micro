@@ -6,6 +6,7 @@ import com.amerbank.account.model.AccountType;
 import com.amerbank.account.service.AccountService;
 import com.amerbank.common_dto.DepositBalanceRequest;
 import com.amerbank.common_dto.PaymentBalanceRequest;
+import com.amerbank.common_dto.RefundBalanceRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -279,6 +280,22 @@ public class AccountController {
         String jwtToken = tokenResponse.getBody();
 
         accountService.performPayment(jwtToken, paymentBalanceRequest);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/refund")
+    public ResponseEntity<Void> performRefund(
+            @RequestBody RefundBalanceRequest refundBalanceRequest,
+            HttpServletRequest request,
+            Authentication authentication){
+        ResponseEntity<String> tokenResponse = extractJwtToken(request, authentication);
+        if (!tokenResponse.getStatusCode().is2xxSuccessful()) {
+            return ResponseEntity.status(tokenResponse.getStatusCode()).build();
+        }
+
+        String jwtToken = tokenResponse.getBody();
+
+        accountService.performRefund(jwtToken, refundBalanceRequest);
         return ResponseEntity.ok().build();
     }
 
