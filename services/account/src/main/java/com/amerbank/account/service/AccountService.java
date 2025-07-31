@@ -85,7 +85,8 @@ public class AccountService {
         Account account = accountMapper.toAccount(request);
         account.setAccountNumber(generateAccountNumber());
         account.setCustomerId(customerId);
-        account.setBalance(BigDecimal.ZERO);
+        //demo balance
+        account.setBalance(BigDecimal.valueOf(1000.00 ));
         Account saved = accountRepository.save(account);
         return accountMapper.fromAccount(saved);
     }
