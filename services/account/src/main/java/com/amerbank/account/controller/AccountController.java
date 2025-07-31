@@ -220,7 +220,7 @@ public class AccountController {
     }
 
     /**
-     * Updates the type of an account.
+     * Updates the type of account.
      *
      * @param request the account update request
      * @return the updated account information
