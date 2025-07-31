@@ -33,7 +33,7 @@ public class Account {
 
     @NotNull
     @DecimalMin(value = "0.0")
-    @Column(name = "account_balance", nullable = false)
+    @Column(name = "balance", nullable = false)
     private BigDecimal balance = BigDecimal.ZERO;
 
     @NotNull
