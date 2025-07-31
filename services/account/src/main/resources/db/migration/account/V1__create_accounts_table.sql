@@ -7,5 +7,6 @@ CREATE TABLE accounts (
     balance NUMERIC(19,2) NOT NULL,
     type VARCHAR(20) NOT NULL,
     status VARCHAR(20) NOT NULL,
-    created_at TIMESTAMP DEFAULT now()
+    created_at TIMESTAMP DEFAULT now(),
+    CONSTRAINT unique_customer_account_type UNIQUE (customer_id, type)
 );
