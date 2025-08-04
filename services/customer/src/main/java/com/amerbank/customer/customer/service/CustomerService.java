@@ -23,6 +23,8 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
+
 /**
  * Service layer for handling customer-related operations such as registration,
  * authentication, KYC verification, and information updates.
@@ -46,6 +48,10 @@ public class CustomerService {
     public Customer findCustomerById(Long id) {
         return customerRepository.findById(id)
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found with ID " + id));
+    }
+
+    public List<Customer> findAllCustomers() {
+        return customerRepository.findAll();
     }
 
     /**
