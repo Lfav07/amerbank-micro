@@ -5,9 +5,12 @@ import com.amerbank.customer.customer.dto.CustomerInfo;
 import com.amerbank.customer.customer.dto.CustomerRequest;
 import com.amerbank.common_dto.CustomerResponse;
 import com.amerbank.customer.customer.dto.CustomerUpdateRequest;
+import com.amerbank.customer.customer.model.Customer;
 import com.amerbank.customer.customer.service.CustomerMapper;
 import com.amerbank.customer.customer.service.CustomerService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +18,7 @@ import org.springframework.security.core.Authentication;
 
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 
 
 @RequiredArgsConstructor
@@ -64,7 +68,7 @@ public class CustomerController {
     }
 
     @GetMapping("/get/{email}")
-    public ResponseEntity<CustomerResponse> getCustomerByEmail(Authentication authentication, HttpServletRequest request, @PathVariable String email) {
+    public ResponseEntity<CustomerResponse> getCustomerByEmail(Authentication authentication, HttpServletRequest request, @PathVariable @Email String email) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -85,6 +89,12 @@ public class CustomerController {
     public ResponseEntity<CustomerResponse> getCustomerByUserId(@PathVariable Long userId) {
         CustomerResponse response = service.getCustomerInfoByUserId(userId);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/get/all")
+    public ResponseEntity<List<Customer>> getAllCustomersInfo() {
+        List<Customer> responseList = service.findAllCustomers();
+        return ResponseEntity.ok(responseList);
     }
 
    @PutMapping("/update")
