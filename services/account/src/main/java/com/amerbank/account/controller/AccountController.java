@@ -282,7 +282,16 @@ public class AccountController {
         accountService.performPayment(jwtToken, paymentBalanceRequest);
         return ResponseEntity.ok().build();
     }
-
+    /**
+     * Endpoint to perform refunds between accounts.
+     * Expects a valid JWT and a payload with accounts numbers and amount.
+     *
+     * @param request the HttpServletRequest, used to extract the Authorization header
+     * @param authentication the Spring Security Authentication object representing the current user
+     *
+     * @param refundBalanceRequest the refund request containing accounts numbers and amount
+     * @return 200 OK if payment is successful
+     */
     @PostMapping("/refund")
     public ResponseEntity<Void> performRefund(
             @RequestBody RefundBalanceRequest refundBalanceRequest,
