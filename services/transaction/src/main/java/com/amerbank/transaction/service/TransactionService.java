@@ -7,8 +7,7 @@ import com.amerbank.transaction.dto.DepositTransactionRequest;
 import com.amerbank.transaction.dto.PaymentTransactionRequest;
 import com.amerbank.transaction.dto.RefundTransactionRequest;
 import com.amerbank.transaction.dto.TransactionResponse;
-import com.amerbank.transaction.exception.AccountServiceUnavailableException;
-import com.amerbank.transaction.exception.TransactionNotFoundException;
+import com.amerbank.transaction.exception.*;
 import com.amerbank.transaction.model.Transaction;
 import com.amerbank.transaction.model.TransactionStatus;
 import com.amerbank.transaction.model.TransactionType;
@@ -17,6 +16,7 @@ import com.amerbank.transaction.repository.TransactionRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -60,14 +60,26 @@ public class TransactionService {
         return  transactionRepository.findByFromAccountNumberAndStatus(fromAccount, status);
     }
 
+    public  List<Transaction> findByFromAccountNumberOrToAccountNumber(String accountNumber){
+        return  transactionRepository.findByFromAccountNumberOrToAccountNumber(accountNumber, accountNumber);
+    }
+
     public  List<Transaction> findByFromAccountNumberAndType(String fromAccount, TransactionType type){
         return  transactionRepository.findByFromAccountNumberAndType(fromAccount, type);
+    }
+
+    public List<Transaction> getMyTransactions(String jwtToken, String accountNumber) {
+        if (!isAccountOwnedByCurrentCustomer(jwtToken, accountNumber)) {
+            throw new UnauthorizedAccountAccessException("Account does not belong to current user");
+        }
+        return  findByFromAccountNumberOrToAccountNumber(accountNumber);
+
     }
 
     public TransactionResponse createDepositTransaction(String jwtToken, DepositTransactionRequest request){
 
         if (!isAccountOwnedByCurrentCustomer(jwtToken, request.fromAccountNumber())) {
-            throw new RuntimeException("Account does not belong to current user");
+            throw new UnauthorizedAccountAccessException("Account does not belong to current user");
         }
 
 
@@ -81,7 +93,7 @@ public class TransactionService {
     }
     public TransactionResponse createPaymentTransaction(String jwtToken, PaymentTransactionRequest request){
         if (!isAccountOwnedByCurrentCustomer(jwtToken, request.fromAccountNumber())) {
-            throw new RuntimeException("Account does not belong to current user");
+            throw new UnauthorizedAccountAccessException("Account does not belong to current user");
         }
 
         Transaction transaction = transactionMapper.toTransaction(request);
@@ -97,11 +109,11 @@ public class TransactionService {
         Transaction originalTransaction = findTransactionById(request.transactionId());
 
         if (!isAccountOwnedByCurrentCustomer(jwtToken, originalTransaction.getFromAccountNumber())) {
-            throw new RuntimeException("Account does not belong to current user");
+            throw new UnauthorizedAccountAccessException("Account does not belong to current user");
         }
 
         if (originalTransaction.getStatus() == TransactionStatus.REVERSED) {
-            throw new RuntimeException("Transaction already refunded");
+            throw new TransactionAlreadyRefundedException("Transaction already refunded");
         }
 
         // Create refund transaction
@@ -138,16 +150,21 @@ public class TransactionService {
         headers.setBearerAuth(jwtToken);
         HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-        ResponseEntity<Boolean> response;
         try {
-            response = restTemplate.exchange(url, HttpMethod.GET, entity, Boolean.class);
-        } catch (RestClientException e) {
-            throw new AccountServiceUnavailableException("Account service unavailable");
-        }
+            ResponseEntity<Boolean> response = restTemplate.exchange(url, HttpMethod.GET, entity, Boolean.class);
+            Boolean owned = response.getBody();
+            return owned != null && owned;
 
-        Boolean owned = response.getBody();
-        return owned != null && owned;
+        } catch (HttpClientErrorException.NotFound e) {
+
+            throw new AccountNotFoundException("Account " + accountNumber + " was not found in account service");
+
+        } catch (RestClientException e) {
+
+            throw new AccountServiceUnavailableException("Account service is currently unavailable");
+        }
     }
+
 
     private void performDeposit(String jwtToken, String accountNumber, BigDecimal amount) {
         String url = "http://account-service/account/manage/deposit";
@@ -162,6 +179,8 @@ public class TransactionService {
 
         try {
             restTemplate.exchange(url, HttpMethod.POST, entity, Void.class);
+        } catch (HttpClientErrorException.NotFound e) {
+            throw new AccountNotFoundException("Account not found while trying to deposit");
         } catch (RestClientException e) {
             throw new AccountServiceUnavailableException("Failed to perform deposit");
         }
@@ -180,8 +199,10 @@ public class TransactionService {
 
         try {
             restTemplate.exchange(url, HttpMethod.POST, entity, Void.class);
+        } catch (HttpClientErrorException.NotFound e) {
+            throw new AccountNotFoundException("Account not found while trying to deposit");
         } catch (RestClientException e) {
-            throw new AccountServiceUnavailableException("Failed to perform payment");
+            throw new AccountServiceUnavailableException("Failed to perform deposit");
         }
     }
 
@@ -198,9 +219,10 @@ public class TransactionService {
 
         try {
             restTemplate.exchange(url, HttpMethod.POST, entity, Void.class);
+        } catch (HttpClientErrorException.NotFound e) {
+            throw new AccountNotFoundException("Account not found while trying to deposit");
         } catch (RestClientException e) {
-            throw new AccountServiceUnavailableException("Failed to perform refound");
+            throw new AccountServiceUnavailableException("Failed to perform deposit");
         }
     }
-
 }
