@@ -35,11 +35,7 @@ public class CustomerController {
         return ResponseEntity.ok("Customer successfully registered");
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody UserLoginRequest request) {
-        var auth = service.login(request);
-        return ResponseEntity.ok(auth);
-    }
+
 
 
     @GetMapping("/{id}")
@@ -91,6 +87,12 @@ public class CustomerController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/get/id/user/{userId}")
+    public ResponseEntity<Long> getCustomerIdByUserId(@PathVariable Long userId) {
+        Long id  = service.getCustomerIdByUserId(userId);
+        return ResponseEntity.ok(id);
+    }
+
     @GetMapping("/get/all")
     public ResponseEntity<List<Customer>> getAllCustomersInfo() {
         List<Customer> responseList = service.findAllCustomers();
@@ -121,5 +123,11 @@ public class CustomerController {
     public ResponseEntity<String> deleteCustomer(@PathVariable Long id) {
         service.deleteCustomerById(id);
         return ResponseEntity.ok("Customer deleted successfully");
+    }
+
+    @DeleteMapping("/all/delete")
+    public ResponseEntity<String> deleteAllCustomers() {
+        service.deleteAllCustomers();
+        return ResponseEntity.ok("Customers deleted successfully");
     }
 }
