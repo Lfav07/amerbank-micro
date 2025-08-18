@@ -4,9 +4,14 @@ import com.amerbank.auth_server.exception.EmailAlreadyTakenException;
 import com.amerbank.auth_server.exception.UserNotFoundException;
 import com.amerbank.auth_server.model.User;
 import com.amerbank.auth_server.repository.UserRepository;
+import com.amerbank.auth_server.security.JwtService;
+import com.amerbank.common_dto.AuthenticationResponse;
 import com.amerbank.common_dto.Role;
+import com.amerbank.common_dto.UserLoginRequest;
 import com.amerbank.common_dto.UserRegisterRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +27,9 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private  final AuthenticationManager authenticationManager;
+    private  final CustomerServiceClient customerServiceClient;
+    private  final JwtService jwtService;
 
     /**
      * Checks if the given email is already taken (case-insensitive).
@@ -53,6 +61,50 @@ public class UserService {
                 .build();
 
         return userRepository.save(user);
+    }
+    /**
+     * Logs-in a user and creates a jwt token.
+     * @param request the login request containing email and password
+     * @return AuthenticationResponse containing jwt token
+     * @throws UserNotFoundException if the user is not found.
+     */
+    public AuthenticationResponse login(UserLoginRequest request) {
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.email(), request.password())
+        );
+
+        User user = findByEmail(request.email());
+        Long customerId = customerServiceClient.getCustomerIdByUserId(user.getId());
+        String token = jwtService.generateToken(user, customerId);
+
+        return new AuthenticationResponse(token);
+    }
+    /**
+     * Logs-in an admin and creates a jwt token.
+     * @param request the login request containing email and password
+     * @return AuthenticationResponse containing jwt token
+     * @throws UserNotFoundException if the user is not found.
+     */
+    public AuthenticationResponse loginAdmin(UserLoginRequest request) {
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.email(), request.password())
+        );
+
+        User user = findByEmail(request.email());
+        String token = jwtService.generateAdminToken(user);
+
+        return new AuthenticationResponse(token);
+    }
+
+
+    /**
+     * Authenticates a user if the password and email are correct.
+     * @param email The user's email.
+     * @param password The user's password.
+     */
+    public void  authenticate(String email, String password) {
+        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(email, password);
+        authenticationManager.authenticate(token);
     }
 
     /**
@@ -140,5 +192,12 @@ public class UserService {
     public User findById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User not found!"));
+    }
+
+    /**
+     * Deletes all users from the database.
+     */
+    public void deleteAllUsers() {
+        userRepository.deleteAll();
     }
 }
