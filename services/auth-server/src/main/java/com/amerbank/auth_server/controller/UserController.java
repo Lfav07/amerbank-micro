@@ -3,6 +3,7 @@ package com.amerbank.auth_server.controller;
 import com.amerbank.auth_server.dto.*;
 import com.amerbank.auth_server.model.User;
 import com.amerbank.auth_server.security.JwtService;
+import com.amerbank.auth_server.service.CustomerServiceClient;
 import com.amerbank.auth_server.service.UserService;
 import com.amerbank.common_dto.AuthenticationResponse;
 import com.amerbank.common_dto.UserLoginRequest;
@@ -24,9 +25,8 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
-    private final JwtService jwtService;
-    private final AuthenticationManager authenticationManager;
-    private  final UserDetailsService userDetailsService;
+
+
 
     @PostMapping("/register")
     public ResponseEntity<UserResponse> register(@RequestBody UserRegisterRequest request) {
@@ -37,15 +37,9 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody UserLoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.email(), request.password())
-        );
-
-        User user = userService.findByEmail(request.email());
-        String token = jwtService.generateToken(user);
-
-        return ResponseEntity.ok(new AuthenticationResponse(token));
+    public ResponseEntity<String> login(@RequestBody UserLoginRequest request) {
+        AuthenticationResponse response = userService.login(request);
+        return ResponseEntity.ok(response.token());
     }
 
     @PatchMapping("/update-email")
@@ -53,8 +47,8 @@ public class UserController {
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody EmailUpdateRequest request) {
 
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(userDetails.getUsername(), request.password())
+            userService.authenticate(
+                    userDetails.getUsername(), request.password()
             );
 
             User user = userService.findByEmail(userDetails.getUsername());
@@ -70,8 +64,8 @@ public class UserController {
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody PasswordUpdateRequest request) {
 
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(userDetails.getUsername(), request.oldPassword())
+            userService.authenticate(
+                   userDetails.getUsername(), request.oldPassword()
             );
 
             User user = userService.findByEmail(userDetails.getUsername());
@@ -85,8 +79,8 @@ public class UserController {
     public ResponseEntity<?> deleteUser(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody PasswordRequest request) {
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(userDetails.getUsername(), request.password())
+           userService.authenticate(
+                   userDetails.getUsername(), request.password()
             );
 
             User user = userService.findByEmail(userDetails.getUsername());
@@ -95,6 +89,14 @@ public class UserController {
             return  ResponseEntity.ok("User deleted successfully");
 
         }
+
+    @DeleteMapping("/all/delete")
+    public ResponseEntity<?> deleteAllUsers() {
+        userService.deleteAllUsers();
+
+        return  ResponseEntity.ok("Users deleted successfully");
+
+    }
 
 
 
