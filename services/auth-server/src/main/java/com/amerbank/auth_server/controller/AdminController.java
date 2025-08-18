@@ -2,10 +2,13 @@ package com.amerbank.auth_server.controller;
 
 import com.amerbank.auth_server.model.User;
 import com.amerbank.auth_server.service.UserService;
+import com.amerbank.common_dto.AuthenticationResponse;
+import com.amerbank.common_dto.UserLoginRequest;
 import com.amerbank.common_dto.UserRegisterRequest;
 import com.amerbank.common_dto.UserResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,6 +27,15 @@ public class AdminController {
 
         UserResponse response = new UserResponse(user.getId(), user.getEmail());
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<String> login(@RequestBody UserLoginRequest request) {
+        userService.authenticate(
+                request.email(), request.password()
+        );
+        AuthenticationResponse response = userService.loginAdmin(request);
+        return ResponseEntity.ok(response.token());
     }
 
 }
