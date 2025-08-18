@@ -8,7 +8,7 @@ import org.springframework.web.client.RestTemplate;
 public class CustomerServiceClient {
 
     private final RestTemplate restTemplate;
-    private final String customerServiceUrl = "http://customer-service";
+    private final String customerServiceUrl = "http://customer";
 
     public CustomerServiceClient(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
