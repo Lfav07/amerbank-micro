@@ -50,6 +50,11 @@ public class CustomerService {
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found with ID " + id));
     }
 
+    /**
+     * Retrieves all the customers in the database.
+     * @return a List of customers
+     */
+
     public List<Customer> findAllCustomers() {
         return customerRepository.findAll();
     }
@@ -118,32 +123,8 @@ public class CustomerService {
         return customerMapper.fromCustomer(saved);
     }
 
-    /**
-     * Authenticates a user using the auth server.
-     *
-     * @param request login credentials
-     * @return a JWT-based authentication response
-     * @throws IllegalArgumentException if the credentials are invalid
-     * @throws IllegalStateException if the auth service is unavailable
-     */
-    public AuthenticationResponse login(UserLoginRequest request) {
-        String authUrl = "http://auth-server/auth/login";
 
-        try {
-            ResponseEntity<AuthenticationResponse> response = restTemplate.postForEntity(
-                    authUrl,
-                    request,
-                    AuthenticationResponse.class
-            );
 
-            return response.getBody();
-
-        } catch (HttpClientErrorException.Unauthorized ex) {
-            throw new IllegalArgumentException("Invalid credentials");
-        } catch (RestClientException ex) {
-            throw new IllegalStateException("Authentication service is unavailable");
-        }
-    }
 
     /**
      * Edits customer profile information.
@@ -184,6 +165,10 @@ public class CustomerService {
         Customer customer = findCustomerById(customerId);
         customer.setKycVerified(false);
         customerRepository.save(customer);
+    }
+
+    public void deleteAllCustomers() {
+        customerRepository.deleteAll();
     }
 
     /**
@@ -251,5 +236,17 @@ public class CustomerService {
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found for user with email: " + email));
 
         return customerMapper.fromCustomer(customer);
+    }
+
+    /**
+     *
+     * @param userId the user's id
+     * @return the customer's id for the corresponding user
+     * @throws CustomerNotFoundException if no customer is found for the user
+     */
+
+    public Long getCustomerIdByUserId(Long userId) {
+        Customer customer = findCustomerByUserId(userId);
+        return  customer.getId();
     }
 }
