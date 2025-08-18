@@ -41,7 +41,19 @@ public class JwtService {
         return extractClaim(token, Claims::getExpiration).before(new Date());
     }
 
-    public String generateToken(User user) {
+    public String generateToken(User user, Long customerId) {
+        return Jwts.builder()
+                .subject(user.getEmail())
+                .claim("userId", user.getId())
+                .claim("customerId", customerId)
+                .claim("roles", user.getRoles().stream().map(Enum::name).toList())
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + expirationMs))
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    public String generateAdminToken(User user) {
         return Jwts.builder()
                 .subject(user.getEmail())
                 .claim("userId", user.getId())
