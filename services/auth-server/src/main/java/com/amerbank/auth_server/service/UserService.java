@@ -5,11 +5,9 @@ import com.amerbank.auth_server.exception.UserNotFoundException;
 import com.amerbank.auth_server.model.User;
 import com.amerbank.auth_server.repository.UserRepository;
 import com.amerbank.auth_server.security.JwtService;
-import com.amerbank.common_dto.AuthenticationResponse;
-import com.amerbank.common_dto.Role;
-import com.amerbank.common_dto.UserLoginRequest;
-import com.amerbank.common_dto.UserRegisterRequest;
+import com.amerbank.common_dto.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -192,6 +190,22 @@ public class UserService {
     public User findById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User not found!"));
+    }
+
+    @KafkaListener(topics = "customer.deleted", groupId = "auth-service")
+    public void handleCustomerDeleted(CustomerDeletedEvent event) {
+        userRepository.deleteById(event.getUserId());
+    }
+
+    /**
+     * Finds a user by ID.
+     *
+     * @param id the user ID to search for
+     * @return the found User entity
+     * @throws UserNotFoundException if no user with the given ID exists
+     */
+    public boolean existsById(Long id) {
+        return userRepository.existsById(id);
     }
 
     /**

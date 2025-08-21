@@ -1,14 +1,10 @@
 package com.amerbank.customer.customer.service;
 
-import com.amerbank.common_dto.AuthenticationResponse;
-import com.amerbank.common_dto.UserLoginRequest;
-import com.amerbank.common_dto.UserRegisterRequest;
+import com.amerbank.common_dto.*;
 import com.amerbank.customer.customer.exception.AuthServiceUnavailableException;
 import com.amerbank.customer.customer.exception.CustomerNotFoundException;
 import com.amerbank.customer.customer.dto.CustomerRequest;
-import com.amerbank.common_dto.CustomerResponse;
 import com.amerbank.customer.customer.dto.CustomerUpdateRequest;
-import com.amerbank.common_dto.UserResponse;
 import com.amerbank.customer.customer.model.Customer;
 import com.amerbank.customer.customer.repository.CustomerRepository;
 import com.amerbank.customer.customer.security.JwtService;
@@ -18,6 +14,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
@@ -37,7 +34,7 @@ public class CustomerService {
     private final CustomerMapper customerMapper;
     private final RestTemplate restTemplate;
     private  final JwtService jwtService;
-
+    private final KafkaTemplate<String, CustomerDeletedEvent> kafkaTemplate;
     /**
      * Retrieves a customer by their database ID.
      *
@@ -182,6 +179,26 @@ public class CustomerService {
         if (!customerRepository.existsById(id)) {
             throw new CustomerNotFoundException("Customer not found with ID " + id);
         }
+        Customer customer = findCustomerById(id);
+        customerRepository.delete(customer);
+        Long userId = customer.getUserId();
+
+        CustomerDeletedEvent event = new CustomerDeletedEvent(userId);
+        kafkaTemplate.send("customer.deleted", event);
+
+    }
+
+    /**
+     * Deletes a customer and their user by ID.
+     *
+     * @param id the customer's ID
+     * @throws CustomerNotFoundException if no customer is found
+     */
+    @Transactional
+    public void deleteCustomerById2(Long id) {
+        if (!customerRepository.existsById(id)) {
+            throw new CustomerNotFoundException("Customer not found with ID " + id);
+        }
         customerRepository.deleteById(id);
     }
 
@@ -194,10 +211,24 @@ public class CustomerService {
      * @throws AuthServiceUnavailableException if the auth service is unavailable
      */
     public CustomerResponse getMyCustomerInfo(String jwtToken) {
-        Long userId = jwtService.extractUserId(jwtToken);
+        Long customerId = jwtService.extractCustomerId(jwtToken);
 
-        Customer customer = customerRepository.findByUserId(userId)
-                .orElseThrow(() -> new CustomerNotFoundException("Customer not found for authenticated user"));
+        Customer customer = findCustomerById(customerId);
+
+        return customerMapper.fromCustomer(customer);
+    }
+
+    /**
+     * Retrieves customer info for the authenticated user by calling /auth/manage/me.
+     *
+     * @param id the Customer's id
+     * @return the corresponding CustomerResponse
+     * @throws CustomerNotFoundException if the user or customer is not found
+     * @throws AuthServiceUnavailableException if the auth service is unavailable
+     */
+    public CustomerResponse getMyCustomerInfoById(Long id) {
+
+        Customer customer = findCustomerById(id);
 
         return customerMapper.fromCustomer(customer);
     }
