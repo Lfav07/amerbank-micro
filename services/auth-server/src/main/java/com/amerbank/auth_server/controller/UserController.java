@@ -9,7 +9,7 @@ import com.amerbank.common_dto.AuthenticationResponse;
 import com.amerbank.common_dto.UserLoginRequest;
 import com.amerbank.common_dto.UserRegisterRequest;
 import com.amerbank.common_dto.UserResponse;
-import lombok.RequiredArgsConstructor;
+import lombok.RequiredArgsConstructor;import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,6 +18,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -75,20 +77,7 @@ public class UserController {
 
     }
 
-    @DeleteMapping("/delete")
-    public ResponseEntity<?> deleteUser(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody PasswordRequest request) {
-           userService.authenticate(
-                   userDetails.getUsername(), request.password()
-            );
 
-            User user = userService.findByEmail(userDetails.getUsername());
-            userService.deleteUser(user.getId());
-
-            return  ResponseEntity.ok("User deleted successfully");
-
-        }
 
     @DeleteMapping("/all/delete")
     public ResponseEntity<?> deleteAllUsers() {
@@ -103,6 +92,9 @@ public class UserController {
 
     @DeleteMapping("/manage/delete/{id}")
     public  ResponseEntity<?> deleteUserById(@PathVariable Long id) {
+        if (!userService.existsById(id)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found"));
+        }
         userService.deleteUser(id);
         return  ResponseEntity.ok("User deleted successfully");
     }
