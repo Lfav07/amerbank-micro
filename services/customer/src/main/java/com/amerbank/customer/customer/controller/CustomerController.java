@@ -29,15 +29,13 @@ import java.util.List;
 public class CustomerController {
 
     private final CustomerService service;
-    private  final CustomerMapper mapper;
+    private final CustomerMapper mapper;
 
     @PostMapping("/register")
     public ResponseEntity<?> registerCustomer(@RequestBody CustomerRequest request) {
         service.registerCustomer(request);
         return ResponseEntity.ok("Customer successfully registered");
     }
-
-
 
 
     @GetMapping("/{id}")
@@ -56,22 +54,20 @@ public class CustomerController {
     }
 
     @GetMapping("/get/{email}")
-    public ResponseEntity<CustomerResponse> getCustomerByEmail(Authentication authentication, HttpServletRequest request, @PathVariable @Email String email) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+    public ResponseEntity<CustomerResponse> getCustomerByEmail(
+            HttpServletRequest request,
+            @PathVariable @Email String email) {
 
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
+
         String jwtToken = authHeader.substring(7);
-
-
         CustomerResponse resp = service.getCustomerInfoByEmail(email, jwtToken);
-
         return ResponseEntity.ok(resp);
     }
+
 
     @GetMapping("/user/{userId}")
     public ResponseEntity<CustomerResponse> getCustomerByUserId(@PathVariable Long userId) {
@@ -81,7 +77,7 @@ public class CustomerController {
 
     @GetMapping("/get/id/user/{userId}")
     public ResponseEntity<Long> getCustomerIdByUserId(@PathVariable Long userId) {
-        Long id  = service.getCustomerIdByUserId(userId);
+        Long id = service.getCustomerIdByUserId(userId);
         return ResponseEntity.ok(id);
     }
 
@@ -91,7 +87,7 @@ public class CustomerController {
         return ResponseEntity.ok(responseList);
     }
 
-   @PutMapping("/update")
+    @PutMapping("/update")
     public ResponseEntity<CustomerResponse> updateCustomer(@RequestBody CustomerUpdateRequest request) {
         CustomerResponse updated = service.editCustomerInfo(request);
         return ResponseEntity.ok(updated);
