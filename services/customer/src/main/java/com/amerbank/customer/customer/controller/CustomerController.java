@@ -6,6 +6,7 @@ import com.amerbank.customer.customer.dto.CustomerRequest;
 import com.amerbank.common_dto.CustomerResponse;
 import com.amerbank.customer.customer.dto.CustomerUpdateRequest;
 import com.amerbank.customer.customer.model.Customer;
+import com.amerbank.customer.customer.security.JwtUserPrincipal;
 import com.amerbank.customer.customer.service.CustomerMapper;
 import com.amerbank.customer.customer.service.CustomerService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -45,19 +47,9 @@ public class CustomerController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<CustomerInfo> getMyProfile(Authentication authentication, HttpServletRequest request) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+    public ResponseEntity<CustomerInfo> getMyProfile(@AuthenticationPrincipal JwtUserPrincipal principal) {
 
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        String jwtToken = authHeader.substring(7);
-
-
-        CustomerResponse resp = service.getMyCustomerInfo(jwtToken);
+        CustomerResponse resp = service.getMyCustomerInfoById(principal.customerId());
         CustomerInfo info = mapper.getInfoFromCustomer(resp);
 
         return ResponseEntity.ok(info);
