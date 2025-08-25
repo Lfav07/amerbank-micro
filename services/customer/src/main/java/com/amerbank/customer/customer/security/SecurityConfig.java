@@ -23,7 +23,7 @@ public class SecurityConfig {
     SecurityFilterChain chain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/customer/register", "/customer/login").permitAll()
+                        .requestMatchers("/customer/register", "/customer/get/id/user/**").permitAll()
                         .requestMatchers("/customer/me").authenticated()
                         .anyRequest().hasRole("ADMIN"))
                 .sessionManagement(sess -> sess
