@@ -41,6 +41,11 @@ public class JwtService {
     public Long extractUserId(String token) {
         return extractClaim(token, claims -> claims.get("userId", Long.class));
     }
+    public  Long extractCustomerId(String token) {
+        return  extractClaim(token, claims -> claims.get("customerId", Long.class));
+    }
+
+
 
     public boolean isTokenValid(String token) {
         try {
