@@ -3,15 +3,18 @@ package com.amerbank.account.controller;
 import com.amerbank.account.dto.*;
 import com.amerbank.account.model.AccountStatus;
 import com.amerbank.account.model.AccountType;
+import com.amerbank.account.security.JwtUserPrincipal;
 import com.amerbank.account.service.AccountService;
 import com.amerbank.common_dto.DepositBalanceRequest;
 import com.amerbank.common_dto.PaymentBalanceRequest;
 import com.amerbank.common_dto.RefundBalanceRequest;
+import io.jsonwebtoken.Jwt;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -27,64 +30,34 @@ public class AccountController {
 
     private final AccountService accountService;
 
-    /**
-     * Extracts the JWT token from the Authorization header.
-     *
-     * @param request the HTTP servlet request
-     * @param authentication the authentication context
-     * @return the JWT token if available and valid, otherwise an error response
-     */
-    private ResponseEntity<String> extractJwtToken(HttpServletRequest request, Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        return ResponseEntity.ok(authHeader.substring(7));
-    }
 
     /**
      * Registers a new account for the authenticated user.
      *
-     * @param accountRequest the account creation data
-     * @param authentication the authentication context
-     * @param request the HTTP servlet request
+     * @param accountRequest   the account creation data
+     * @param jwtUserPrincipal the authenticated customer's data
      * @return a success message or an error response
      */
     @PostMapping("/register")
-    public ResponseEntity<?> registerAccount(@RequestBody AccountRequest accountRequest, Authentication authentication, HttpServletRequest request) {
-        ResponseEntity<String> tokenResponse = extractJwtToken(request, authentication);
-        if (!tokenResponse.getStatusCode().is2xxSuccessful()) {
-            return ResponseEntity.status(tokenResponse.getStatusCode()).build();
-        }
-        String jwtToken = tokenResponse.getBody();
-        accountService.createAccount(accountRequest, jwtToken);
+    public ResponseEntity<?> registerAccount(@RequestBody AccountRequest accountRequest, @AuthenticationPrincipal JwtUserPrincipal jwtUserPrincipal) {
+
+        accountService.createAccount(accountRequest, jwtUserPrincipal.customerId());
         return ResponseEntity.ok("Account successfully registered");
     }
+
     /**
      * Checks if the specified account number belongs to the currently authenticated customer.
      *
-     * @param accountNumber the account number to verify ownership of
-     * @param request the HttpServletRequest, used to extract the Authorization header
-     * @param authentication the Spring Security Authentication object representing the current user
+     * @param accountNumber    the account number to verify ownership of
+     * @param jwtUserPrincipal the authenticated customer's data
      * @return a ResponseEntity containing true if the account belongs to the current customer,
-     *         false otherwise; returns 401 Unauthorized if JWT token is missing or invalid
+     * false otherwise; returns 401 Unauthorized if JWT token is missing or invalid
      */
     @GetMapping("/manage/owned")
     public ResponseEntity<Boolean> isAccountOwnedByCurrentCustomer(
-            @RequestParam String accountNumber,
-            HttpServletRequest request,
-            Authentication authentication) {
+            @RequestParam String accountNumber, @AuthenticationPrincipal JwtUserPrincipal jwtUserPrincipal) {
 
-        ResponseEntity<String> tokenResponse = extractJwtToken(request, authentication);
-        if (!tokenResponse.getStatusCode().is2xxSuccessful()) {
-            return ResponseEntity.status(tokenResponse.getStatusCode()).build();
-        }
-        String jwtToken = tokenResponse.getBody();
-
-        boolean owned = accountService.isAccountOwnedByCurrentCustomer(jwtToken, accountNumber);
+        boolean owned = accountService.isAccountOwnedByCurrentCustomer(jwtUserPrincipal.customerId(), accountNumber);
         return ResponseEntity.ok(owned);
     }
 
@@ -101,12 +74,11 @@ public class AccountController {
     }
 
 
-
     /**
      * Retrieves account(s) by customer ID and optionally filters by type.
      *
      * @param customerId the customer ID
-     * @param type the account type (optional)
+     * @param type       the account type (optional)
      * @return list of matching accounts
      */
     @GetMapping("/manage/by-customer/{customerId}/filter")
@@ -137,61 +109,44 @@ public class AccountController {
     /**
      * Retrieves the authenticated user's accounts.
      *
-     * @param request the HTTP servlet request
-     * @param authentication the authentication context
+     * @param jwtUserPrincipal the authenticated customer's data
      * @return list of account info
      */
     @GetMapping("/manage/me")
-    public ResponseEntity<List<AccountInfo>> getMyAccounts(HttpServletRequest request, Authentication authentication) {
-        ResponseEntity<String> tokenResponse = extractJwtToken(request, authentication);
-        if (!tokenResponse.getStatusCode().is2xxSuccessful()) {
-            return ResponseEntity.status(tokenResponse.getStatusCode()).build();
-        }
-        String jwtToken = tokenResponse.getBody();
-        List<AccountInfo> accounts = accountService.getMyAccounts(jwtToken);
+    public ResponseEntity<List<AccountInfo>> getMyAccounts(@AuthenticationPrincipal JwtUserPrincipal jwtUserPrincipal) {
+
+        List<AccountInfo> accounts = accountService.getMyAccounts(jwtUserPrincipal.customerId());
         return ResponseEntity.ok(accounts);
     }
 
     /**
      * Retrieves the balance of the authenticated user's account by type.
      *
-     * @param type the account type
-     * @param request the HTTP servlet request
-     * @param authentication the authentication context
+     * @param type             the account type
+     * @param jwtUserPrincipal the authenticated customer's data
      * @return the account balance
      */
     @GetMapping("/manage/me/balance")
     public ResponseEntity<BigDecimal> getMyAccountBalanceByType(
             @RequestParam AccountType type,
-            HttpServletRequest request,
-            Authentication authentication) {
+            @AuthenticationPrincipal JwtUserPrincipal jwtUserPrincipal) {
 
-        ResponseEntity<String> tokenResponse = extractJwtToken(request, authentication);
-        if (!tokenResponse.getStatusCode().is2xxSuccessful()) {
-            return ResponseEntity.status(tokenResponse.getStatusCode()).build();
-        }
-        String jwtToken = tokenResponse.getBody();
 
-        BigDecimal balance = accountService.getAccountBalance(jwtToken, type);
+        BigDecimal balance = accountService.getAccountBalance(jwtUserPrincipal.customerId(), type);
         return ResponseEntity.ok(balance);
     }
 
     /**
      * Retrieves the balances of all accounts of the authenticated user.
      *
-     * @param request the HTTP servlet request
-     * @param authentication the authentication context
+     * @param jwtUserPrincipal the authenticated customer's data
      * @return list of account balances
      */
     @GetMapping("/manage/me/balances")
-    public ResponseEntity<List<AccountBalanceInfo>> getAllAccountsBalances(HttpServletRequest request, Authentication authentication) {
-        ResponseEntity<String> tokenResponse = extractJwtToken(request, authentication);
-        if (!tokenResponse.getStatusCode().is2xxSuccessful()) {
-            return ResponseEntity.status(tokenResponse.getStatusCode()).build();
-        }
-        String jwtToken = tokenResponse.getBody();
+    public ResponseEntity<List<AccountBalanceInfo>> getAllAccountsBalances(@AuthenticationPrincipal JwtUserPrincipal jwtUserPrincipal) {
 
-        List<AccountBalanceInfo> balances = accountService.getAllAccountsBalances(jwtToken);
+
+        List<AccountBalanceInfo> balances = accountService.getAllAccountsBalances(jwtUserPrincipal.customerId());
         return ResponseEntity.ok(balances);
     }
 
@@ -235,25 +190,16 @@ public class AccountController {
      * Endpoint to deposit funds into an account.
      * Expects a valid JWT and a payload with account number and amount.
      *
-     * @param request the HttpServletRequest, used to extract the Authorization header
-     * @param authentication the Spring Security Authentication object representing the current user
-     *
+     * @param jwtUserPrincipal      the authenticated customer's data
      * @param depositBalanceRequest the deposit request containing account number and amount
      * @return 200 OK if deposit is successful
      */
     @PostMapping("/deposit")
     public ResponseEntity<Void> performDeposit(
-            @RequestBody DepositBalanceRequest depositBalanceRequest,
-            HttpServletRequest request,
-            Authentication authentication){
-        ResponseEntity<String> tokenResponse = extractJwtToken(request, authentication);
-        if (!tokenResponse.getStatusCode().is2xxSuccessful()) {
-            return ResponseEntity.status(tokenResponse.getStatusCode()).build();
-        }
+            @RequestBody DepositBalanceRequest depositBalanceRequest, @AuthenticationPrincipal JwtUserPrincipal jwtUserPrincipal) {
 
-        String jwtToken = tokenResponse.getBody();
 
-        accountService.performDeposit(jwtToken, depositBalanceRequest);
+        accountService.performDeposit(jwtUserPrincipal.customerId(), depositBalanceRequest);
         return ResponseEntity.ok().build();
     }
 
@@ -261,50 +207,34 @@ public class AccountController {
      * Endpoint to transfer funds between accounts.
      * Expects a valid JWT and a payload with accounts numbers and amount.
      *
-     * @param request the HttpServletRequest, used to extract the Authorization header
-     * @param authentication the Spring Security Authentication object representing the current user
-     *
+     * @param jwtUserPrincipal      the authenticated customer's data
      * @param paymentBalanceRequest the payment request containing accounts numbers and amount
      * @return 200 OK if payment is successful
      */
     @PostMapping("/payment")
     public ResponseEntity<Void> performPayment(
             @RequestBody PaymentBalanceRequest paymentBalanceRequest,
-            HttpServletRequest request,
-            Authentication authentication){
-        ResponseEntity<String> tokenResponse = extractJwtToken(request, authentication);
-        if (!tokenResponse.getStatusCode().is2xxSuccessful()) {
-            return ResponseEntity.status(tokenResponse.getStatusCode()).build();
-        }
+            @AuthenticationPrincipal JwtUserPrincipal jwtUserPrincipal) {
 
-        String jwtToken = tokenResponse.getBody();
 
-        accountService.performPayment(jwtToken, paymentBalanceRequest);
+        accountService.performPayment(jwtUserPrincipal.customerId(), paymentBalanceRequest);
         return ResponseEntity.ok().build();
     }
+
     /**
      * Endpoint to perform refunds between accounts.
      * Expects a valid JWT and a payload with accounts numbers and amount.
      *
-     * @param request the HttpServletRequest, used to extract the Authorization header
-     * @param authentication the Spring Security Authentication object representing the current user
-     *
+     * @param jwtUserPrincipal     the authenticated customer's data
      * @param refundBalanceRequest the refund request containing accounts numbers and amount
      * @return 200 OK if payment is successful
      */
     @PostMapping("/refund")
     public ResponseEntity<Void> performRefund(
             @RequestBody RefundBalanceRequest refundBalanceRequest,
-            HttpServletRequest request,
-            Authentication authentication){
-        ResponseEntity<String> tokenResponse = extractJwtToken(request, authentication);
-        if (!tokenResponse.getStatusCode().is2xxSuccessful()) {
-            return ResponseEntity.status(tokenResponse.getStatusCode()).build();
-        }
+            @AuthenticationPrincipal JwtUserPrincipal jwtUserPrincipal) {
 
-        String jwtToken = tokenResponse.getBody();
-
-        accountService.performRefund(jwtToken, refundBalanceRequest);
+        accountService.performRefund(jwtUserPrincipal.customerId(), refundBalanceRequest);
         return ResponseEntity.ok().build();
     }
 
@@ -348,28 +278,21 @@ public class AccountController {
     /**
      * Checks if the authenticated user has sufficient funds in a specific account type.
      *
-     * @param type the account type
-     * @param amount the required amount
-     * @param request the HTTP servlet request
-     * @param authentication the authentication context
+     * @param type             the account type
+     * @param amount           the required amount
+     * @param jwtUserPrincipal the authenticated customer's data
      * @return true if sufficient funds are available, false otherwise
      */
     @GetMapping("/manage/me/has-funds")
     public ResponseEntity<Boolean> hasSufficientFundsByType(
             @RequestParam AccountType type,
             @RequestParam BigDecimal amount,
-            HttpServletRequest request,
-            Authentication authentication) {
+            @AuthenticationPrincipal JwtUserPrincipal jwtUserPrincipal) {
 
-        ResponseEntity<String> tokenResponse = extractJwtToken(request, authentication);
-        if (!tokenResponse.getStatusCode().is2xxSuccessful()) {
-            return ResponseEntity.status(tokenResponse.getStatusCode()).build();
-        }
-        String jwtToken = tokenResponse.getBody();
-        boolean hasFunds = accountService.hasSufficientFundsByType(jwtToken, type, amount);
+
+        boolean hasFunds = accountService.hasSufficientFundsByType(jwtUserPrincipal.customerId(), type, amount);
         return ResponseEntity.ok(hasFunds);
     }
-
 
 
     /**

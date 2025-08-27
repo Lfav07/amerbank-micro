@@ -8,6 +8,7 @@ import com.amerbank.account.model.Account;
 import com.amerbank.account.model.AccountStatus;
 import com.amerbank.account.model.AccountType;
 import com.amerbank.account.repository.AccountRepository;
+import com.amerbank.account.security.JwtService;
 import com.amerbank.common_dto.CustomerResponse;
 
 import com.amerbank.common_dto.DepositBalanceRequest;
@@ -47,6 +48,7 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final AccountMapper accountMapper;
     private final RestTemplate restTemplate;
+    private final JwtService jwtService;
 
     // -------------------------------
     // ACCOUNT CREATION & GENERATION
@@ -71,13 +73,13 @@ public class AccountService {
      * Creates a new account for the authenticated customer with the given request details.
      * Throws an exception if the customer already has an account of the requested type.
      *
-     * @param request  the account creation request details.
-     * @param jwtToken the JWT token of the authenticated user.
+     * @param request    the account creation request details.
+     * @param customerId the customer's id.
      * @return the created account response DTO.
      * @throws IllegalStateException if account of the requested type already exists for the customer.
      */
-    public AccountResponse createAccount(AccountRequest request, String jwtToken) {
-        Long customerId = getCustomerId(jwtToken);
+    public AccountResponse createAccount(AccountRequest request, Long customerId) {
+
         boolean exists = accountRepository.existsByCustomerIdAndType(customerId, request.type());
         if (exists) {
             throw new IllegalStateException("Customer already has an account of type: " + request.type());
@@ -86,7 +88,7 @@ public class AccountService {
         account.setAccountNumber(generateAccountNumber());
         account.setCustomerId(customerId);
         //demo balance
-        account.setBalance(BigDecimal.valueOf(1000.00 ));
+        account.setBalance(BigDecimal.valueOf(1000.00));
         Account saved = accountRepository.save(account);
         return accountMapper.fromAccount(saved);
     }
@@ -130,12 +132,11 @@ public class AccountService {
     /**
      * Retrieves accounts of the authenticated customer.
      *
-     * @param jwtToken the JWT token of the authenticated user.
+     * @param customerId the current customer's id.
      * @return a list of account info DTOs.
      * @throws AccountNotFoundException if the authenticated customer has no accounts.
      */
-    public List<AccountInfo> getMyAccounts(String jwtToken) {
-        Long customerId = getCustomerId(jwtToken);
+    public List<AccountInfo> getMyAccounts(Long customerId) {
         List<Account> accounts = accountRepository.findAllByCustomerId(customerId);
         if (accounts.isEmpty()) {
             throw new AccountNotFoundException("No accounts found for authenticated customer");
@@ -164,14 +165,13 @@ public class AccountService {
     /**
      * Retrieves the balance of the authenticated customer's account by account type.
      *
-     * @param jwtToken the JWT token of the authenticated user.
-     * @param type     the type of the account.
+     * @param customerId the customer's id for the authenticated user.
+     * @param type       the type of the account.
      * @return the account balance.
      * @throws AccountNotFoundException if no matching account is found.
      * @throws IllegalStateException    if the account balance is null.
      */
-    public BigDecimal getAccountBalance(String jwtToken, AccountType type) {
-        Long customerId = getCustomerId(jwtToken);
+    public BigDecimal getAccountBalance(Long customerId, AccountType type) {
         Account account = accountRepository.findByCustomerIdAndType(customerId, type)
                 .orElseThrow(() -> new AccountNotFoundException(
                         "No account found for authenticated customer with type " + type));
@@ -185,12 +185,11 @@ public class AccountService {
     /**
      * Retrieves balances of all accounts belonging to the authenticated customer.
      *
-     * @param jwtToken the JWT token of the authenticated user.
+     * @param customerId the customer's id for the authenticated user.
      * @return a list of account balance info DTOs.
      * @throws AccountNotFoundException if the customer has no accounts.
      */
-    public List<AccountBalanceInfo> getAllAccountsBalances(String jwtToken) {
-        Long customerId = getCustomerId(jwtToken);
+    public List<AccountBalanceInfo> getAllAccountsBalances(Long customerId) {
         List<Account> accounts = accountRepository.findAllByCustomerId(customerId);
         if (accounts.isEmpty()) {
             throw new AccountNotFoundException("No accounts found for authenticated customer");
@@ -287,20 +286,19 @@ public class AccountService {
     /**
      * Deposits a specified amount into the given account if the account belongs to the authenticated user.
      *
-     * @param jwtToken JWT token of the current user
-     * @param request  contains account number and amount to deposit
+     * @param customerId the customer's id for the authenticated user.
+     * @param request    contains account number and amount to deposit
      * @throws AccountNotFoundException if the account does not exist or does not belong to the user
      * @throws IllegalArgumentException if the deposit amount is negative or zero
      */
     @Transactional
-    public void performDeposit(String jwtToken, DepositBalanceRequest request) {
+    public void performDeposit(Long customerId, DepositBalanceRequest request) {
         if (request.amount() == null || request.amount().signum() <= 0) {
             throw new IllegalArgumentException("Deposit amount must be positive");
         }
 
         Account account = findAccountEntity(request.accountNumber());
 
-        Long customerId = getCustomerId(jwtToken);
         if (!account.getCustomerId().equals(customerId)) {
             throw new AccountNotFoundException("Account does not belong to authenticated customer");
         }
@@ -313,19 +311,18 @@ public class AccountService {
      * Transfers a specified amount from one account to another, ensuring that the sender owns the source account
      * and has sufficient funds.
      *
-     * @param jwtToken JWT token of the current authenticated user
-     * @param request  contains source (from) and destination (to) account numbers, and the payment amount
-     * @throws AccountNotFoundException         if the source account does not exist or is not owned by the user
-     * @throws IllegalArgumentException         if the payment amount is negative or zero
+     * @param customerId the customer's id for the authenticated user.
+     * @param request    contains source (from) and destination (to) account numbers, and the payment amount
+     * @throws AccountNotFoundException            if the source account does not exist or is not owned by the user
+     * @throws IllegalArgumentException            if the payment amount is negative or zero
      * @throws InsufficientFundsAvailableException if the source account has insufficient balance
      */
     @Transactional
-    public void performPayment(String jwtToken, PaymentBalanceRequest request) {
+    public void performPayment(Long customerId, PaymentBalanceRequest request) {
         if (request.amount() == null || request.amount().signum() <= 0) {
             throw new IllegalArgumentException("Payment amount must be positive");
         }
 
-        Long customerId = getCustomerId(jwtToken);
         Account fromAccount = findAccountEntity(request.fromAccountNumber());
         Account toAccount = findAccountEntity(request.toAccountNumber());
 
@@ -350,20 +347,20 @@ public class AccountService {
      * Refunds a specified amount by reversing a previous transaction, transferring funds from the recipient
      * back to the original sender. Only the recipient of the original transaction can initiate a refund.
      *
-     * @param jwtToken JWT token of the current authenticated user
-     * @param request  contains the account numbers involved in the original transaction and the refund amount
-     * @throws AccountNotFoundException         if the sender (original recipient) account is not owned by the user
-     * @throws IllegalArgumentException         if the refund amount is negative or zero
+     * @param customerId the customer's id for the authenticated user.
+     * @param request    contains the account numbers involved in the original transaction and the refund amount
+     * @throws AccountNotFoundException            if the sender (original recipient) account is not owned by the user
+     * @throws IllegalArgumentException            if the refund amount is negative or zero
      * @throws InsufficientFundsAvailableException if the sender account lacks sufficient balance for the refund
      */
     @Transactional
-    public void performRefund(String jwtToken, RefundBalanceRequest request) {
+    public void performRefund(Long customerId, RefundBalanceRequest request) {
         if (request.amount() == null || request.amount().signum() <= 0) {
             throw new IllegalArgumentException("Refund amount must be positive");
         }
 
         BigDecimal amount = request.amount();
-        Long customerId = getCustomerId(jwtToken);
+
 
         // The one sending the refund is the RECIPIENT of the original transaction
         Account sender = findAccountEntity(request.fromAccountNumber()); // original recipient
@@ -402,16 +399,15 @@ public class AccountService {
 
     /**
      * Checks if the authenticated customer has sufficient funds in an account of the given type.
-     *
-     * @param jwtToken         the JWT token of the authenticated user.
+     * @param customerId the customer's id for the authenticated user.
      * @param type             the account type.
      * @param amountToTransfer the amount to check against the balance.
      * @return true if the account balance is greater than or equal to the amount, false otherwise.
      * @throws AccountNotFoundException if no matching account is found.
      * @throws IllegalStateException    if the account balance is null.
      */
-    public boolean hasSufficientFundsByType(String jwtToken, AccountType type, BigDecimal amountToTransfer) {
-        BigDecimal balance = getAccountBalance(jwtToken, type);
+    public boolean hasSufficientFundsByType(Long customerId, AccountType type, BigDecimal amountToTransfer) {
+        BigDecimal balance = getAccountBalance(customerId, type);
         return balance.compareTo(amountToTransfer) >= 0;
     }
 
@@ -468,40 +464,10 @@ public class AccountService {
      * @return true if the given accountNumber belongs to logged in customer
      * @throws AccountNotFoundException if the account is not found.
      */
-    public boolean isAccountOwnedByCurrentCustomer(String jwtToken, String accountNumber) {
-        Long customerId = getCustomerId(jwtToken);
-
+    public boolean isAccountOwnedByCurrentCustomer(Long customerId, String accountNumber) {
         Account account = findAccountEntity(accountNumber);
-
         return account.getCustomerId().equals(customerId);
     }
 
 
-    /**
-     * Retrieves the customer ID of the authenticated user by calling the customer service.
-     *
-     * @param jwtToken the JWT token of the authenticated user.
-     * @return the customer ID.
-     * @throws CustomerServiceUnavailableException if the customer service is unavailable.
-     * @throws AccountNotFoundException            if the authenticated customer is not found.
-     */
-    public Long getCustomerId(String jwtToken) {
-        String url = "http://customer/customer/me";
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(jwtToken);
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
-
-        ResponseEntity<CustomerResponse> response;
-        try {
-            response = restTemplate.exchange(url, HttpMethod.GET, entity, CustomerResponse.class);
-        } catch (RestClientException e) {
-            throw new CustomerServiceUnavailableException("Customer service unavailable");
-        }
-
-        CustomerResponse customerResponse = response.getBody();
-        if (customerResponse == null || customerResponse.id() == null) {
-            throw new AccountNotFoundException("Authenticated customer not found");
-        }
-        return customerResponse.id();
-    }
 }
