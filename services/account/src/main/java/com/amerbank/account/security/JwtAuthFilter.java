@@ -44,9 +44,12 @@ public class  JwtAuthFilter extends OncePerRequestFilter {
         }
 
         String username = jwtService.extractUsername(token);
+       Long customerId = jwtService.extractCustomerId(token);
 
 
         var roles = jwtService.extractRoles(token);
+
+
 
 
         List<SimpleGrantedAuthority> authorities = roles.stream()
@@ -54,6 +57,7 @@ public class  JwtAuthFilter extends OncePerRequestFilter {
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
 
+        JwtUserPrincipal jwtUserPrincipal = new JwtUserPrincipal(username, customerId, authorities);
 
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(username, null, authorities);
