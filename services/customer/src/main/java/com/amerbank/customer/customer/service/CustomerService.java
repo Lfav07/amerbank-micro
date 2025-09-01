@@ -2,23 +2,25 @@ package com.amerbank.customer.customer.service;
 
 import com.amerbank.common_dto.*;
 import com.amerbank.customer.customer.exception.AuthServiceUnavailableException;
+import com.amerbank.customer.customer.exception.CustomerAlreadyExistsException;
 import com.amerbank.customer.customer.exception.CustomerNotFoundException;
 import com.amerbank.customer.customer.dto.CustomerRequest;
 import com.amerbank.customer.customer.dto.CustomerUpdateRequest;
+import com.amerbank.customer.customer.exception.UserRegistrationFailedException;
 import com.amerbank.customer.customer.model.Customer;
 import com.amerbank.customer.customer.repository.CustomerRepository;
 import com.amerbank.customer.customer.security.JwtService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang.NullArgumentException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.*;
 
 import java.util.List;
 
@@ -89,11 +91,23 @@ public class CustomerService {
     }
 
     /**
-     * Registers a new customer and links them to a user in the auth server.
+     * Registers a new customer and links them to a user in the authentication service.
+     * <p>
+     * This method performs the following steps:
+     * <ol>
+     *     <li>Creates a {@link UserRegisterRequest} from the provided {@link CustomerRequest}.</li>
+     *     <li>Calls the authentication service via HTTP to register a new user.</li>
+     *     <li>Validates the response from the authentication service.</li>
+     *     <li>Checks if a customer already exists for the returned user ID.</li>
+     *     <li>Maps the request to a {@link Customer} entity, sets KYC as verified, and saves it in the repository.</li>
+     * </ol>
      *
-     * @param request the registration data
-     * @return a response DTO of the newly registered customer
-     * @throws IllegalArgumentException if a customer already exists for the user
+     * @param request the registration data containing email, password, and customer details
+     * @return a {@link CustomerResponse} DTO representing the newly registered customer
+     * @throws CustomerAlreadyExistsException if a customer already exists for the given user ID
+     * @throws UserRegistrationFailedException if the authentication service returns null or a client-side error occurs
+     * @throws AuthServiceUnavailableException if the authentication service cannot be reached or returns a server-side error
+     * @throws IllegalStateException if an unexpected error occurs during REST call or saving the customer (e.g., data integrity violation)
      */
     public CustomerResponse registerCustomer(CustomerRequest request) {
         UserRegisterRequest userRegisterRequest = new UserRegisterRequest(
@@ -101,23 +115,42 @@ public class CustomerService {
                 request.password()
         );
 
-        UserResponse userResponse = restTemplate.postForObject(
-                "http://auth-server/auth/register",
-                userRegisterRequest,
-                UserResponse.class
-        );
+        UserResponse userResponse;
+        try {
+            userResponse = restTemplate.postForObject(
+                    "http://auth-server/auth/register",
+                    userRegisterRequest,
+                    UserResponse.class
+            );
+        } catch (HttpClientErrorException e) {
+            throw new UserRegistrationFailedException("User registration failed: " + e);
+        } catch (HttpServerErrorException e) {
+            throw new AuthServiceUnavailableException("Auth server error: " + e);
+        } catch (ResourceAccessException e) {
+            throw new AuthServiceUnavailableException("Cannot reach auth server" + e);
+        } catch (RestClientException e) {
+            throw new IllegalStateException("Unexpected error during user registration", e);
+        }
 
-        assert userResponse != null;
+        if (userResponse == null || userResponse.id() == null) {
+            throw new UserRegistrationFailedException("Auth server returned null response");
+        }
+
         Long userId = userResponse.id();
 
         if (customerRepository.existsByUserId(userId)) {
-            throw new IllegalArgumentException("Customer already exists for userId: " + userId);
+            throw new CustomerAlreadyExistsException("Customer already exists for userId: " + userId);
         }
 
         Customer customer = customerMapper.toCustomer(request, userId);
         customer.setKycVerified(true);
-        Customer saved = customerRepository.save(customer);
-        return customerMapper.fromCustomer(saved);
+
+        try {
+            Customer saved = customerRepository.save(customer);
+            return customerMapper.fromCustomer(saved);
+        } catch (DataIntegrityViolationException e) {
+            throw new IllegalStateException("Failed to save customer: data integrity violation", e);
+        }
     }
 
 
