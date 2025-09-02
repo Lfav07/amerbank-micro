@@ -144,7 +144,7 @@ public class TransactionService {
 
 
     public boolean isAccountOwnedByCurrentCustomer(String jwtToken, String accountNumber) {
-        String url = "http://account-service/account/manage/owned?accountNumber=" + accountNumber;
+        String url = "http://account/account/manage/owned?accountNumber=" + accountNumber;
 
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(jwtToken);
@@ -167,7 +167,7 @@ public class TransactionService {
 
 
     private void performDeposit(String jwtToken, String accountNumber, BigDecimal amount) {
-        String url = "http://account-service/account/manage/deposit";
+        String url = "http://account/account/manage/deposit";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(jwtToken);
@@ -187,7 +187,7 @@ public class TransactionService {
     }
 
     private void performPayment(String jwtToken, String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
-        String url = "http://account-service/account/manage/payment";
+        String url = "http://account/account/payment";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(jwtToken);
@@ -207,7 +207,7 @@ public class TransactionService {
     }
 
     private void performRefund(String jwtToken,String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
-        String url = "http://account-service/account/manage/refund";
+        String url = "http://account/account/manage/refund";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(jwtToken);
