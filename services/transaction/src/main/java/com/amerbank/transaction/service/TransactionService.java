@@ -167,7 +167,7 @@ public class TransactionService {
 
 
     private void performDeposit(String jwtToken, String accountNumber, BigDecimal amount) {
-        String url = "http://account/account/manage/deposit";
+        String url = "http://account/account/deposit";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(jwtToken);
@@ -197,17 +197,13 @@ public class TransactionService {
         PaymentBalanceRequest body = new PaymentBalanceRequest(fromAccountNumber, toAccountNumber, amount);
         HttpEntity<PaymentBalanceRequest> entity = new HttpEntity<>(body, headers);
 
-        try {
+
             restTemplate.exchange(url, HttpMethod.POST, entity, Void.class);
-        } catch (HttpClientErrorException.NotFound e) {
-            throw new AccountNotFoundException("Account not found while trying to deposit");
-        } catch (RestClientException e) {
-            throw new AccountServiceUnavailableException("Failed to perform deposit");
-        }
+
     }
 
     private void performRefund(String jwtToken,String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
-        String url = "http://account/account/manage/refund";
+        String url = "http://account/account/refund";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(jwtToken);
