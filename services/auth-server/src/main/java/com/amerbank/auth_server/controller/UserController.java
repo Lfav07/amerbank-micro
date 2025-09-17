@@ -9,9 +9,11 @@ import com.amerbank.common_dto.AuthenticationResponse;
 import com.amerbank.common_dto.UserLoginRequest;
 import com.amerbank.common_dto.UserRegisterRequest;
 import com.amerbank.common_dto.UserResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -31,59 +33,54 @@ public class UserController {
 
 
     @PostMapping("/register")
-    public ResponseEntity<UserResponse> register(@RequestBody UserRegisterRequest request) {
-        User user = userService.registerUser(request);
-
-        UserResponse response = new UserResponse(user.getId(), user.getEmail());
-        return ResponseEntity.ok(response);
+    public ResponseEntity<Map<String, String>> register(@RequestBody UserRegisterRequest request) {
+        userService.registerUser(request);
+        Map<String, String> response = Map.of("message", "User successfully registered");
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody UserLoginRequest request) {
+    public ResponseEntity<Map<String, String>> login(@RequestBody UserLoginRequest request) {
         AuthenticationResponse response = userService.login(request);
-        return ResponseEntity.ok(response.token());
+        return ResponseEntity.ok(Map.of("token", response.token()));
     }
 
     @PatchMapping("/update-email")
-    public ResponseEntity<?> updateEmail(
+    public ResponseEntity<Map<String, String>> updateEmail(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody EmailUpdateRequest request) {
 
-            userService.authenticate(
-                    userDetails.getUsername(), request.password()
-            );
 
             User user = userService.findByEmail(userDetails.getUsername());
             userService.updateEmail(user.getId(), request.newEmail());
 
-            return ResponseEntity.ok("Email updated successfully");
+        Map<String, String> response = Map.of("message", "Email successfully updated");
+
+            return ResponseEntity.status(HttpStatus.OK).body(response);
 
         }
 
 
     @PatchMapping("/update-password")
-    public ResponseEntity<?> updatePassword(
+    public  ResponseEntity<Map<String, String>> updatePassword(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody PasswordUpdateRequest request) {
+           @Valid @RequestBody PasswordUpdateRequest request) {
 
-            userService.authenticate(
-                   userDetails.getUsername(), request.oldPassword()
-            );
-
-            User user = userService.findByEmail(userDetails.getUsername());
-            userService.updatePassword(user.getId(), request.newPassword());
-
-            return ResponseEntity.noContent().build();
-
+        try {
+            userService.updatePassword(userDetails.getUsername(), request);
+            return ResponseEntity.ok(Map.of("message", "Password successfully updated"));
+        } catch (BadCredentialsException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Old password is incorrect"));
+        }
     }
 
 
 
     @DeleteMapping("/all/delete")
-    public ResponseEntity<?> deleteAllUsers() {
+    public ResponseEntity<Map<String, String>> deleteAllUsers() {
         userService.deleteAllUsers();
-
-        return  ResponseEntity.ok("Users deleted successfully");
+        return  ResponseEntity.ok(Map.of("message", "Users successfully deleted"));
 
     }
 
@@ -91,26 +88,30 @@ public class UserController {
 
 
     @DeleteMapping("/manage/delete/{id}")
-    public  ResponseEntity<?> deleteUserById(@PathVariable Long id) {
-        if (!userService.existsById(id)) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found"));
-        }
+    public  ResponseEntity<Map<String, String>> deleteUserById(@PathVariable Long id) {
+
         userService.deleteUser(id);
-        return  ResponseEntity.ok("User deleted successfully");
+        return  ResponseEntity.ok(Map.of("message", "User deleted successfully"));
     }
 
     @PatchMapping("/manage/update-password/{id}")
-    public ResponseEntity<?> updatePasswordById(Long id,
-            @RequestBody String password) {
+    public ResponseEntity<?> updatePasswordById(
+            @PathVariable Long id,
+            @RequestBody @Valid AdminPasswordUpdateRequest request) {
 
-
-
-        User user = userService.findById(id);
-        userService.updatePassword(user.getId(), password);
-
+        userService.updatePasswordById(id, request.newPassword());
         return ResponseEntity.noContent().build();
-
     }
+
+    @PatchMapping("/manage/update-email/{id}")
+    public ResponseEntity<?> updateEmailById(
+            @PathVariable Long id,
+            @RequestBody @Valid AdminEmailUpdateRequest request) {
+
+        userService.updateEmailById(id, request.email());
+        return ResponseEntity.noContent().build();
+    }
+
 
 
 
