@@ -3,21 +3,29 @@ package com.amerbank.auth_server.controller;
 import com.amerbank.auth_server.exception.UserNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.Map;
 
 @RestControllerAdvice
 class ApiExceptionHandler {
 
     @ExceptionHandler(AuthenticationException.class)
-    ResponseEntity<String> handleAuth(AuthenticationException e) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+    ResponseEntity<Map<String, String>> handleAuth(AuthenticationException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Unauthorized"));
     }
 
     @ExceptionHandler(UserNotFoundException.class)
-    ResponseEntity<String> handleUserNotFound(UserNotFoundException e) {
-        return  ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+    ResponseEntity<Map<String, String>>handleUserNotFound(UserNotFoundException e) {
+        return  ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "User not found"));
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    ResponseEntity<Map<String, String>> handleBadCredentials(BadCredentialsException e) {
+        return  ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Bad Credentials"));
     }
 
 }
