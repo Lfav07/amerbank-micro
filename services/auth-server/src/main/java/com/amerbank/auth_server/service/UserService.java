@@ -1,5 +1,6 @@
 package com.amerbank.auth_server.service;
 
+import com.amerbank.auth_server.dto.PasswordUpdateRequest;
 import com.amerbank.auth_server.exception.EmailAlreadyTakenException;
 import com.amerbank.auth_server.exception.UserNotFoundException;
 import com.amerbank.auth_server.model.User;
@@ -12,6 +13,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 
@@ -135,25 +137,53 @@ public class UserService {
      * @throws UserNotFoundException if no user with the given ID exists
      */
     public void updateEmail(Long id, String email) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        User user = findById(id);
         user.setEmail(email);
+        userRepository.save(user);
+    }
+
+    /**
+     * Updates the email address of a user.
+     *
+     * @param id the ID of the user to update
+     * @param email the new email address
+     * @throws UserNotFoundException if no user with the given ID exists
+     */
+    public void updateEmailById(Long id, String email) {
+        User user = findById(id);
+        userRepository.save(user);
+    }
+
+
+    /**
+     * Updates the password of a user.
+     *
+     * @param email the email of the user to update
+     * @param request the old and new password
+     * @throws UserNotFoundException if no user with the given ID exists
+     */
+    public void updatePassword(String email, PasswordUpdateRequest request) {
+
+        authenticate(email, request.oldPassword());
+        User user = findByEmail(email);
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
         userRepository.save(user);
     }
 
     /**
      * Updates the password of a user.
      *
-     * @param id the ID of the user to update
+     * @param id the id of the user to update
      * @param newPassword the new password
      * @throws UserNotFoundException if no user with the given ID exists
      */
-    public void updatePassword(Long id, String newPassword) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+    @Transactional
+    public void updatePasswordById(Long id, String newPassword) {
+        User user = findById(id);
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }
+
 
     /**
      * Deletes a user by ID.
