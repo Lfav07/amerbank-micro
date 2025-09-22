@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -25,7 +26,12 @@ class ApiExceptionHandler {
 
     @ExceptionHandler(BadCredentialsException.class)
     ResponseEntity<Map<String, String>> handleBadCredentials(BadCredentialsException e) {
-        return  ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Bad Credentials"));
+        return  ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Incorrect username or password"));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    ResponseEntity<Map<String, String>> handleArgumentNotValid(MethodArgumentNotValidException e) {
+        return  ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Invalid argument"));
     }
 
 }
