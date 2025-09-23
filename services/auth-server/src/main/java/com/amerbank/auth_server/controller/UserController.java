@@ -21,6 +21,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -75,7 +76,12 @@ public class UserController {
         }
     }
 
+    @GetMapping("/all/get")
+    public ResponseEntity<List<User>> getAllUsers() {
+         List<User> users = userService.getAllUsers();
+        return  ResponseEntity.ok(users);
 
+    }
 
     @DeleteMapping("/all/delete")
     public ResponseEntity<Map<String, String>> deleteAllUsers() {
