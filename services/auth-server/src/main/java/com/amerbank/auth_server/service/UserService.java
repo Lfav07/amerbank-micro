@@ -32,6 +32,11 @@ public class UserService {
     private  final CustomerServiceClient customerServiceClient;
     private  final JwtService jwtService;
 
+    // -------------------------------------------------------------------------
+    // Checkers
+    // -------------------------------------------------------------------------
+
+
     /**
      * Checks if the given email is already taken (case-insensitive).
      *
@@ -41,6 +46,18 @@ public class UserService {
     public boolean isEmailTaken(String email) {
         return userRepository.existsByEmailIgnoreCase(email.trim().toLowerCase());
     }
+
+    /**
+     * Finds a user by ID.
+     *
+     * @param id the user ID to search for
+     * @return the found User entity
+     * @throws UserNotFoundException if no user with the given ID exists
+     */
+    public boolean existsById(Long id) {
+        return userRepository.existsById(id);
+    }
+
 
     /**
      * Registers a new user with the ROLE_USER role.
@@ -152,6 +169,7 @@ public class UserService {
      */
     public void updateEmailById(Long id, String email) {
         User user = findById(id);
+        user.setEmail(email);
         userRepository.save(user);
     }
 
@@ -228,16 +246,6 @@ public class UserService {
         userRepository.deleteById(event.getUserId());
     }
 
-    /**
-     * Finds a user by ID.
-     *
-     * @param id the user ID to search for
-     * @return the found User entity
-     * @throws UserNotFoundException if no user with the given ID exists
-     */
-    public boolean existsById(Long id) {
-        return userRepository.existsById(id);
-    }
 
     /**
      * Deletes all users from the database.
