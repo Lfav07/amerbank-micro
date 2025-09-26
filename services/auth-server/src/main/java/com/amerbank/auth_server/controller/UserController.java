@@ -2,23 +2,19 @@ package com.amerbank.auth_server.controller;
 
 import com.amerbank.auth_server.dto.*;
 import com.amerbank.auth_server.model.User;
-import com.amerbank.auth_server.security.JwtService;
-import com.amerbank.auth_server.service.CustomerServiceClient;
+import com.amerbank.auth_server.service.UserMapper;
 import com.amerbank.auth_server.service.UserService;
 import com.amerbank.common_dto.AuthenticationResponse;
 import com.amerbank.common_dto.UserLoginRequest;
 import com.amerbank.common_dto.UserRegisterRequest;
 import com.amerbank.common_dto.UserResponse;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;import org.springframework.http.HttpStatus;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,118 +26,105 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
+    private final UserMapper mapper;
 
+    // -------------------- Helper --------------------
+    private Map<String, String> message(String msg) {
+        return Map.of("message", msg);
+    }
 
-
+    // -------------------- Public Endpoints --------------------
     @PostMapping("/register")
-    public ResponseEntity<Map<String, String>> register(@RequestBody UserRegisterRequest request) {
+    public ResponseEntity<Map<String, String>> register(@Valid @RequestBody UserRegisterRequest request) {
         userService.registerUser(request);
-        Map<String, String> response = Map.of("message", "User successfully registered");
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(message("User successfully registered"));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> login(@RequestBody UserLoginRequest request) {
+    public ResponseEntity<Map<String, String>> login(@Valid @RequestBody UserLoginRequest request) {
         AuthenticationResponse response = userService.login(request);
         return ResponseEntity.ok(Map.of("token", response.token()));
     }
 
     @PatchMapping("/update-email")
-    public ResponseEntity<Map<String, String>> updateEmail(
+    public ResponseEntity<Void> updateEmail(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody EmailUpdateRequest request) {
+            @Valid @RequestBody EmailUpdateRequest request) {
 
-
-            User user = userService.findByEmail(userDetails.getUsername());
-            userService.updateEmail(user.getId(), request.newEmail());
-
-        Map<String, String> response = Map.of("message", "Email successfully updated");
-
-            return ResponseEntity.status(HttpStatus.OK).body(response);
-
-        }
-
+        User user = userService.findByEmail(userDetails.getUsername());
+        userService.updateEmail(user.getId(), request.newEmail());
+        return ResponseEntity.noContent().build();
+    }
 
     @PatchMapping("/update-password")
-    public  ResponseEntity<Map<String, String>> updatePassword(
+    public ResponseEntity<Map<String, String>> updatePassword(
             @AuthenticationPrincipal UserDetails userDetails,
-           @Valid @RequestBody PasswordUpdateRequest request) {
+            @Valid @RequestBody PasswordUpdateRequest request) {
 
         try {
             userService.updatePassword(userDetails.getUsername(), request);
-            return ResponseEntity.ok(Map.of("message", "Password successfully updated"));
+            return ResponseEntity.ok(message("Password successfully updated"));
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "Old password is incorrect"));
         }
     }
 
-    @GetMapping("/all/get")
-    public ResponseEntity<List<User>> getAllUsers() {
-         List<User> users = userService.getAllUsers();
-        return  ResponseEntity.ok(users);
-
+    @GetMapping("/me")
+    public ResponseEntity<UserResponse> getMyUserInfo(@AuthenticationPrincipal UserDetails userDetails) {
+        User user = userService.findByEmail(userDetails.getUsername());
+        return ResponseEntity.ok(mapper.toResponse(user));
     }
 
-    @DeleteMapping("/all/delete")
-    public ResponseEntity<Map<String, String>> deleteAllUsers() {
+    // -------------------- Admin / Management Endpoints --------------------
+    @GetMapping("/users")
+    public ResponseEntity<List<UserResponse>> getAllUsers() {
+        List<UserResponse> users = userService.getAllUsers()
+                .stream()
+                .map(mapper::toResponse)
+                .toList();
+        return ResponseEntity.ok(users);
+    }
+
+    @DeleteMapping("/users")
+    public ResponseEntity<Void> deleteAllUsers() {
         userService.deleteAllUsers();
-        return  ResponseEntity.ok(Map.of("message", "Users successfully deleted"));
-
+        return ResponseEntity.noContent().build();
     }
 
-
-
-
-    @DeleteMapping("/manage/delete/{id}")
-    public  ResponseEntity<Map<String, String>> deleteUserById(@PathVariable Long id) {
-
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<Void> deleteUserById(@PathVariable Long id) {
         userService.deleteUser(id);
-        return  ResponseEntity.ok(Map.of("message", "User deleted successfully"));
+        return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/manage/update-password/{id}")
-    public ResponseEntity<?> updatePasswordById(
+    @PatchMapping("/users/{id}/update-password")
+    public ResponseEntity<Void> updatePasswordById(
             @PathVariable Long id,
-            @RequestBody @Valid AdminPasswordUpdateRequest request) {
+            @Valid @RequestBody AdminPasswordUpdateRequest request) {
 
         userService.updatePasswordById(id, request.newPassword());
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/manage/update-email/{id}")
-    public ResponseEntity<?> updateEmailById(
+    @PatchMapping("/users/{id}/update-email")
+    public ResponseEntity<Void> updateEmailById(
             @PathVariable Long id,
-            @RequestBody @Valid AdminEmailUpdateRequest request) {
+            @Valid @RequestBody AdminEmailUpdateRequest request) {
 
         userService.updateEmailById(id, request.email());
         return ResponseEntity.noContent().build();
     }
 
-
-
-
-    @GetMapping("/manage/by-id/{id}")
-    public  ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
+    @GetMapping("/users/{id}")
+    public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
         User user = userService.findById(id);
-        UserResponse response = new UserResponse(user.getId(), user.getEmail());
-        return  ResponseEntity.ok(response);
+        return ResponseEntity.ok(mapper.toResponse(user));
     }
 
-    @GetMapping("/manage/me")
-    public ResponseEntity<UserResponse> getMyUserInfo(Authentication authentication) {
-        String email = authentication.getName();
+    @GetMapping("/users/email/{email}")
+    public ResponseEntity<UserResponse> getUserByEmail(@PathVariable String email) {
         User user = userService.findByEmail(email);
-        UserResponse resp = new UserResponse(user.getId(), user.getEmail());
-        return ResponseEntity.ok(resp);
+        return ResponseEntity.ok(mapper.toResponse(user));
     }
-
-    @GetMapping("/manage/by-email/{email}")
-    public  ResponseEntity<UserResponse> getUserByEmail(@PathVariable String email) {
-     User user  = userService.findByEmail(email);
-        UserResponse response = new UserResponse(user.getId(), user.getEmail());
-     return  ResponseEntity.ok(response);
-    }
-
-
 }
