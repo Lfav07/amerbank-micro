@@ -13,6 +13,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
     private final JwtAuthFilter jwtAuthFilter;
 
     public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
@@ -23,16 +24,35 @@ public class SecurityConfig {
     SecurityFilterChain chain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/account/register", "/account/manage/me", "/account/manage/owned", "/account/manage/owned/**",  "/account/manage/me/**").authenticated()
-                        // testing purposes
-                        .requestMatchers("/account/deposit", "/account/payment", "/account/refund/**").authenticated()
-                        .anyRequest().hasRole("ADMIN"))
+                        // Endpoints for authenticated users
+                        .requestMatchers(
+                                "/accounts",                        // register account
+                                "/accounts/me",                      // get my accounts
+                                "/accounts/me/owned",                // check ownership
+                                "/accounts/me/balances",             // get balances
+                                "/accounts/me/balance",              // get balance by type
+                                "/accounts/me/has-funds",            // check funds
+                                "/accounts/deposit",                 // deposit
+                                "/accounts/payment",                 // payment
+                                "/accounts/refund"                   // refund
+                        ).authenticated()
+                        // Admin-only endpoints
+                        .requestMatchers(
+                                "/accounts/customers/**",            // get accounts by customer
+                                "/accounts/{accountNumber}",         // get account details
+                                "/accounts/{accountNumber}/type",    // update type
+                                "/accounts/{accountNumber}/status",  // update status
+                                "/accounts/{accountNumber}/suspend", // suspend account
+                                "/accounts/{accountNumber}/balance", // get balance
+                                "/accounts/{accountNumber}"          // delete account
+                        ).hasRole("ADMIN")
+                        .anyRequest().authenticated())  // fallback: authenticated
                 .sessionManagement(sess -> sess
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .addFilterBefore(jwtAuthFilter,
                         UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 }
-
