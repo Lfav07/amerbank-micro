@@ -43,6 +43,7 @@ public class JwtService {
 
     public String generateToken(User user, Long customerId) {
         return Jwts.builder()
+                .issuer("auth-server")
                 .subject(user.getEmail())
                 .claim("userId", user.getId())
                 .claim("customerId", customerId)
@@ -55,6 +56,7 @@ public class JwtService {
 
     public String generateAdminToken(User user) {
         return Jwts.builder()
+                .issuer("auth-server")
                 .subject(user.getEmail())
                 .claim("userId", user.getId())
                 .claim("roles", user.getRoles().stream().map(Enum::name).toList())
