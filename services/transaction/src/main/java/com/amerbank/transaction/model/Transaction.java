@@ -23,6 +23,7 @@ public class Transaction {
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(columnDefinition = "UUID")
     private UUID id;
+
     @Column(nullable = false)
     private BigDecimal amount;
 
