@@ -33,6 +33,10 @@ public class JwtService {
         return extractClaim(token, Claims::getSubject);
     }
 
+    public  Long extractCustomerId(String token) {
+        return  extractClaim(token, claims -> claims.get("customerId", Long.class));
+    }
+
     public <T> T extractClaim(String token, Function<Claims, T> resolver) {
         return resolver.apply(extractAllClaims(token));
     }
@@ -52,13 +56,12 @@ public class JwtService {
                 .subject("transaction-service")
                 .audience().add("account-service").and()
                 .claim("serviceName", "transaction-service")
-                .claim("jti", UUID.randomUUID().toString())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + serviceTokenExpirationMs))
                 .signWith(getSigningKey())
+                .id(UUID.randomUUID().toString())
                 .compact();
     }
-
 
     public Set<Role> extractRoles(String token) {
         Claims claims = extractAllClaims(token);
