@@ -29,9 +29,10 @@ public class JwtService {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    public String extractUsername(String token) {
+    public String extractSubject(String token) {
         return extractClaim(token, Claims::getSubject);
     }
+
 
     public <T> T extractClaim(String token, Function<Claims, T> resolver) {
         return resolver.apply(extractAllClaims(token));
@@ -46,6 +47,23 @@ public class JwtService {
             extractAllClaims(token);
             return !isTokenExpired(token);
         } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    public boolean validateTransactionServiceToken(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+
+            // Check expiration
+            if (claims.getExpiration().before(new Date())) return false;
+
+            // Check audience
+            Set<String> audience = claims.getAudience();
+            if (audience == null || !audience.contains("account-service")) return false;
+            // Check issuer
+            return "transaction-service".equals(claims.getIssuer());
+        } catch (JwtException e) {
             return false;
         }
     }

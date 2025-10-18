@@ -1,13 +1,10 @@
 package com.amerbank.account.controller;
 
 import com.amerbank.account.dto.*;
-import com.amerbank.account.model.AccountStatus;
 import com.amerbank.account.model.AccountType;
 import com.amerbank.account.security.JwtUserPrincipal;
 import com.amerbank.account.service.AccountService;
-import com.amerbank.common_dto.DepositBalanceRequest;
-import com.amerbank.common_dto.PaymentBalanceRequest;
-import com.amerbank.common_dto.RefundBalanceRequest;
+import com.amerbank.common_dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -25,6 +22,10 @@ import java.util.List;
 public class AccountController {
 
     private final AccountService accountService;
+
+    // ============================================================
+    // =============== ACCOUNT REGISTRATION & RETRIEVAL ============
+    // ============================================================
 
     /**
      * Registers a new account for the authenticated user.
@@ -99,20 +100,12 @@ public class AccountController {
         return ResponseEntity.ok(accountService.getAccountByAccountNumber(accountNumber));
     }
 
-    /**
-     * Deletes an account by its account number.
-     *
-     * @param accountNumber the account number
-     * @return a 204 No Content response if deletion is successful
-     */
-    @DeleteMapping("/{accountNumber}")
-    public ResponseEntity<Void> deleteAccount(@PathVariable String accountNumber) {
-        accountService.deleteAccount(accountNumber);
-        return ResponseEntity.noContent().build();
-    }
+    // ============================================================
+    // ================= ACCOUNT MANAGEMENT =======================
+    // ============================================================
 
     /**
-     * Updates the type of account.
+     * Updates the type of an account.
      *
      * @param request the account update request
      * @return the updated account information
@@ -145,6 +138,22 @@ public class AccountController {
     }
 
     /**
+     * Deletes an account by its account number.
+     *
+     * @param accountNumber the account number
+     * @return a 204 No Content response if deletion is successful
+     */
+    @DeleteMapping("/{accountNumber}")
+    public ResponseEntity<Void> deleteAccount(@PathVariable String accountNumber) {
+        accountService.deleteAccount(accountNumber);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ============================================================
+    // ============= ACCOUNT STATUS & OWNERSHIP CHECKS ============
+    // ============================================================
+
+    /**
      * Checks if an account is currently active.
      *
      * @param accountNumber the account number
@@ -170,6 +179,10 @@ public class AccountController {
         return ResponseEntity.ok(accountService.isAccountOwnedByCurrentCustomer(
                 jwtUserPrincipal.customerId(), accountNumber));
     }
+
+    // ============================================================
+    // ==================== BALANCE OPERATIONS ====================
+    // ============================================================
 
     /**
      * Retrieves the balance of a specific account.
@@ -228,51 +241,67 @@ public class AccountController {
                 jwtUserPrincipal.customerId(), type, amount));
     }
 
+    // ============================================================
+    // ==================== INTERNAL OPERATIONS ===================
+    // ============================================================
+
     /**
      * Endpoint to deposit funds into an account.
      *
      * @param depositBalanceRequest the deposit request containing account number and amount
-     * @param jwtUserPrincipal      the authenticated customer's data
      * @return 200 OK if deposit is successful
      */
-    @PostMapping("/deposit")
+    @PostMapping("/internal/deposit")
     public ResponseEntity<Void> performDeposit(
-            @RequestBody DepositBalanceRequest depositBalanceRequest,
-            @AuthenticationPrincipal JwtUserPrincipal jwtUserPrincipal) {
+            @RequestBody ServiceDepositBalanceRequest depositBalanceRequest) {
 
-        accountService.performDeposit(jwtUserPrincipal.customerId(), depositBalanceRequest);
+        accountService.performDeposit(
+                depositBalanceRequest.customerId(),
+                new DepositBalanceRequest(
+                        depositBalanceRequest.accountNumber(),
+                        depositBalanceRequest.amount()));
         return ResponseEntity.ok().build();
     }
 
     /**
-     * Endpoint to transfer funds between accounts.
+     * Endpoint to perform payments between accounts (used internally by services).
      *
-     * @param paymentBalanceRequest the payment request containing accounts numbers and amount
-     * @param jwtUserPrincipal      the authenticated customer's data
+     * @param servicePaymentRequest the payment request containing source, destination, and amount
      * @return 200 OK if payment is successful
      */
-    @PostMapping("/payment")
+    @PostMapping("/internal/payment")
     public ResponseEntity<Void> performPayment(
-            @RequestBody PaymentBalanceRequest paymentBalanceRequest,
-            @AuthenticationPrincipal JwtUserPrincipal jwtUserPrincipal) {
+            @RequestBody ServicePaymentRequest servicePaymentRequest) {
 
-        accountService.performPayment(jwtUserPrincipal.customerId(), paymentBalanceRequest);
+        accountService.performPayment(
+                servicePaymentRequest.customerId(),
+                new PaymentBalanceRequest(
+                        servicePaymentRequest.fromAccountNumber(),
+                        servicePaymentRequest.toAccountNumber(),
+                        servicePaymentRequest.amount()
+                )
+        );
         return ResponseEntity.ok().build();
     }
 
     /**
-     * Endpoint to perform refunds between accounts.
+     * Endpoint to perform refunds between accounts (used internally by services).
      *
-     * @param refundBalanceRequest the refund request containing accounts numbers and amount
-     * @param jwtUserPrincipal     the authenticated customer's data
-     * @return 200 OK if payment is successful
+     * @param serviceRefundBalanceRequest the refund request containing accounts and amount
+     * @return 200 OK if refund is successful
      */
-    @PostMapping("/refund")
+    @PostMapping("/internal/refund")
     public ResponseEntity<Void> performRefund(
-            @RequestBody RefundBalanceRequest refundBalanceRequest,
-            @AuthenticationPrincipal JwtUserPrincipal jwtUserPrincipal) {
+            @RequestBody ServiceRefundBalanceRequest serviceRefundBalanceRequest) {
 
-        accountService.performRefund(jwtUserPrincipal.customerId(), refundBalanceRequest);
+        accountService.performRefund(
+                serviceRefundBalanceRequest.customerId(),
+                new RefundBalanceRequest(
+                        serviceRefundBalanceRequest.fromAccountNumber(),
+                        serviceRefundBalanceRequest.toAccountNumber(),
+                        serviceRefundBalanceRequest.amount()
+                )
+        );
         return ResponseEntity.ok().build();
     }
 }

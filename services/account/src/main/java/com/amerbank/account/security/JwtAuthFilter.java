@@ -43,7 +43,7 @@ public class  JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        String username = jwtService.extractUsername(token);
+        String username = jwtService.extractSubject(token);
        Long customerId = jwtService.extractCustomerId(token);
 
 
