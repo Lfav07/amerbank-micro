@@ -55,10 +55,7 @@ public class TransactionController {
             @RequestHeader("Authorization") String authorization,
             @PathVariable String accountNumber
     ) {
-
-
         String jwtToken = authorization.substring(7);
-
         return ResponseEntity.ok(transactionService.getMyTransactions(jwtToken, accountNumber));
     }
 

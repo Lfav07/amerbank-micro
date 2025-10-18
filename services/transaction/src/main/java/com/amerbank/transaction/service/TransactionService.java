@@ -1,8 +1,6 @@
 package com.amerbank.transaction.service;
 
-import com.amerbank.common_dto.DepositBalanceRequest;
-import com.amerbank.common_dto.PaymentBalanceRequest;
-import com.amerbank.common_dto.RefundBalanceRequest;
+import com.amerbank.common_dto.*;
 import com.amerbank.transaction.dto.DepositTransactionRequest;
 import com.amerbank.transaction.dto.PaymentTransactionRequest;
 import com.amerbank.transaction.dto.RefundTransactionRequest;
@@ -69,36 +67,30 @@ public class TransactionService {
     }
 
     public List<Transaction> getMyTransactions(String jwtToken, String accountNumber) {
-        if (!isAccountOwnedByCurrentCustomer(jwtToken, accountNumber)) {
-            throw new UnauthorizedAccountAccessException("Account does not belong to current user");
-        }
+
         return  findByFromAccountNumberOrToAccountNumber(accountNumber);
 
     }
 
     public TransactionResponse createDepositTransaction(String jwtToken, DepositTransactionRequest request){
 
-        if (!isAccountOwnedByCurrentCustomer(jwtToken, request.fromAccountNumber())) {
-            throw new UnauthorizedAccountAccessException("Account does not belong to current user");
-        }
 
+
+        Long customerId = jwtService.extractCustomerId(jwtToken);
 
         Transaction transaction = transactionMapper.toTransaction(request);
 
-
-        performDeposit(jwtToken, request.toAccountNumber(), request.amount());
+        performDeposit(customerId, request.toAccountNumber(), request.amount());
         transaction.setStatus(TransactionStatus.APPROVED);
         transactionRepository.save(transaction);
         return transactionMapper.toResponse(transaction);
     }
     public TransactionResponse createPaymentTransaction(String jwtToken, PaymentTransactionRequest request){
-        if (!isAccountOwnedByCurrentCustomer(jwtToken, request.fromAccountNumber())) {
-            throw new UnauthorizedAccountAccessException("Account does not belong to current user");
-        }
 
         Transaction transaction = transactionMapper.toTransaction(request);
+        Long customerId = jwtService.extractCustomerId(jwtToken);
 
-        performPayment(jwtToken, request.fromAccountNumber(), request.toAccountNumber(), request.amount());
+        performPayment(customerId, request.fromAccountNumber(), request.toAccountNumber(), request.amount());
         transaction.setStatus(TransactionStatus.APPROVED);
         transactionRepository.save(transaction);
         return transactionMapper.toResponse(transaction);
@@ -108,13 +100,13 @@ public class TransactionService {
     public TransactionResponse createRefundTransaction(String jwtToken, RefundTransactionRequest request) {
         Transaction originalTransaction = findTransactionById(request.transactionId());
 
-        if (!isAccountOwnedByCurrentCustomer(jwtToken, originalTransaction.getFromAccountNumber())) {
-            throw new UnauthorizedAccountAccessException("Account does not belong to current user");
-        }
+
 
         if (originalTransaction.getStatus() == TransactionStatus.REVERSED) {
             throw new TransactionAlreadyRefundedException("Transaction already refunded");
         }
+
+        Long customerId = jwtService.extractCustomerId(jwtToken);
 
         // Create refund transaction
         Transaction transaction = new Transaction();
@@ -125,7 +117,7 @@ public class TransactionService {
         transaction.setStatus(TransactionStatus.WAITING);
 
         // Perform the refund (reverse the direction)
-        performRefund(jwtToken,
+        performRefund(customerId,
                 transaction.getFromAccountNumber(),
                 transaction.getToAccountNumber(),
                 transaction.getAmount());
@@ -143,82 +135,70 @@ public class TransactionService {
 
 
 
-    public boolean isAccountOwnedByCurrentCustomer(String jwtToken, String accountNumber) {
-        String url = "http://account/account/manage/owned?accountNumber=" + accountNumber;
+
+
+
+    private void performDeposit(Long customerId, String accountNumber, BigDecimal amount) {
+        String url = "http://account/accounts/internal/deposit";
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(jwtToken);
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        String serviceToken = jwtService.generateServiceToken();
+        headers.setBearerAuth(serviceToken);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        // Create request body (DTO)
+        ServiceDepositBalanceRequest body = new ServiceDepositBalanceRequest(customerId, accountNumber, amount);
+        HttpEntity<ServiceDepositBalanceRequest> entity = new HttpEntity<>(body, headers);
 
         try {
-            ResponseEntity<Boolean> response = restTemplate.exchange(url, HttpMethod.GET, entity, Boolean.class);
-            Boolean owned = response.getBody();
-            return owned != null && owned;
-
-        } catch (HttpClientErrorException.NotFound e) {
-
-            throw new AccountNotFoundException("Account " + accountNumber + " was not found in account service");
-
+            restTemplate.exchange(url, HttpMethod.POST, entity, Void.class);
+        } catch (HttpClientErrorException e) {
+            throw new DepositFailedException("Deposit rejected:" + e.getStatusCode());
         } catch (RestClientException e) {
-
-            throw new AccountServiceUnavailableException("Account service is currently unavailable");
+            throw new DepositFailedException("Could not reach account service");
         }
     }
 
-
-    private void performDeposit(String jwtToken, String accountNumber, BigDecimal amount) {
-        String url = "http://account/account/deposit";
-
+    private void performPayment(Long customerId, String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
+        String url = "http://account/accounts/internal/payment";
+        String serviceToken = jwtService.generateServiceToken();
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(jwtToken);
+        headers.setBearerAuth(serviceToken);
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         // Create request body (DTO)
-        DepositBalanceRequest body = new DepositBalanceRequest(accountNumber, amount);
-        HttpEntity<DepositBalanceRequest> entity = new HttpEntity<>(body, headers);
+        ServicePaymentRequest body = new ServicePaymentRequest(customerId, fromAccountNumber, toAccountNumber, amount);
+        HttpEntity<ServicePaymentRequest> entity = new HttpEntity<>(body, headers);
 
         try {
             restTemplate.exchange(url, HttpMethod.POST, entity, Void.class);
-        } catch (HttpClientErrorException.NotFound e) {
-            throw new AccountNotFoundException("Account not found while trying to deposit");
+        } catch (HttpClientErrorException e) {
+           // log.error("Account service rejected payment: {}", e.getResponseBodyAsString());
+            throw new PaymentFailedException("Payment rejected: " + e.getStatusCode());
         } catch (RestClientException e) {
-            throw new AccountServiceUnavailableException("Failed to perform deposit");
+          //  log.error("Error communicating with account service", e);
+            throw new PaymentFailedException("Could not contact account service");
         }
     }
 
-    private void performPayment(String jwtToken, String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
-        String url = "http://account/account/payment";
+    private void performRefund(Long customerId,String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
+        String url = "http://account/accounts/internal/refund";
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(jwtToken);
+        String serviceToken = jwtService.generateServiceToken();
+        headers.setBearerAuth(serviceToken);
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         // Create request body (DTO)
-        PaymentBalanceRequest body = new PaymentBalanceRequest(fromAccountNumber, toAccountNumber, amount);
-        HttpEntity<PaymentBalanceRequest> entity = new HttpEntity<>(body, headers);
-
-
-            restTemplate.exchange(url, HttpMethod.POST, entity, Void.class);
-
-    }
-
-    private void performRefund(String jwtToken,String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
-        String url = "http://account/account/refund";
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(jwtToken);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        // Create request body (DTO)
-        RefundBalanceRequest body = new RefundBalanceRequest(amount, toAccountNumber,  fromAccountNumber);
-        HttpEntity<RefundBalanceRequest> entity = new HttpEntity<>(body, headers);
+        ServiceRefundBalanceRequest body = new ServiceRefundBalanceRequest(customerId, toAccountNumber,  fromAccountNumber, amount);
+        HttpEntity<ServiceRefundBalanceRequest> entity = new HttpEntity<>(body, headers);
 
         try {
             restTemplate.exchange(url, HttpMethod.POST, entity, Void.class);
-        } catch (HttpClientErrorException.NotFound e) {
-            throw new AccountNotFoundException("Account not found while trying to deposit");
+        } catch (HttpClientErrorException e) {
+            throw new RefundFailedException("Refund rejected:" + e.getStatusCode());
         } catch (RestClientException e) {
-            throw new AccountServiceUnavailableException("Failed to perform deposit");
+            throw new RefundFailedException("Could not reach account service");
         }
     }
 }
