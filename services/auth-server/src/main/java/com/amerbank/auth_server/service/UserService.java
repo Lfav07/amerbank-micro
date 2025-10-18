@@ -8,6 +8,7 @@ import com.amerbank.auth_server.repository.UserRepository;
 import com.amerbank.auth_server.security.JwtService;
 import com.amerbank.common_dto.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -24,18 +25,19 @@ import java.util.Set;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private  final AuthenticationManager authenticationManager;
-    private  final CustomerServiceClient customerServiceClient;
-    private  final JwtService jwtService;
+    private final AuthenticationManager authenticationManager;
+    private final CustomerServiceClient customerServiceClient;
+    private final JwtService jwtService;
+
 
     // -------------------------------------------------------------------------
     // Checkers
     // -------------------------------------------------------------------------
-
 
     /**
      * Checks if the given email is already taken (case-insensitive).
@@ -59,15 +61,22 @@ public class UserService {
     }
 
 
+    // -------------------------------------------------------------------------
+    // Registration
+    // -------------------------------------------------------------------------
+
     /**
      * Registers a new user with the ROLE_USER role.
      *
      * @param request the registration request containing email and password
-     * @return the saved User entity
      * @throws EmailAlreadyTakenException if the email is already in use
      */
-    public User registerUser(UserRegisterRequest request) {
+    public void registerUser(UserRegisterRequest request) {
+        String maskedEmail = maskEmail(request.email());
+        log.info("Attempting to register new user with email {} ...", maskedEmail);
+
         if (isEmailTaken(request.email())) {
+            log.warn("Registration failed: email {} is already taken.", maskedEmail);
             throw new EmailAlreadyTakenException("Email already taken");
         }
 
@@ -78,51 +87,11 @@ public class UserService {
                 .active(true)
                 .build();
 
-        return userRepository.save(user);
-    }
-    /**
-     * Logs-in a user and creates a jwt token.
-     * @param request the login request containing email and password
-     * @return AuthenticationResponse containing jwt token
-     * @throws UserNotFoundException if the user is not found.
-     */
-    public AuthenticationResponse login(UserLoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.email(), request.password())
-        );
+        log.debug("User entity prepared for registration: {}", user);
 
-        User user = findByEmail(request.email());
-        Long customerId = customerServiceClient.getCustomerIdByUserId(user.getId());
-        String token = jwtService.generateToken(user, customerId);
+        userRepository.save(user);
 
-        return new AuthenticationResponse(token);
-    }
-    /**
-     * Logs-in an admin and creates a jwt token.
-     * @param request the login request containing email and password
-     * @return AuthenticationResponse containing jwt token
-     * @throws UserNotFoundException if the user is not found.
-     */
-    public AuthenticationResponse loginAdmin(UserLoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.email(), request.password())
-        );
-
-        User user = findByEmail(request.email());
-        String token = jwtService.generateAdminToken(user);
-
-        return new AuthenticationResponse(token);
-    }
-
-
-    /**
-     * Authenticates a user if the password and email are correct.
-     * @param email The user's email.
-     * @param password The user's password.
-     */
-    public void  authenticate(String email, String password) {
-        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(email, password);
-        authenticationManager.authenticate(token);
+        log.info("User successfully registered with email {}", maskedEmail);
     }
 
     /**
@@ -146,6 +115,61 @@ public class UserService {
 
         return userRepository.save(user);
     }
+
+
+    // -------------------------------------------------------------------------
+    // Authentication & Login
+    // -------------------------------------------------------------------------
+
+    /**
+     * Authenticates a user if the password and email are correct.
+     * @param email The user's email.
+     * @param password The user's password.
+     */
+    public void authenticate(String email, String password) {
+        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(email, password);
+        authenticationManager.authenticate(token);
+    }
+
+    /**
+     * Logs-in a user and creates a jwt token.
+     * @param request the login request containing email and password
+     * @return AuthenticationResponse containing jwt token
+     * @throws UserNotFoundException if the user is not found.
+     */
+    public AuthenticationResponse login(UserLoginRequest request) {
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.email(), request.password())
+        );
+
+        User user = findByEmail(request.email());
+        Long customerId = customerServiceClient.getCustomerIdByUserId(user.getId());
+        String token = jwtService.generateToken(user, customerId);
+
+        return new AuthenticationResponse(token);
+    }
+
+    /**
+     * Logs-in an admin and creates a jwt token.
+     * @param request the login request containing email and password
+     * @return AuthenticationResponse containing jwt token
+     * @throws UserNotFoundException if the user is not found.
+     */
+    public AuthenticationResponse loginAdmin(UserLoginRequest request) {
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.email(), request.password())
+        );
+
+        User user = findByEmail(request.email());
+        String token = jwtService.generateAdminToken(user);
+
+        return new AuthenticationResponse(token);
+    }
+
+
+    // -------------------------------------------------------------------------
+    // Updates
+    // -------------------------------------------------------------------------
 
     /**
      * Updates the email address of a user.
@@ -173,7 +197,6 @@ public class UserService {
         userRepository.save(user);
     }
 
-
     /**
      * Updates the password of a user.
      *
@@ -182,7 +205,6 @@ public class UserService {
      * @throws UserNotFoundException if no user with the given ID exists
      */
     public void updatePassword(String email, PasswordUpdateRequest request) {
-
         authenticate(email, request.oldPassword());
         User user = findByEmail(email);
         user.setPassword(passwordEncoder.encode(request.newPassword()));
@@ -204,18 +226,9 @@ public class UserService {
     }
 
 
-    /**
-     * Deletes a user by ID.
-     *
-     * @param id the ID of the user to delete
-     * @throws UserNotFoundException if the user does not exist
-     */
-    public void deleteUser(Long id) throws UserNotFoundException {
-        if (!userRepository.existsById(id)) {
-            throw new UserNotFoundException("User not found");
-        }
-        userRepository.deleteById(id);
-    }
+    // -------------------------------------------------------------------------
+    // Retrieval
+    // -------------------------------------------------------------------------
 
     /**
      * Finds a user by email (case-insensitive).
@@ -241,11 +254,30 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException("User not found!"));
     }
 
-    @KafkaListener(topics = "customer.deleted", groupId = "auth-service")
-    public void handleCustomerDeleted(CustomerDeletedEvent event) {
-        userRepository.deleteById(event.getUserId());
+    /**
+     * Retrieves all users from the database.
+     */
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
     }
 
+
+    // -------------------------------------------------------------------------
+    // Deletion
+    // -------------------------------------------------------------------------
+
+    /**
+     * Deletes a user by ID.
+     *
+     * @param id the ID of the user to delete
+     * @throws UserNotFoundException if the user does not exist
+     */
+    public void deleteUser(Long id) throws UserNotFoundException {
+        if (!userRepository.existsById(id)) {
+            throw new UserNotFoundException("User not found");
+        }
+        userRepository.deleteById(id);
+    }
 
     /**
      * Deletes all users from the database.
@@ -254,12 +286,24 @@ public class UserService {
         userRepository.deleteAll();
     }
 
-    /**
-     * Retrieves all users from the database.
-     */
-    public List<User> getAllUsers() {
-       return userRepository.findAll();
+
+    // -------------------------------------------------------------------------
+    // Utilities
+    // -------------------------------------------------------------------------
+
+    private String maskEmail(String email) {
+        if (email == null || !email.contains("@")) return "***";
+        int at = email.indexOf('@');
+        return email.substring(0, Math.min(2, at)) + "***" + email.substring(at);
     }
 
 
+    // -------------------------------------------------------------------------
+    // Kafka Listener
+    // -------------------------------------------------------------------------
+
+    @KafkaListener(topics = "customer.deleted", groupId = "auth-service")
+    public void handleCustomerDeleted(CustomerDeletedEvent event) {
+        userRepository.deleteById(event.getUserId());
+    }
 }
