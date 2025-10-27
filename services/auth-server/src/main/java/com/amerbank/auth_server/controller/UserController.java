@@ -92,29 +92,9 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/users/{id}")
-    public ResponseEntity<Void> deleteUserById(@PathVariable Long id) {
-        userService.deleteUser(id);
-        return ResponseEntity.noContent().build();
-    }
 
-    @PatchMapping("/users/{id}/update-password")
-    public ResponseEntity<Void> updatePasswordById(
-            @PathVariable Long id,
-            @Valid @RequestBody AdminPasswordUpdateRequest request) {
 
-        userService.updatePasswordById(id, request.newPassword());
-        return ResponseEntity.noContent().build();
-    }
 
-    @PatchMapping("/users/{id}/update-email")
-    public ResponseEntity<Void> updateEmailById(
-            @PathVariable Long id,
-            @Valid @RequestBody AdminEmailUpdateRequest request) {
-
-        userService.updateEmailById(id, request.email());
-        return ResponseEntity.noContent().build();
-    }
 
     @GetMapping("/users/{id}")
     public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
