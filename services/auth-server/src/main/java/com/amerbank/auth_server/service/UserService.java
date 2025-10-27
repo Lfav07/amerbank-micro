@@ -50,11 +50,10 @@ public class UserService {
     }
 
     /**
-     * Finds a user by ID.
+     * Checks whether a user with the given ID exists.
      *
-     * @param id the user ID to search for
-     * @return the found User entity
-     * @throws UserNotFoundException if no user with the given ID exists
+     * @param id the user ID to check
+     * @return true if the user exists; false otherwise
      */
     public boolean existsById(Long id) {
         return userRepository.existsById(id);
@@ -98,10 +97,11 @@ public class UserService {
      * Registers a new admin user with the ROLE_ADMIN role.
      *
      * @param request the registration request containing email and password
-     * @return the saved User entity
      * @throws EmailAlreadyTakenException if the email is already in use
      */
-    public User registerAdmin(UserRegisterRequest request) {
+    public void registerAdmin(UserRegisterRequest request) {
+        String maskedEmail = maskEmail(request.email());
+
         if (isEmailTaken(request.email())) {
             throw new EmailAlreadyTakenException("Email already taken");
         }
@@ -112,8 +112,10 @@ public class UserService {
                 .roles(Set.of(Role.ROLE_ADMIN))
                 .active(true)
                 .build();
+        log.debug("Admin entity prepared for registration: {}", user);
 
-        return userRepository.save(user);
+        userRepository.save(user);
+        log.info("Admin successfully registered with email {}", maskedEmail);
     }
 
 
@@ -123,7 +125,8 @@ public class UserService {
 
     /**
      * Authenticates a user if the password and email are correct.
-     * @param email The user's email.
+     *
+     * @param email    The user's email.
      * @param password The user's password.
      */
     public void authenticate(String email, String password) {
@@ -133,11 +136,14 @@ public class UserService {
 
     /**
      * Logs-in a user and creates a jwt token.
+     *
      * @param request the login request containing email and password
      * @return AuthenticationResponse containing jwt token
      * @throws UserNotFoundException if the user is not found.
      */
     public AuthenticationResponse login(UserLoginRequest request) {
+        String maskedEmail = maskEmail(request.email());
+        log.debug("Attempting to log in user with email {}", maskedEmail);
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.email(), request.password())
         );
@@ -145,24 +151,27 @@ public class UserService {
         User user = findByEmail(request.email());
         Long customerId = customerServiceClient.getCustomerIdByUserId(user.getId());
         String token = jwtService.generateToken(user, customerId);
-
+        log.info("User successfully logged in with email {}", maskedEmail);
         return new AuthenticationResponse(token);
     }
 
     /**
      * Logs-in an admin and creates a jwt token.
+     *
      * @param request the login request containing email and password
      * @return AuthenticationResponse containing jwt token
      * @throws UserNotFoundException if the user is not found.
      */
     public AuthenticationResponse loginAdmin(UserLoginRequest request) {
+        String maskedEmail = maskEmail(request.email());
+        log.debug("Attempting to log in admin with email {}", maskedEmail);
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.email(), request.password())
         );
 
         User user = findByEmail(request.email());
         String token = jwtService.generateAdminToken(user);
-
+        log.info("Admin successfully logged in with email {}", maskedEmail);
         return new AuthenticationResponse(token);
     }
 
@@ -174,54 +183,65 @@ public class UserService {
     /**
      * Updates the email address of a user.
      *
-     * @param id the ID of the user to update
+     * @param id    the ID of the user to update
      * @param email the new email address
      * @throws UserNotFoundException if no user with the given ID exists
      */
+    @Transactional
     public void updateEmail(Long id, String email) {
+        String maskedEmail = maskEmail(email);
         User user = findById(id);
-        user.setEmail(email);
+        user.setEmail(email.trim().toLowerCase());
+        log.info("User with id {} successfully updated their email to {}", id, maskedEmail);
         userRepository.save(user);
     }
 
     /**
      * Updates the email address of a user.
      *
-     * @param id the ID of the user to update
-     * @param email the new email address
+     * @param adminId the ID of the current logged in admin
+     * @param id      the ID of the user to update
+     * @param email   the new email address
      * @throws UserNotFoundException if no user with the given ID exists
      */
-    public void updateEmailById(Long id, String email) {
+    @Transactional
+    public void updateEmailById(Long adminId, Long id, String email) {
         User user = findById(id);
-        user.setEmail(email);
+        user.setEmail(email.trim().toLowerCase());
+        log.info("Admin with id {} successfully updated user with id {} 's email", adminId, id);
         userRepository.save(user);
     }
 
     /**
      * Updates the password of a user.
      *
-     * @param email the email of the user to update
+     * @param email   the email of the user to update
      * @param request the old and new password
      * @throws UserNotFoundException if no user with the given ID exists
      */
+    @Transactional
     public void updatePassword(String email, PasswordUpdateRequest request) {
         authenticate(email, request.oldPassword());
         User user = findByEmail(email);
-        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        String password = passwordEncoder.encode(request.newPassword());
+        user.setPassword(password);
+        log.info("User with id {} successfully updated their password", user.getId());
         userRepository.save(user);
     }
 
     /**
      * Updates the password of a user.
      *
-     * @param id the id of the user to update
+     * @param adminId     the ID of the current logged in admin
+     * @param id          the id of the user to update
      * @param newPassword the new password
      * @throws UserNotFoundException if no user with the given ID exists
      */
     @Transactional
-    public void updatePasswordById(Long id, String newPassword) {
+    public void updatePasswordById(Long adminId, Long id, String newPassword) {
         User user = findById(id);
         user.setPassword(passwordEncoder.encode(newPassword));
+        log.info("Admin with id {} successfully updated user with id {} 's password", adminId, id);
         userRepository.save(user);
     }
 
@@ -269,13 +289,17 @@ public class UserService {
     /**
      * Deletes a user by ID.
      *
-     * @param id the ID of the user to delete
+     * @param adminId the ID of the current logged in admin
+     * @param id      the ID of the user to delete
      * @throws UserNotFoundException if the user does not exist
      */
-    public void deleteUser(Long id) throws UserNotFoundException {
+    @Transactional
+    public void deleteUser(Long adminId, Long id) throws UserNotFoundException {
         if (!userRepository.existsById(id)) {
             throw new UserNotFoundException("User not found");
         }
+
+        log.info("Admin with id {} successfully deleted user with id {}", adminId, id);
         userRepository.deleteById(id);
     }
 
@@ -303,7 +327,13 @@ public class UserService {
     // -------------------------------------------------------------------------
 
     @KafkaListener(topics = "customer.deleted", groupId = "auth-service")
+    @Transactional
     public void handleCustomerDeleted(CustomerDeletedEvent event) {
+        if (!userRepository.existsById(event.getUserId())) {
+            log.warn("Received customer.deleted event for non-existing user {}", event.getUserId());
+            return;
+        }
         userRepository.deleteById(event.getUserId());
+        log.info("User with id {} successfully deleted by customer deletion", event.getUserId());
     }
 }
