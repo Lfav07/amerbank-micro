@@ -243,8 +243,8 @@ public class AccountService {
      * @throws AccountNotFoundException if the account is not found.
      */
     @CachePut(value = "accounts", key = "#request.accountNumber()")
-    public AccountResponse updateAccountType(AccountUpdateTypeRequest request) {
-        Account existing = findAccountEntity(request.accountNumber());
+    public AccountResponse updateAccountType(String accountNumber, AccountUpdateTypeRequest request) {
+        Account existing = findAccountEntity(accountNumber);
         Long customerId = existing.getCustomerId();
 
         if (accountRepository.existsByCustomerIdAndType(customerId, request.type())) {
@@ -263,8 +263,8 @@ public class AccountService {
      * @throws AccountNotFoundException if the account is not found.
      */
     @CachePut(value = "accounts", key = "#request.accountNumber()")
-    public AccountResponse updateAccountStatus(AccountUpdateStatusRequest request) {
-        Account existing = findAccountEntity(request.accountNumber());
+    public AccountResponse updateAccountStatus(String accountNumber, AccountUpdateStatusRequest request) {
+        Account existing = findAccountEntity(accountNumber);
         existing.setStatus(request.status());
         return accountMapper.fromAccount(accountRepository.save(existing));
     }
@@ -464,10 +464,9 @@ public class AccountService {
      * @return true if the given accountNumber belongs to logged in customer
      * @throws AccountNotFoundException if the account is not found.
      */
-    public boolean isAccountOwnedByCurrentCustomer(Long customerId, String accountNumber) {
+    public boolean isAccountOwnedByCustomer(Long customerId, String accountNumber) {
         Account account = findAccountEntity(accountNumber);
         return account.getCustomerId().equals(customerId);
     }
-
 
 }
