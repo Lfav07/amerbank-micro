@@ -105,14 +105,17 @@ public class AccountController {
     // ============================================================
 
     /**
-     * Updates the type of an account.
+     * Updates the type of account.
      *
      * @param request the account update request
      * @return the updated account information
      */
     @PutMapping("/{accountNumber}/type")
-    public ResponseEntity<AccountResponse> updateAccountType(@RequestBody AccountUpdateTypeRequest request) {
-        return ResponseEntity.ok(accountService.updateAccountType(request));
+    public ResponseEntity<AccountResponse> updateAccountType(
+            @PathVariable String accountNumber,
+            @RequestBody AccountUpdateTypeRequest request) {
+
+        return ResponseEntity.ok(accountService.updateAccountType(accountNumber, request));
     }
 
     /**
@@ -122,8 +125,10 @@ public class AccountController {
      * @return the updated account information
      */
     @PutMapping("/{accountNumber}/status")
-    public ResponseEntity<AccountResponse> updateAccountStatus(@RequestBody AccountUpdateStatusRequest request) {
-        return ResponseEntity.ok(accountService.updateAccountStatus(request));
+    public ResponseEntity<AccountResponse> updateAccountStatus(
+            @PathVariable String accountNumber,
+            @RequestBody AccountUpdateStatusRequest request) {
+        return ResponseEntity.ok(accountService.updateAccountStatus(accountNumber, request));
     }
 
     /**
@@ -167,17 +172,33 @@ public class AccountController {
     /**
      * Checks if the specified account number belongs to the currently authenticated customer.
      *
-     * @param accountNumber    the account number to verify ownership of
+     * @param request dto containing the account number to verify ownership of
      * @param jwtUserPrincipal the authenticated customer's data
      * @return true if the account belongs to the current customer, false otherwise
      */
-    @GetMapping("/me/owned")
+    @PostMapping("/me/owned")
     public ResponseEntity<Boolean> isAccountOwnedByCurrentCustomer(
-            @RequestParam String accountNumber,
+            @RequestBody MyAccountOwnedRequest request,
             @AuthenticationPrincipal JwtUserPrincipal jwtUserPrincipal) {
 
-        return ResponseEntity.ok(accountService.isAccountOwnedByCurrentCustomer(
-                jwtUserPrincipal.customerId(), accountNumber));
+        return ResponseEntity.ok(
+                accountService.isAccountOwnedByCustomer(jwtUserPrincipal.customerId(), request.accountNumber())
+        );
+    }
+
+
+    /**
+     * Checks if the specified account number belongs to the currently authenticated customer.
+     *
+     * @param request the verification request containg the customer id and account number
+     * @return true if the account belongs to the current customer, false otherwise
+     */
+    @PostMapping("/internal/owned")
+    public ResponseEntity<Boolean> isAccountOwnedByCustomer(
+            @RequestBody ServiceAccountOwnedRequest request) {
+
+        return ResponseEntity.ok(accountService.isAccountOwnedByCustomer(
+                request.customerId(),  request.accountNumber()));
     }
 
     // ============================================================
