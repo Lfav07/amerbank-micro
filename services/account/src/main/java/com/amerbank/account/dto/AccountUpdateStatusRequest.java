@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotBlank;
 
 public record AccountUpdateStatusRequest(
         @NotBlank
-        String accountNumber,
         AccountStatus status
 ) {
 }
