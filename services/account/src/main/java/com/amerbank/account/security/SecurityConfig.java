@@ -28,7 +28,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Endpoints for authenticated users
                         .requestMatchers(
-                                "/accounts",                        // register account
+                                "/accounts/register",                        // register account
                                 "/accounts/me",                      // get my accounts
                                 "/accounts/me/owned",                // check ownership
                                 "/accounts/me/balances",             // get balances

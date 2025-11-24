@@ -34,7 +34,7 @@ public class AccountController {
      * @param jwtUserPrincipal the authenticated customer's data
      * @return a success message or an error response
      */
-    @PostMapping
+    @PostMapping("/register")
     public ResponseEntity<?> registerAccount(
             @RequestBody AccountRequest accountRequest,
             @AuthenticationPrincipal JwtUserPrincipal jwtUserPrincipal) {
