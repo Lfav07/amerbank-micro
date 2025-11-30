@@ -30,35 +30,78 @@ public class TransactionController {
         return ResponseEntity.ok(transactionMapper.toResponse(transaction));
     }
 
-    @GetMapping("/from/{fromAccount}")
-    public ResponseEntity<List<Transaction>> getTransactionsByFromAccount(@PathVariable String fromAccount) {
-        return ResponseEntity.ok(transactionService.findTransactionsByFromAccountNumber(fromAccount));
+    @GetMapping("/from-account/{fromAccount}")
+    public ResponseEntity<List<TransactionResponse>> getByFromAccount(@PathVariable String fromAccount) {
+        return ResponseEntity.ok(
+                transactionService.findTransactionsByFromAccountNumber(fromAccount)
+                        .stream().map(transactionMapper::toResponse).toList()
+        );
     }
 
-    @GetMapping("/to/{toAccount}")
-    public ResponseEntity<List<Transaction>> getTransactionsByToAccount(@PathVariable String toAccount) {
-        return ResponseEntity.ok(transactionService.findTransactionsByToAccountNumber(toAccount));
+    @GetMapping(params = {"fromAccount", "toAccount"})
+    public ResponseEntity<List<TransactionResponse>> getByFromAndToAccount(
+            @RequestParam String fromAccount,
+            @RequestParam String toAccount) {
+        List<TransactionResponse> response = transactionService
+                .findTransactionsByFromAndToAccountNumber(fromAccount, toAccount)
+                .stream()
+                .map(transactionMapper::toResponse)
+                .toList();
+
+        return ResponseEntity.ok(response);
     }
+
+
+    @GetMapping("/from/{fromAccount}/to/{toAccount}")
+    public ResponseEntity<List<TransactionResponse>> getByFromAndTo(
+            @PathVariable String fromAccount,
+            @PathVariable String toAccount
+    ) {
+        List<Transaction> list = transactionService.findTransactionsByFromAndToAccountNumber(fromAccount, toAccount);
+        return ResponseEntity.ok(
+                list.stream().map(transactionMapper::toResponse).toList()
+        );
+    }
+
+
+    @GetMapping("/to-account/{toAccount}")
+    public ResponseEntity<List<TransactionResponse>> getByToAccount(@PathVariable String toAccount) {
+        return ResponseEntity.ok(
+                transactionService.findTransactionsByToAccountNumber(toAccount)
+                        .stream().map(transactionMapper::toResponse).toList()
+        );
+    }
+
 
     @GetMapping("/status/{status}")
-    public ResponseEntity<List<Transaction>> getTransactionsByStatus(@PathVariable TransactionStatus status) {
-        return ResponseEntity.ok(transactionService.findTransactionsByStatus(status));
+    public ResponseEntity<List<TransactionResponse>> getByStatus(@PathVariable TransactionStatus status) {
+        return ResponseEntity.ok(
+                transactionService.findTransactionsByStatus(status)
+                        .stream().map(transactionMapper::toResponse).toList()
+        );
     }
+
 
     @GetMapping("/type/{type}")
-    public ResponseEntity<List<Transaction>> getTransactionsByType(@PathVariable TransactionType type) {
-        return ResponseEntity.ok(transactionService.findTransactionsByType(type));
+    public ResponseEntity<List<TransactionResponse>> getByType(@PathVariable TransactionType type) {
+        return ResponseEntity.ok(
+                transactionService.findTransactionsByType(type)
+                        .stream().map(transactionMapper::toResponse).toList()
+        );
     }
 
-    @GetMapping("/my/{accountNumber}")
-    public ResponseEntity<List<Transaction>> getMyTransactions(
+
+    @GetMapping("/account/{accountNumber}/me")
+    public ResponseEntity<List<TransactionResponse>> getMyTransactions(
             @RequestHeader("Authorization") String authorization,
             @PathVariable String accountNumber
     ) {
-        String jwtToken = authorization.substring(7);
-        return ResponseEntity.ok(transactionService.getMyTransactions(jwtToken, accountNumber));
+        String jwt = authorization.substring(7);
+        return ResponseEntity.ok(
+                transactionService.getMyTransactions(jwt, accountNumber)
+                        .stream().map(transactionMapper::toResponse).toList()
+        );
     }
-
     // --- CREATE TRANSACTIONS ---
 
     @PostMapping("/deposit")
