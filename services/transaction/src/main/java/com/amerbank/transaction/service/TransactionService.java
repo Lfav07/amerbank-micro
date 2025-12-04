@@ -12,6 +12,7 @@ import com.amerbank.transaction.model.TransactionType;
 import com.amerbank.transaction.security.JwtService;
 import com.amerbank.transaction.repository.TransactionRepository;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
@@ -24,6 +25,7 @@ import java.util.UUID;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final TransactionMapper transactionMapper;
@@ -67,7 +69,10 @@ public class TransactionService {
     }
 
     public List<Transaction> getMyTransactions(String jwtToken, String accountNumber) {
-
+        Long customerId = jwtService.extractCustomerId(jwtToken);
+        if (!isAccountOwnedByCurrentCustomer(accountNumber, customerId)) {
+            throw  new UnauthorizedAccountAccessException("Account does not belong to current User");
+        }
         return  findByFromAccountNumberOrToAccountNumber(accountNumber);
 
     }
@@ -132,9 +137,27 @@ public class TransactionService {
         return transactionMapper.toResponse(transaction);
     }
 
+    private boolean isAccountOwnedByCurrentCustomer(String accountNumber, Long customerId) {
+        String url = "http://account/accounts/internal/owned";
+        HttpHeaders headers = new HttpHeaders();
+        String serviceToken = jwtService.generateServiceToken();
+        headers.setBearerAuth(serviceToken);
+        headers.setContentType(MediaType.APPLICATION_JSON);
 
+        // Create request body (DTO)
+        ServiceAccountOwnedRequest body = new ServiceAccountOwnedRequest(customerId, accountNumber);
+        HttpEntity<ServiceAccountOwnedRequest> entity = new HttpEntity<>(body, headers);
 
-
+        ResponseEntity<Boolean> isOwned;
+        try {
+           isOwned = restTemplate.exchange(url, HttpMethod.POST, entity, Boolean.class);
+        } catch (HttpClientErrorException e) {
+            throw new AccountServiceUnavailableException("An error occurred." + e.getStatusCode());
+        } catch (RestClientException e) {
+            throw new AccountServiceUnavailableException("Could not reach account service");
+        }
+       return Boolean.TRUE.equals(isOwned.getBody());
+    }
 
 
 

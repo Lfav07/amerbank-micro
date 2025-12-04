@@ -305,6 +305,7 @@ public class UserService {
 
     /**
      * Deletes all users from the database.
+     * Demo only.
      */
     public void deleteAllUsers() {
         userRepository.deleteAll();
@@ -320,8 +321,7 @@ public class UserService {
         int at = email.indexOf('@');
         return email.substring(0, Math.min(2, at)) + "***" + email.substring(at);
     }
-
-
+    
     // -------------------------------------------------------------------------
     // Kafka Listener
     // -------------------------------------------------------------------------

@@ -89,6 +89,8 @@ public class AccountController {
         return ResponseEntity.ok(accounts);
     }
 
+
+
     /**
      * Retrieves account details by account number.
      *
@@ -172,7 +174,7 @@ public class AccountController {
     /**
      * Checks if the specified account number belongs to the currently authenticated customer.
      *
-     * @param request dto containing the account number to verify ownership of
+     * @param request          dto containing the account number to verify ownership of
      * @param jwtUserPrincipal the authenticated customer's data
      * @return true if the account belongs to the current customer, false otherwise
      */
@@ -198,7 +200,7 @@ public class AccountController {
             @RequestBody ServiceAccountOwnedRequest request) {
 
         return ResponseEntity.ok(accountService.isAccountOwnedByCustomer(
-                request.customerId(),  request.accountNumber()));
+                request.customerId(), request.accountNumber()));
     }
 
     // ============================================================
