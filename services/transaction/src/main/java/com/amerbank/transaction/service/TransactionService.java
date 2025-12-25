@@ -216,7 +216,7 @@ public class TransactionService {
         } catch (HttpClientErrorException e) {
             throw exceptionFactory.apply("Rejected: " + e.getStatusCode());
         } catch (RestClientException e) {
-            throw exceptionFactory.apply("Service unavailable");
+            throw exceptionFactory.apply("Account service unavailable");
         }
     }
 }

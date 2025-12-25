@@ -22,11 +22,13 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain chain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
+                .securityMatcher("/transactions/**")
                 .authorizeHttpRequests(auth -> auth
-                       // .requestMatchers("/account/register", "/account/manage/me/", "/account/manage/me/**").authenticated()
-                        // testing purposes
-                       // .requestMatchers("/account/deposit", "/account/payment/", "/account/refund/**").authenticated()
-                        .anyRequest().permitAll())
+                        .requestMatchers(
+                                "/transactions/user/**",
+                                "/account/{accountNumber}/me"
+                        ).authenticated()
+                        .anyRequest().hasRole("ADMIN"))
                 .sessionManagement(sess -> sess
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .httpBasic(httpBasic -> httpBasic.disable())

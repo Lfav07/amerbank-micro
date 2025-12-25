@@ -23,6 +23,10 @@ public class TransactionController {
     private final TransactionService transactionService;
     private final TransactionMapper transactionMapper;
 
+    String extractJwt(String authorization){
+        return authorization.replace("Bearer ", "");
+    }
+
     // --- GET TRANSACTIONS ---
 
     @GetMapping("/{id}")
@@ -97,7 +101,7 @@ public class TransactionController {
             @RequestHeader("Authorization") String authorization,
             @PathVariable String accountNumber
     ) {
-        String jwt = authorization.substring(7);
+        String jwt = extractJwt(authorization);
         return ResponseEntity.ok(
                 transactionService.getMyTransactions(jwt, accountNumber)
                         .stream().map(transactionMapper::toResponse).toList()
@@ -105,35 +109,35 @@ public class TransactionController {
     }
     // --- CREATE TRANSACTIONS ---
 
-    @PostMapping("/deposit")
+    @PostMapping("/user/deposit")
     public ResponseEntity<TransactionResponse> createDeposit(
             @RequestHeader("Authorization") String authorization,
             @RequestHeader("idempotency-key") @NotBlank String idempotencyKey,
             @RequestBody DepositTransactionRequest request
     ) {
-        String jwtToken = authorization.replace("Bearer ", "");
+        String jwtToken = extractJwt(authorization);
         TransactionResponse response = transactionService.createDepositTransaction(jwtToken, idempotencyKey, request);
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/payment")
+    @PostMapping("/user/payment")
     public ResponseEntity<TransactionResponse> createPayment(
             @RequestHeader("Authorization") String authorization,
             @RequestHeader("idempotency-key") @NotBlank String idempotencyKey,
             @RequestBody PaymentTransactionRequest request
     ) {
-        String jwtToken = authorization.replace("Bearer ", "");
+        String jwtToken = extractJwt(authorization);
         TransactionResponse response = transactionService.createPaymentTransaction(jwtToken, idempotencyKey, request);
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/refund")
+    @PostMapping("/user/refund")
     public ResponseEntity<TransactionResponse> createRefund(
             @RequestHeader("Authorization") String authorization,
             @RequestHeader("idempotency-key") @NotBlank String idempotencyKey,
             @RequestBody RefundTransactionRequest request
     ) {
-        String jwtToken = authorization.replace("Bearer ", "");
+        String jwtToken = extractJwt(authorization);
         TransactionResponse response = transactionService.createRefundTransaction(jwtToken, idempotencyKey, request);
         return ResponseEntity.ok(response);
     }
