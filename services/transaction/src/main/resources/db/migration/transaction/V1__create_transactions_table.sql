@@ -9,6 +9,7 @@ CREATE TABLE transactions (
    type VARCHAR(20) NOT NULL,
    status VARCHAR(20) NOT NULL,
    failure_reason VARCHAR(255),
+   idempotency_key VARCHAR(255) UNIQUE  NOT NULL,
    created_at TIMESTAMP DEFAULT now(),
    updated_at TIMESTAMP DEFAULT now()
 );

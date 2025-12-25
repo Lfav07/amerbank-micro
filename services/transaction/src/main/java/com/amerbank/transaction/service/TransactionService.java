@@ -22,18 +22,21 @@ import org.springframework.web.client.RestTemplate;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Function;
 
 @Service
 @AllArgsConstructor
 @Slf4j
 public class TransactionService {
+
     private final TransactionRepository transactionRepository;
     private final TransactionMapper transactionMapper;
     private final RestTemplate restTemplate;
     private final JwtService jwtService;
+    private final IdempotencyService idempotencyService;
 
     public Transaction findTransactionById(UUID id) {
-        return  transactionRepository.findById(id)
+        return transactionRepository.findById(id)
                 .orElseThrow(() -> new TransactionNotFoundException("Transaction not found"));
     }
 
@@ -45,183 +48,175 @@ public class TransactionService {
         return transactionRepository.findByToAccountNumber(toAccount);
     }
 
-    public  List<Transaction> findTransactionsByFromAndToAccountNumber(String fromAccount, String toAccount) {
-        return  transactionRepository.findByFromAccountNumberAndToAccountNumber(fromAccount, toAccount);
+    public List<Transaction> findTransactionsByFromAndToAccountNumber(String fromAccount, String toAccount) {
+        return transactionRepository.findByFromAccountNumberAndToAccountNumber(fromAccount, toAccount);
     }
 
-    public  List<Transaction> findTransactionsByStatus(TransactionStatus status) {
-        return  transactionRepository.findByStatus(status);
-    }
-    public  List<Transaction> findTransactionsByType(TransactionType type) {
-        return  transactionRepository.findByType(type);
+    public List<Transaction> findTransactionsByStatus(TransactionStatus status) {
+        return transactionRepository.findByStatus(status);
     }
 
-    public  List<Transaction> findByFromAccountNumberAndStatus(String fromAccount, TransactionStatus status){
-        return  transactionRepository.findByFromAccountNumberAndStatus(fromAccount, status);
+    public List<Transaction> findTransactionsByType(TransactionType type) {
+        return transactionRepository.findByType(type);
     }
 
-    public  List<Transaction> findByFromAccountNumberOrToAccountNumber(String accountNumber){
-        return  transactionRepository.findByFromAccountNumberOrToAccountNumber(accountNumber, accountNumber);
+    public List<Transaction> findByFromAccountNumberAndStatus(String fromAccount, TransactionStatus status) {
+        return transactionRepository.findByFromAccountNumberAndStatus(fromAccount, status);
     }
 
-    public  List<Transaction> findByFromAccountNumberAndType(String fromAccount, TransactionType type){
-        return  transactionRepository.findByFromAccountNumberAndType(fromAccount, type);
+    public List<Transaction> findByFromAccountNumberOrToAccountNumber(String accountNumber) {
+        return transactionRepository.findByFromAccountNumberOrToAccountNumber(accountNumber, accountNumber);
+    }
+
+    public List<Transaction> findByFromAccountNumberAndType(String fromAccount, TransactionType type) {
+        return transactionRepository.findByFromAccountNumberAndType(fromAccount, type);
     }
 
     public List<Transaction> getMyTransactions(String jwtToken, String accountNumber) {
         Long customerId = jwtService.extractCustomerId(jwtToken);
         if (!isAccountOwnedByCurrentCustomer(accountNumber, customerId)) {
-            throw  new UnauthorizedAccountAccessException("Account does not belong to current User");
+            throw new UnauthorizedAccountAccessException("Account does not belong to current User");
         }
-        return  findByFromAccountNumberOrToAccountNumber(accountNumber);
-
+        return findByFromAccountNumberOrToAccountNumber(accountNumber);
     }
 
-    public TransactionResponse createDepositTransaction(String jwtToken, DepositTransactionRequest request){
-
-
+    public TransactionResponse createDepositTransaction(
+            String jwtToken,
+            String idempotencyKey,
+            DepositTransactionRequest request
+    ) {
 
         Long customerId = jwtService.extractCustomerId(jwtToken);
 
-        Transaction transaction = transactionMapper.toTransaction(request);
-
-        performDeposit(customerId, request.toAccountNumber(), request.amount());
-        transaction.setStatus(TransactionStatus.APPROVED);
-        transactionRepository.save(transaction);
-        return transactionMapper.toResponse(transaction);
+        return idempotencyService.execute(
+                idempotencyKey,
+                () -> transactionMapper.toTransaction(request),
+                tx -> performDeposit(customerId, request.toAccountNumber(), request.amount()),
+                transactionMapper::toResponse
+        );
     }
-    public TransactionResponse createPaymentTransaction(String jwtToken, PaymentTransactionRequest request){
 
-        Transaction transaction = transactionMapper.toTransaction(request);
+    public TransactionResponse createPaymentTransaction(
+            String jwtToken,
+            String idempotencyKey,
+            PaymentTransactionRequest request
+    ) {
+
         Long customerId = jwtService.extractCustomerId(jwtToken);
 
-        performPayment(customerId, request.fromAccountNumber(), request.toAccountNumber(), request.amount());
-        transaction.setStatus(TransactionStatus.APPROVED);
-        transactionRepository.save(transaction);
-        return transactionMapper.toResponse(transaction);
-
+        return idempotencyService.execute(
+                idempotencyKey,
+                () -> transactionMapper.toTransaction(request),
+                tx -> performPayment(
+                        customerId,
+                        request.fromAccountNumber(),
+                        request.toAccountNumber(),
+                        request.amount()
+                ),
+                transactionMapper::toResponse
+        );
     }
 
-    public TransactionResponse createRefundTransaction(String jwtToken, RefundTransactionRequest request) {
-        Transaction originalTransaction = findTransactionById(request.transactionId());
+    public TransactionResponse createRefundTransaction(
+            String jwtToken,
+            String idempotencyKey,
+            RefundTransactionRequest request
+    ) {
 
+        Transaction original = findTransactionById(request.transactionId());
 
-
-        if (originalTransaction.getStatus() == TransactionStatus.REVERSED) {
+        if (original.getStatus() == TransactionStatus.REVERSED) {
             throw new TransactionAlreadyRefundedException("Transaction already refunded");
         }
 
         Long customerId = jwtService.extractCustomerId(jwtToken);
 
-        // Create refund transaction
-        Transaction transaction = new Transaction();
-        transaction.setAmount(originalTransaction.getAmount());
-        transaction.setFromAccountNumber(originalTransaction.getToAccountNumber());
-        transaction.setToAccountNumber(originalTransaction.getFromAccountNumber());
-        transaction.setType(TransactionType.REFUND);
-        transaction.setStatus(TransactionStatus.WAITING);
+        return idempotencyService.execute(
+                idempotencyKey,
+                () -> {
+                    Transaction tx = new Transaction();
+                    tx.setAmount(original.getAmount());
+                    tx.setFromAccountNumber(original.getToAccountNumber());
+                    tx.setToAccountNumber(original.getFromAccountNumber());
+                    tx.setType(TransactionType.REFUND);
+                    return tx;
+                },
+                tx -> {
+                    performRefund(
+                            customerId,
+                            tx.getFromAccountNumber(),
+                            tx.getToAccountNumber(),
+                            tx.getAmount()
+                    );
+                    original.setStatus(TransactionStatus.REVERSED);
+                    transactionRepository.save(original);
+                },
+                transactionMapper::toResponse
+        );
 
-        // Perform the refund (reverse the direction)
-        performRefund(customerId,
-                transaction.getFromAccountNumber(),
-                transaction.getToAccountNumber(),
-                transaction.getAmount());
-
-
-        originalTransaction.setStatus(TransactionStatus.REVERSED);
-        transaction.setStatus(TransactionStatus.APPROVED);
-
-        transactionRepository.save(transaction);
-        transactionRepository.save(originalTransaction);
-
-        return transactionMapper.toResponse(transaction);
     }
 
     private boolean isAccountOwnedByCurrentCustomer(String accountNumber, Long customerId) {
         String url = "http://account/accounts/internal/owned";
+
         HttpHeaders headers = new HttpHeaders();
-        String serviceToken = jwtService.generateServiceToken();
-        headers.setBearerAuth(serviceToken);
+        headers.setBearerAuth(jwtService.generateServiceToken());
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        // Create request body (DTO)
-        ServiceAccountOwnedRequest body = new ServiceAccountOwnedRequest(customerId, accountNumber);
-        HttpEntity<ServiceAccountOwnedRequest> entity = new HttpEntity<>(body, headers);
+        HttpEntity<ServiceAccountOwnedRequest> entity =
+                new HttpEntity<>(new ServiceAccountOwnedRequest(customerId, accountNumber), headers);
 
-        ResponseEntity<Boolean> isOwned;
         try {
-           isOwned = restTemplate.exchange(url, HttpMethod.POST, entity, Boolean.class);
+            return Boolean.TRUE.equals(
+                    restTemplate.exchange(url, HttpMethod.POST, entity, Boolean.class).getBody()
+            );
         } catch (HttpClientErrorException e) {
             throw new AccountServiceUnavailableException("An error occurred." + e.getStatusCode());
         } catch (RestClientException e) {
             throw new AccountServiceUnavailableException("Could not reach account service");
         }
-       return Boolean.TRUE.equals(isOwned.getBody());
     }
 
-
-
     private void performDeposit(Long customerId, String accountNumber, BigDecimal amount) {
-        String url = "http://account/accounts/internal/deposit";
-
-        HttpHeaders headers = new HttpHeaders();
-        String serviceToken = jwtService.generateServiceToken();
-        headers.setBearerAuth(serviceToken);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        // Create request body (DTO)
-        ServiceDepositBalanceRequest body = new ServiceDepositBalanceRequest(customerId, accountNumber, amount);
-        HttpEntity<ServiceDepositBalanceRequest> entity = new HttpEntity<>(body, headers);
-
-        try {
-            restTemplate.exchange(url, HttpMethod.POST, entity, Void.class);
-        } catch (HttpClientErrorException e) {
-            throw new DepositFailedException("Deposit rejected:" + e.getStatusCode());
-        } catch (RestClientException e) {
-            throw new DepositFailedException("Could not reach account service");
-        }
+        executeAccountCall(
+                "http://account/accounts/internal/deposit",
+                new ServiceDepositBalanceRequest(customerId, accountNumber, amount),
+                DepositFailedException::new
+        );
     }
 
     private void performPayment(Long customerId, String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
-        String url = "http://account/accounts/internal/payment";
-        String serviceToken = jwtService.generateServiceToken();
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(serviceToken);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        // Create request body (DTO)
-        ServicePaymentRequest body = new ServicePaymentRequest(customerId, fromAccountNumber, toAccountNumber, amount);
-        HttpEntity<ServicePaymentRequest> entity = new HttpEntity<>(body, headers);
-
-        try {
-            restTemplate.exchange(url, HttpMethod.POST, entity, Void.class);
-        } catch (HttpClientErrorException e) {
-           // log.error("Account service rejected payment: {}", e.getResponseBodyAsString());
-            throw new PaymentFailedException("Payment rejected: " + e.getStatusCode());
-        } catch (RestClientException e) {
-          //  log.error("Error communicating with account service", e);
-            throw new PaymentFailedException("Could not contact account service");
-        }
+        executeAccountCall(
+                "http://account/accounts/internal/payment",
+                new ServicePaymentRequest(customerId, fromAccountNumber, toAccountNumber, amount),
+                PaymentFailedException::new
+        );
     }
 
-    private void performRefund(Long customerId,String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
-        String url = "http://account/accounts/internal/refund";
+    private void performRefund(Long customerId, String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
+        executeAccountCall(
+                "http://account/accounts/internal/refund",
+                new ServiceRefundBalanceRequest(customerId, toAccountNumber, fromAccountNumber, amount),
+                RefundFailedException::new
+        );
+    }
+
+    private void executeAccountCall(
+            String url,
+            Object body,
+            Function<String, RuntimeException> exceptionFactory
+    ) {
 
         HttpHeaders headers = new HttpHeaders();
-        String serviceToken = jwtService.generateServiceToken();
-        headers.setBearerAuth(serviceToken);
+        headers.setBearerAuth(jwtService.generateServiceToken());
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        // Create request body (DTO)
-        ServiceRefundBalanceRequest body = new ServiceRefundBalanceRequest(customerId, toAccountNumber,  fromAccountNumber, amount);
-        HttpEntity<ServiceRefundBalanceRequest> entity = new HttpEntity<>(body, headers);
-
         try {
-            restTemplate.exchange(url, HttpMethod.POST, entity, Void.class);
+            restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(body, headers), Void.class);
         } catch (HttpClientErrorException e) {
-            throw new RefundFailedException("Refund rejected:" + e.getStatusCode());
+            throw exceptionFactory.apply("Rejected: " + e.getStatusCode());
         } catch (RestClientException e) {
-            throw new RefundFailedException("Could not reach account service");
+            throw exceptionFactory.apply("Service unavailable");
         }
     }
 }

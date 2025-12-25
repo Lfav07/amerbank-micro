@@ -17,6 +17,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
+@Table(name = "transactions", schema = "transaction")
 public class Transaction {
 
     @Id
@@ -26,6 +27,7 @@ public class Transaction {
 
     @Column(nullable = false)
     private BigDecimal amount;
+
 
     private String description;
 
@@ -48,6 +50,9 @@ public class Transaction {
 
     @Column(nullable = true)
     private String failureReason;
+
+    @Column(name = "idempotency_key", nullable = false, unique = true)
+    private String idempotencyKey;
 
 
     @Column(name = "created_at", updatable = false)

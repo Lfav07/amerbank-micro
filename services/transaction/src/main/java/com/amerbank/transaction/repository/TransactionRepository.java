@@ -32,6 +32,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
 
     List<Transaction> findByFromAccountNumberAndStatusOrderByCreatedAtDesc(String fromAccount, TransactionStatus status);
 
+    Optional<Transaction> findByIdempotencyKey(String idempotencyKey);
 
     List<Transaction> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
