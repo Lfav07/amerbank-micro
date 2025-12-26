@@ -3,6 +3,7 @@ package com.amerbank.account.service;
 import com.amerbank.account.dto.*;
 import com.amerbank.account.exception.AccountNotFoundException;
 import com.amerbank.account.exception.CustomerServiceUnavailableException;
+import com.amerbank.account.exception.InactiveAccountException;
 import com.amerbank.account.exception.InsufficientFundsAvailableException;
 import com.amerbank.account.model.Account;
 import com.amerbank.account.model.AccountStatus;
@@ -29,6 +30,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -296,8 +298,11 @@ public class AccountService {
         if (request.amount() == null || request.amount().signum() <= 0) {
             throw new IllegalArgumentException("Deposit amount must be positive");
         }
+        if (!isAccountActive(request.accountNumber())) {
+            throw new InactiveAccountException("Account is not active");
+        }
 
-        Account account = findAccountEntity(request.accountNumber());
+        Account account = findAccountEntityForUpdate(request.accountNumber());
 
         if (!account.getCustomerId().equals(customerId)) {
             throw new AccountNotFoundException("Account does not belong to authenticated customer");
@@ -323,8 +328,28 @@ public class AccountService {
             throw new IllegalArgumentException("Payment amount must be positive");
         }
 
-        Account fromAccount = findAccountEntity(request.fromAccountNumber());
-        Account toAccount = findAccountEntity(request.toAccountNumber());
+        if (request.fromAccountNumber().equals(request.toAccountNumber())) {
+            throw new IllegalArgumentException("Source and destination accounts must be different");
+        }
+
+        if (!isAccountActive(request.fromAccountNumber()) || !isAccountActive(request.toAccountNumber())) {
+            throw new InactiveAccountException("Account is not active");
+        }
+
+
+        List<Account> locked = lockAccountsOrdered(
+                request.fromAccountNumber(),
+                request.toAccountNumber()
+        );
+
+        Account fromAccount = locked.stream()
+                .filter(a -> a.getAccountNumber().equals(request.fromAccountNumber()))
+                .findFirst()
+                .orElseThrow();
+        Account toAccount = locked.stream()
+                .filter(a -> a.getAccountNumber().equals(request.toAccountNumber()))
+                .findFirst()
+                .orElseThrow();
 
         if (!fromAccount.getCustomerId().equals(customerId)) {
             throw new AccountNotFoundException("Account does not belong to authenticated customer");
@@ -359,12 +384,34 @@ public class AccountService {
             throw new IllegalArgumentException("Refund amount must be positive");
         }
 
+        if (!isAccountActive(request.fromAccountNumber()) || !isAccountActive(request.toAccountNumber())) {
+            throw new InactiveAccountException("Account is not active");
+        }
+
+        if (request.fromAccountNumber().equals(request.toAccountNumber())) {
+            throw new IllegalArgumentException("Source and destination accounts must be different");
+        }
+
+
+        List<Account> locked = lockAccountsOrdered(
+                request.fromAccountNumber(),
+                request.toAccountNumber()
+        );
+
         BigDecimal amount = request.amount();
 
 
         // The one sending the refund is the RECIPIENT of the original transaction
-        Account sender = findAccountEntity(request.fromAccountNumber()); // original recipient
-        Account recipient = findAccountEntity(request.toAccountNumber()); // original sender
+        //  - original recipient
+        Account sender = locked.stream()
+                .filter(a -> a.getAccountNumber().equals(request.fromAccountNumber()))
+                .findFirst()
+                .orElseThrow();
+        // original sender
+        Account recipient =  locked.stream()
+                .filter(a -> a.getAccountNumber().equals(request.toAccountNumber()))
+                .findFirst()
+                .orElseThrow();
 
         if (!sender.getCustomerId().equals(customerId)) {
             throw new AccountNotFoundException("Account does not belong to authenticated customer");
@@ -455,6 +502,44 @@ public class AccountService {
     public Account findAccountEntity(String accountNumber) {
         return accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new AccountNotFoundException("Account not found with accountNumber " + accountNumber));
+    }
+
+
+    /**
+     * Finds an account entity by account number.
+     * Meant for operations that involve an account's balance.
+     * Uses pessimist locking.
+     * @param accountNumber the account number to find.
+     * @return the account entity.
+     * @throws AccountNotFoundException if the account is not found.
+     */
+    public Account findAccountEntityForUpdate(String accountNumber) {
+        return accountRepository.findByAccountNumberForUpdate(accountNumber)
+                .orElseThrow(() -> new AccountNotFoundException("Account not found with accountNumber " + accountNumber));
+    }
+
+    /**
+     * Locks an ordered account list using pessimist lock.
+     * @param accountNumbers the account numbers to lock.
+     * @return the accounts in their locked state.
+     */
+    private List<Account> lockAccountsOrdered(String... accountNumbers) {
+        return Arrays.stream(accountNumbers)
+                .distinct()
+                .sorted()
+                .map(this::lockAccount)
+                .toList();
+    }
+
+    /**
+     * Locks an account using pessimist lock.
+     * @param accountNumber the account number to lock.
+     * @return the account in its locked state.
+     */
+    private Account lockAccount(String accountNumber) {
+        return accountRepository.findByAccountNumberForUpdate(accountNumber)
+                .orElseThrow(() -> new AccountNotFoundException(
+                        "Account not found with accountNumber " + accountNumber));
     }
 
     /**
