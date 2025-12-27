@@ -4,6 +4,7 @@ import com.amerbank.auth_server.dto.PasswordUpdateRequest;
 import com.amerbank.auth_server.exception.EmailAlreadyTakenException;
 import com.amerbank.auth_server.exception.UserNotFoundException;
 import com.amerbank.auth_server.model.User;
+import  com.amerbank.auth_server.service.UserMapper;
 import com.amerbank.auth_server.repository.UserRepository;
 import com.amerbank.auth_server.security.JwtService;
 import com.amerbank.common_dto.*;
@@ -35,6 +36,7 @@ public class UserService {
     private final AuthenticationManager authenticationManager;
     private final CustomerServiceClient customerServiceClient;
     private final JwtService jwtService;
+    private  final UserMapper mapper;
 
 
     // -------------------------------------------------------------------------
@@ -72,7 +74,7 @@ public class UserService {
      * @param request the registration request containing email and password
      * @throws EmailAlreadyTakenException if the email is already in use
      */
-    public void registerUser(UserRegisterRequest request) {
+    public UserResponse registerUser(UserRegisterRequest request) {
         String maskedEmail = maskEmail(request.email());
         log.info("Attempting to register new user with email {} ...", maskedEmail);
 
@@ -95,8 +97,8 @@ public class UserService {
         } catch (DataIntegrityViolationException ex) {
             throw new EmailAlreadyTakenException("Email already taken");
         }
-
         log.info("User successfully registered with email {}", maskedEmail);
+        return mapper.toResponse(user);
     }
 
     /**

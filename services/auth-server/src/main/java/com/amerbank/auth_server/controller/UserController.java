@@ -35,9 +35,9 @@ public class UserController {
 
     // -------------------- Public Endpoints --------------------
     @PostMapping("/register")
-    public ResponseEntity<Map<String, String>> register(@Valid @RequestBody UserRegisterRequest request) {
-        userService.registerUser(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(message("User successfully registered"));
+    public ResponseEntity<UserResponse> register(@Valid @RequestBody UserRegisterRequest request) {
+       UserResponse response =  userService.registerUser(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PostMapping("/login")
