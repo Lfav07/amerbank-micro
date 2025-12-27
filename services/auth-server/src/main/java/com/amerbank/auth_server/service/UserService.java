@@ -9,7 +9,9 @@ import com.amerbank.auth_server.security.JwtService;
 import com.amerbank.common_dto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -75,7 +77,7 @@ public class UserService {
         log.info("Attempting to register new user with email {} ...", maskedEmail);
 
         if (isEmailTaken(request.email())) {
-            log.warn("Registration failed: email {} is already taken.", maskedEmail);
+            log.warn("User registration failed: email {} is already taken.", maskedEmail);
             throw new EmailAlreadyTakenException("Email already taken");
         }
 
@@ -88,21 +90,27 @@ public class UserService {
 
         log.debug("User entity prepared for registration: {}", user);
 
-        userRepository.save(user);
+        try {
+            userRepository.save(user);
+        } catch (DataIntegrityViolationException ex) {
+            throw new EmailAlreadyTakenException("Email already taken");
+        }
 
         log.info("User successfully registered with email {}", maskedEmail);
     }
 
     /**
      * Registers a new admin user with the ROLE_ADMIN role.
-     *
+     * Enabled for demonstrative purposes.
      * @param request the registration request containing email and password
      * @throws EmailAlreadyTakenException if the email is already in use
      */
     public void registerAdmin(UserRegisterRequest request) {
         String maskedEmail = maskEmail(request.email());
+        log.info("Attempting to register new admin with email {} ...", maskedEmail);
 
         if (isEmailTaken(request.email())) {
+            log.warn("Admin registration failed: email {} is already taken.", maskedEmail);
             throw new EmailAlreadyTakenException("Email already taken");
         }
 
@@ -114,7 +122,12 @@ public class UserService {
                 .build();
         log.debug("Admin entity prepared for registration: {}", user);
 
-        userRepository.save(user);
+        try {
+            userRepository.save(user);
+        } catch (DataIntegrityViolationException ex) {
+            throw new EmailAlreadyTakenException("Email already taken");
+        }
+
         log.info("Admin successfully registered with email {}", maskedEmail);
     }
 
@@ -129,10 +142,13 @@ public class UserService {
      * @param email    The user's email.
      * @param password The user's password.
      */
-    public void authenticate(String email, String password) {
-        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(email, password);
+    private void authenticate(String email, String password) {
+        String normalizedEmail = email.trim().toLowerCase();
+        UsernamePasswordAuthenticationToken token =
+                new UsernamePasswordAuthenticationToken(normalizedEmail, password);
         authenticationManager.authenticate(token);
     }
+
 
     /**
      * Logs-in a user and creates a jwt token.
@@ -144,11 +160,11 @@ public class UserService {
     public AuthenticationResponse login(UserLoginRequest request) {
         String maskedEmail = maskEmail(request.email());
         log.debug("Attempting to log in user with email {}", maskedEmail);
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.email(), request.password())
-        );
 
-        User user = findByEmail(request.email());
+        String email = request.email().trim().toLowerCase();
+        authenticate(email, request.password());
+        User user = findByEmail(email);
+
         Long customerId = customerServiceClient.getCustomerIdByUserId(user.getId());
         String token = jwtService.generateToken(user, customerId);
         log.info("User successfully logged in with email {}", maskedEmail);
@@ -157,7 +173,7 @@ public class UserService {
 
     /**
      * Logs-in an admin and creates a jwt token.
-     *
+     * Enabled for demonstrative purposes.
      * @param request the login request containing email and password
      * @return AuthenticationResponse containing jwt token
      * @throws UserNotFoundException if the user is not found.
@@ -165,11 +181,15 @@ public class UserService {
     public AuthenticationResponse loginAdmin(UserLoginRequest request) {
         String maskedEmail = maskEmail(request.email());
         log.debug("Attempting to log in admin with email {}", maskedEmail);
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.email(), request.password())
-        );
 
-        User user = findByEmail(request.email());
+
+        String email = request.email().trim().toLowerCase();
+        authenticate(email, request.password());
+        User user = findByEmail(email);
+        if (!user.getRoles().contains(Role.ROLE_ADMIN)) {
+            throw new AccessDeniedException("Not an admin");
+        }
+
         String token = jwtService.generateAdminToken(user);
         log.info("Admin successfully logged in with email {}", maskedEmail);
         return new AuthenticationResponse(token);
@@ -182,23 +202,34 @@ public class UserService {
 
     /**
      * Updates the email address of a user.
-     *
+     * Regular customer use only.
      * @param id    the ID of the user to update
      * @param email the new email address
      * @throws UserNotFoundException if no user with the given ID exists
      */
     @Transactional
     public void updateEmail(Long id, String email) {
-        String maskedEmail = maskEmail(email);
+        String normalizedEmail = email.trim().toLowerCase();
+
         User user = findById(id);
-        user.setEmail(email.trim().toLowerCase());
-        log.info("User with id {} successfully updated their email to {}", id, maskedEmail);
-        userRepository.save(user);
+
+        if (!user.getEmail().equals(normalizedEmail) && isEmailTaken(normalizedEmail)) {
+            throw new EmailAlreadyTakenException("Email already taken");
+        }
+
+        user.setEmail(normalizedEmail);
+        try {
+            userRepository.save(user);
+        } catch (DataIntegrityViolationException ex) {
+            throw new EmailAlreadyTakenException("Email already taken");
+        }
+        log.info("User with id {} successfully updated their email to {}", id, maskEmail(normalizedEmail));
     }
 
+
     /**
-     * Updates the email address of a user.
-     *
+     * Updates the email address of a user by their id.
+     * Admin use only.
      * @param adminId the ID of the current logged in admin
      * @param id      the ID of the user to update
      * @param email   the new email address
@@ -206,23 +237,33 @@ public class UserService {
      */
     @Transactional
     public void updateEmailById(Long adminId, Long id, String email) {
+        String normalizedEmail = email.trim().toLowerCase();
+
         User user = findById(id);
-        user.setEmail(email.trim().toLowerCase());
+        if (!user.getEmail().equals(normalizedEmail) && isEmailTaken(normalizedEmail)) {
+            throw new EmailAlreadyTakenException("Email already taken");
+        }
+        user.setEmail(normalizedEmail);
+        try {
+            userRepository.save(user);
+        } catch (DataIntegrityViolationException ex) {
+            throw new EmailAlreadyTakenException("Email already taken");
+        }
         log.info("Admin with id {} successfully updated user with id {} 's email", adminId, id);
-        userRepository.save(user);
     }
 
     /**
      * Updates the password of a user.
-     *
+     * Regular customer use only.
      * @param email   the email of the user to update
      * @param request the old and new password
      * @throws UserNotFoundException if no user with the given ID exists
      */
     @Transactional
     public void updatePassword(String email, PasswordUpdateRequest request) {
-        authenticate(email, request.oldPassword());
-        User user = findByEmail(email);
+        String normalizedEmail = email.trim().toLowerCase();
+        authenticate(normalizedEmail, request.currentPassword());
+        User user = findByEmail(normalizedEmail);
         String password = passwordEncoder.encode(request.newPassword());
         user.setPassword(password);
         log.info("User with id {} successfully updated their password", user.getId());
@@ -231,7 +272,7 @@ public class UserService {
 
     /**
      * Updates the password of a user.
-     *
+     * Admin use only.
      * @param adminId     the ID of the current logged in admin
      * @param id          the id of the user to update
      * @param newPassword the new password
@@ -276,8 +317,10 @@ public class UserService {
 
     /**
      * Retrieves all users from the database.
+     * Demonstrative use only.
      */
     public List<User> getAllUsers() {
+
         return userRepository.findAll();
     }
 
@@ -286,6 +329,7 @@ public class UserService {
     // Deletion
     // -------------------------------------------------------------------------
 
+    // Hard deletion implemented for ease-to-use demonstrative purpose.
     /**
      * Deletes a user by ID.
      *
@@ -303,9 +347,9 @@ public class UserService {
         userRepository.deleteById(id);
     }
 
+    //  Demonstrative use only
     /**
      * Deletes all users from the database.
-     * Demo only.
      */
     public void deleteAllUsers() {
         userRepository.deleteAll();
@@ -316,6 +360,11 @@ public class UserService {
     // Utilities
     // -------------------------------------------------------------------------
 
+    /**
+     * Masks a user's email.
+     * @param email the email to be masked.
+     * @return the user's email in its masked state.
+     */
     private String maskEmail(String email) {
         if (email == null || !email.contains("@")) return "***";
         int at = email.indexOf('@');
@@ -326,6 +375,13 @@ public class UserService {
     // Kafka Listener
     // -------------------------------------------------------------------------
 
+    // When a customer is deleted from the database, the associated user must be deleted too.
+    /**
+     * Handles a customer deletion event.
+     * Uses Kafka to receive customer deletion events.
+     * Deletes the user associated with the customer.
+     * @param event the customer deletion event received from Kafka.
+     */
     @KafkaListener(topics = "customer.deleted", groupId = "auth-service")
     @Transactional
     public void handleCustomerDeleted(CustomerDeletedEvent event) {

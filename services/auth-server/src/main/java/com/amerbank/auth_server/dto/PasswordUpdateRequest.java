@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 
 public record PasswordUpdateRequest(
         @NotBlank
-        String oldPassword,
+        String currentPassword,
 
         @NotBlank
         String newPassword) {

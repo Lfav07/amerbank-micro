@@ -1,5 +1,6 @@
 package com.amerbank.auth_server.controller;
 
+import com.amerbank.auth_server.exception.EmailAlreadyTakenException;
 import com.amerbank.auth_server.exception.UserNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,12 @@ class ApiExceptionHandler {
     ResponseEntity<Map<String, String>>handleUserNotFound(UserNotFoundException e) {
         return  ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "User not found"));
     }
+
+    @ExceptionHandler(EmailAlreadyTakenException.class)
+        ResponseEntity<Map<String, String>>handleEmailAlreadyTaken(EmailAlreadyTakenException e){
+            return  ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Email already taken"));
+        }
+
 
     @ExceptionHandler(BadCredentialsException.class)
     ResponseEntity<Map<String, String>> handleBadCredentials(BadCredentialsException e) {
