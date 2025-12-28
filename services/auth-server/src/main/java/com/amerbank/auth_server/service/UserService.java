@@ -4,7 +4,6 @@ import com.amerbank.auth_server.dto.PasswordUpdateRequest;
 import com.amerbank.auth_server.exception.EmailAlreadyTakenException;
 import com.amerbank.auth_server.exception.UserNotFoundException;
 import com.amerbank.auth_server.model.User;
-import  com.amerbank.auth_server.service.UserMapper;
 import com.amerbank.auth_server.repository.UserRepository;
 import com.amerbank.auth_server.security.JwtService;
 import com.amerbank.common_dto.*;
@@ -257,15 +256,15 @@ public class UserService {
     /**
      * Updates the password of a user.
      * Regular customer use only.
-     * @param email   the email of the user to update
+      * @param id the id of the user to update
      * @param request the old and new password
      * @throws UserNotFoundException if no user with the given ID exists
      */
     @Transactional
-    public void updatePassword(String email, PasswordUpdateRequest request) {
-        String normalizedEmail = email.trim().toLowerCase();
+    public void updatePassword(Long id, PasswordUpdateRequest request) {
+        User user = findById(id);
+        String normalizedEmail = user.getEmail().trim().toLowerCase();
         authenticate(normalizedEmail, request.currentPassword());
-        User user = findByEmail(normalizedEmail);
         String password = passwordEncoder.encode(request.newPassword());
         user.setPassword(password);
         log.info("User with id {} successfully updated their password", user.getId());
@@ -316,14 +315,16 @@ public class UserService {
         return userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User not found!"));
     }
+    public UserResponse getOwnUserInfo(Long id) {
+        return mapper.toResponse(findById(id));
+    }
 
     /**
      * Retrieves all users from the database.
      * Demonstrative use only.
      */
-    public List<User> getAllUsers() {
-
-        return userRepository.findAll();
+    public List<UserResponse> getAllUsers() {
+        return userRepository.findAll().stream().map(mapper::toResponse).toList();
     }
 
 

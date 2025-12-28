@@ -2,6 +2,7 @@ package com.amerbank.auth_server.controller;
 
 import com.amerbank.auth_server.dto.*;
 import com.amerbank.auth_server.model.User;
+import com.amerbank.auth_server.security.JwtUserPrincipal;
 import com.amerbank.auth_server.service.UserMapper;
 import com.amerbank.auth_server.service.UserService;
 import com.amerbank.common_dto.AuthenticationResponse;
@@ -12,9 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -40,49 +39,42 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> login(@Valid @RequestBody UserLoginRequest request) {
         AuthenticationResponse response = userService.login(request);
         return ResponseEntity.ok(Map.of("token", response.token()));
     }
 
-    @PatchMapping("/update-email")
+    @PatchMapping("/me/email")
     public ResponseEntity<Void> updateEmail(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal JwtUserPrincipal principal,
             @Valid @RequestBody EmailUpdateRequest request) {
 
-        User user = userService.findByEmail(userDetails.getUsername());
-        userService.updateEmail(user.getId(), request.newEmail());
+
+        userService.updateEmail(principal.userId(), request.newEmail());
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/update-password")
+    @PatchMapping("/me/password")
     public ResponseEntity<Map<String, String>> updatePassword(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal JwtUserPrincipal principal,
             @Valid @RequestBody PasswordUpdateRequest request) {
 
-        try {
-            userService.updatePassword(userDetails.getUsername(), request);
+            userService.updatePassword(principal.userId(), request);
             return ResponseEntity.ok(message("Password successfully updated"));
-        } catch (BadCredentialsException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Old password is incorrect"));
         }
-    }
 
     @GetMapping("/me")
-    public ResponseEntity<UserResponse> getMyUserInfo(@AuthenticationPrincipal UserDetails userDetails) {
-        User user = userService.findByEmail(userDetails.getUsername());
-        return ResponseEntity.ok(mapper.toResponse(user));
+    public ResponseEntity<UserResponse> getMyUserInfo(@AuthenticationPrincipal JwtUserPrincipal principal) {
+       UserResponse response = userService.getOwnUserInfo(principal.userId());
+        return ResponseEntity.ok(response);
     }
 
     // -------------------- Admin / Management Endpoints --------------------
     @GetMapping("/users")
     public ResponseEntity<List<UserResponse>> getAllUsers() {
-        List<UserResponse> users = userService.getAllUsers()
-                .stream()
-                .map(mapper::toResponse)
-                .toList();
+        List<UserResponse> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
     }
 
@@ -102,8 +94,8 @@ public class UserController {
         return ResponseEntity.ok(mapper.toResponse(user));
     }
 
-    @GetMapping("/users/email/{email}")
-    public ResponseEntity<UserResponse> getUserByEmail(@PathVariable String email) {
+    @GetMapping("/users/by-email")
+    public ResponseEntity<UserResponse> getUserByEmail(@RequestParam String email) {
         User user = userService.findByEmail(email);
         return ResponseEntity.ok(mapper.toResponse(user));
     }
