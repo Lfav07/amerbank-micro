@@ -2,9 +2,7 @@ package com.amerbank.auth_server.controller;
 
 import com.amerbank.auth_server.dto.AdminEmailUpdateRequest;
 import com.amerbank.auth_server.dto.AdminPasswordUpdateRequest;
-import com.amerbank.auth_server.model.User;
 import com.amerbank.auth_server.security.JwtUserPrincipal;
-import com.amerbank.auth_server.service.UserMapper;
 import com.amerbank.auth_server.service.UserService;
 import com.amerbank.common_dto.AuthenticationResponse;
 import com.amerbank.common_dto.UserLoginRequest;
@@ -26,7 +24,6 @@ import java.util.Map;
 public class AdminController {
 
     private final UserService userService;
-    private final UserMapper mapper;
 
     // -------------------- Helper --------------------
     private Map<String, String> message(String msg) {
@@ -34,72 +31,97 @@ public class AdminController {
     }
 
     // -------------------- Admin Authentication --------------------
+
     @PostMapping("/register")
-    public ResponseEntity<Map<String, String>> register(@Valid @RequestBody UserRegisterRequest request) {
+    public ResponseEntity<Map<String, String>> registerAdmin(
+            @Valid @RequestBody UserRegisterRequest request) {
+
         userService.registerAdmin(request);
-        return ResponseEntity.status(HttpStatus.CREATED)
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
                 .body(message("Admin successfully registered."));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> login(@Valid @RequestBody UserLoginRequest request) {
+    public ResponseEntity<Map<String, String>> loginAdmin(
+            @Valid @RequestBody UserLoginRequest request) {
+
         AuthenticationResponse response = userService.loginAdmin(request);
-        return ResponseEntity.ok(Map.of("token", response.token()));
+
+        return ResponseEntity.ok(
+                Map.of("token", response.token())
+        );
     }
 
-    // -------------------- User Management Endpoints --------------------
+// -------------------- User Management --------------------
 
     @GetMapping("/users")
     public ResponseEntity<List<UserResponse>> getAllUsers() {
-        List<UserResponse> users = userService.getAllUsers()
-                .stream()
-                .map(mapper::toResponse)
-                .toList();
-        return ResponseEntity.ok(users);
+        return ResponseEntity.ok(userService.getAllUsers());
     }
 
     @GetMapping("/users/{id}")
     public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
-        User user = userService.findById(id);
-        return ResponseEntity.ok(mapper.toResponse(user));
+        return ResponseEntity.ok(userService.findByIdMapped(id));
     }
 
-    @GetMapping("/users/email/{email}")
-    public ResponseEntity<UserResponse> getUserByEmail(@PathVariable String email) {
-        User user = userService.findByEmail(email);
-        return ResponseEntity.ok(mapper.toResponse(user));
+    @GetMapping("/users/by-email")
+    public ResponseEntity<UserResponse> getUserByEmail(
+            @RequestParam String email) {
+
+        return ResponseEntity.ok(userService.findByEmailMapped(email));
     }
+
+// -------------------- Demo Only --------------------
 
     @DeleteMapping("/users")
-    public ResponseEntity<Void> deleteAllUsers() {
+    public ResponseEntity<Map<String, String>> deleteAllUsers() {
+
         userService.deleteAllUsers();
-        return ResponseEntity.noContent().build();
+
+        return ResponseEntity.ok(
+                message("All users successfully deleted.")
+        );
     }
 
     @DeleteMapping("/users/{id}")
-    public ResponseEntity<Void> deleteUserById(@PathVariable Long id,  @AuthenticationPrincipal JwtUserPrincipal admin) {
+    public ResponseEntity<Map<String, String>> deleteUserById(
+            @PathVariable Long id,
+            @AuthenticationPrincipal JwtUserPrincipal admin) {
+
         userService.deleteUser(admin.userId(), id);
-        return ResponseEntity.noContent().build();
+
+        return ResponseEntity.ok(
+                message("Successfully deleted user " + id)
+        );
     }
 
-    @PatchMapping("/users/{id}/update-password")
-    public ResponseEntity<Void> updatePasswordById(
+// -------------------- Updates --------------------
+
+    @PatchMapping("/users/{id}/password")
+    public ResponseEntity<Map<String, String>> updateUserPassword(
             @PathVariable Long id,
             @Valid @RequestBody AdminPasswordUpdateRequest request,
             @AuthenticationPrincipal JwtUserPrincipal admin) {
 
+
         userService.updatePasswordById(admin.userId(), id, request.newPassword());
-        return ResponseEntity.noContent().build();
+
+        return ResponseEntity.ok(
+                message("Password successfully updated for user " + id)
+        );
     }
 
-
-    @PatchMapping("/users/{id}/update-email")
-    public ResponseEntity<Void> updateEmailById(
+    @PatchMapping("/users/{id}/email")
+    public ResponseEntity<Void> updateUserEmail(
             @PathVariable Long id,
             @Valid @RequestBody AdminEmailUpdateRequest request,
             @AuthenticationPrincipal JwtUserPrincipal admin) {
 
+
         userService.updateEmailById(admin.userId(), id, request.email());
+
         return ResponseEntity.noContent().build();
     }
 }

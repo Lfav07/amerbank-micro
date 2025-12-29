@@ -35,7 +35,7 @@ public class UserController {
     // -------------------- Public Endpoints --------------------
     @PostMapping("/register")
     public ResponseEntity<UserResponse> register(@Valid @RequestBody UserRegisterRequest request) {
-       UserResponse response =  userService.registerUser(request);
+        UserResponse response = userService.registerUser(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -47,13 +47,13 @@ public class UserController {
     }
 
     @PatchMapping("/me/email")
-    public ResponseEntity<Void> updateEmail(
+    public ResponseEntity<Map<String, String>> updateEmail(
             @AuthenticationPrincipal JwtUserPrincipal principal,
             @Valid @RequestBody EmailUpdateRequest request) {
 
 
         userService.updateEmail(principal.userId(), request.newEmail());
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(message("Email successfully updated"));
     }
 
     @PatchMapping("/me/password")
@@ -61,42 +61,13 @@ public class UserController {
             @AuthenticationPrincipal JwtUserPrincipal principal,
             @Valid @RequestBody PasswordUpdateRequest request) {
 
-            userService.updatePassword(principal.userId(), request);
-            return ResponseEntity.ok(message("Password successfully updated"));
-        }
+        userService.updatePassword(principal.userId(), request);
+        return ResponseEntity.ok(message("Password successfully updated"));
+    }
 
     @GetMapping("/me")
     public ResponseEntity<UserResponse> getMyUserInfo(@AuthenticationPrincipal JwtUserPrincipal principal) {
-       UserResponse response = userService.getOwnUserInfo(principal.userId());
+        UserResponse response = userService.getOwnUserInfo(principal.userId());
         return ResponseEntity.ok(response);
-    }
-
-    // -------------------- Admin / Management Endpoints --------------------
-    @GetMapping("/users")
-    public ResponseEntity<List<UserResponse>> getAllUsers() {
-        List<UserResponse> users = userService.getAllUsers();
-        return ResponseEntity.ok(users);
-    }
-
-    @DeleteMapping("/users")
-    public ResponseEntity<Void> deleteAllUsers() {
-        userService.deleteAllUsers();
-        return ResponseEntity.noContent().build();
-    }
-
-
-
-
-
-    @GetMapping("/users/{id}")
-    public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
-        User user = userService.findById(id);
-        return ResponseEntity.ok(mapper.toResponse(user));
-    }
-
-    @GetMapping("/users/by-email")
-    public ResponseEntity<UserResponse> getUserByEmail(@RequestParam String email) {
-        User user = userService.findByEmail(email);
-        return ResponseEntity.ok(mapper.toResponse(user));
     }
 }

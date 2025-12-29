@@ -4,6 +4,7 @@ import com.amerbank.auth_server.exception.EmailAlreadyTakenException;
 import com.amerbank.auth_server.exception.UserNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -25,6 +26,13 @@ class ApiExceptionHandler {
         return  ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "User not found"));
     }
 
+    @ExceptionHandler(AccessDeniedException.class)
+    ResponseEntity<Map<String, String>> handleAccessDenied(AccessDeniedException e) {
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(Map.of("message", "Access denied"));
+    }
+
     @ExceptionHandler(EmailAlreadyTakenException.class)
         ResponseEntity<Map<String, String>>handleEmailAlreadyTaken(EmailAlreadyTakenException e){
             return  ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Email already taken"));
@@ -38,7 +46,17 @@ class ApiExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<Map<String, String>> handleArgumentNotValid(MethodArgumentNotValidException e) {
-        return  ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Invalid argument"));
+        String message = e.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .findFirst()
+                .map(err -> err.getField() + ": " + err.getDefaultMessage())
+                .orElse("Invalid request");
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("message", message));
     }
+
 
 }

@@ -49,7 +49,7 @@ public class UserService {
      * @return true if the email is already registered; false otherwise
      */
     public boolean isEmailTaken(String email) {
-        return userRepository.existsByEmailIgnoreCase(email.trim().toLowerCase());
+        return userRepository.existsByEmailIgnoreCase(normalizeEmail(email));
     }
 
     /**
@@ -83,7 +83,7 @@ public class UserService {
         }
 
         User user = User.builder()
-                .email(request.email().trim().toLowerCase())
+                .email(normalizeEmail(request.email()))
                 .password(passwordEncoder.encode(request.password()))
                 .roles(Set.of(Role.ROLE_USER))
                 .active(true)
@@ -116,7 +116,7 @@ public class UserService {
         }
 
         User user = User.builder()
-                .email(request.email().trim().toLowerCase())
+                .email(normalizeEmail(request.email()))
                 .password(passwordEncoder.encode(request.password()))
                 .roles(Set.of(Role.ROLE_ADMIN))
                 .active(true)
@@ -144,7 +144,7 @@ public class UserService {
      * @param password The user's password.
      */
     private void authenticate(String email, String password) {
-        String normalizedEmail = email.trim().toLowerCase();
+        String normalizedEmail = normalizeEmail(email);
         UsernamePasswordAuthenticationToken token =
                 new UsernamePasswordAuthenticationToken(normalizedEmail, password);
         authenticationManager.authenticate(token);
@@ -162,7 +162,7 @@ public class UserService {
         String maskedEmail = maskEmail(request.email());
         log.debug("Attempting to log in user with email {}", maskedEmail);
 
-        String email = request.email().trim().toLowerCase();
+        String email = normalizeEmail(request.email());
         authenticate(email, request.password());
         User user = findByEmail(email);
 
@@ -184,7 +184,7 @@ public class UserService {
         log.debug("Attempting to log in admin with email {}", maskedEmail);
 
 
-        String email = request.email().trim().toLowerCase();
+        String email = normalizeEmail(request.email());
         authenticate(email, request.password());
         User user = findByEmail(email);
         if (!user.getRoles().contains(Role.ROLE_ADMIN)) {
@@ -210,7 +210,7 @@ public class UserService {
      */
     @Transactional
     public void updateEmail(Long id, String email) {
-        String normalizedEmail = email.trim().toLowerCase();
+        String normalizedEmail = normalizeEmail(email);
 
         User user = findById(id);
 
@@ -238,7 +238,7 @@ public class UserService {
      */
     @Transactional
     public void updateEmailById(Long adminId, Long id, String email) {
-        String normalizedEmail = email.trim().toLowerCase();
+        String normalizedEmail = normalizeEmail(email);
 
         User user = findById(id);
         if (!user.getEmail().equals(normalizedEmail) && isEmailTaken(normalizedEmail)) {
@@ -263,7 +263,7 @@ public class UserService {
     @Transactional
     public void updatePassword(Long id, PasswordUpdateRequest request) {
         User user = findById(id);
-        String normalizedEmail = user.getEmail().trim().toLowerCase();
+        String normalizedEmail = normalizeEmail(user.getEmail());
         authenticate(normalizedEmail, request.currentPassword());
         String password = passwordEncoder.encode(request.newPassword());
         user.setPassword(password);
@@ -305,6 +305,18 @@ public class UserService {
     }
 
     /**
+     * Finds a user by email (case-insensitive).
+     * Maps the user to userResponse.
+     * @param email the email to search for
+     * @return the found User entity
+     * @throws UserNotFoundException if no user with the given email exists
+     */
+    public UserResponse findByEmailMapped (String email) {
+        return userRepository.findByEmailIgnoreCase(email).map(mapper::toResponse)
+                .orElseThrow(() -> new UserNotFoundException("User not found!"));
+    }
+
+    /**
      * Finds a user by ID.
      *
      * @param id the user ID to search for
@@ -315,6 +327,18 @@ public class UserService {
         return userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User not found!"));
     }
+    /**
+     * Finds a user by ID.
+     *  Maps the user to userResponse.
+     * @param id the user ID to search for
+     * @return the found User entity
+     * @throws UserNotFoundException if no user with the given ID exists
+     */
+    public UserResponse findByIdMapped(Long id) {
+        return userRepository.findById(id).map(mapper::toResponse)
+                .orElseThrow(() -> new UserNotFoundException("User not found!"));
+    }
+
     public UserResponse getOwnUserInfo(Long id) {
         return mapper.toResponse(findById(id));
     }
@@ -342,10 +366,6 @@ public class UserService {
      */
     @Transactional
     public void deleteUser(Long adminId, Long id) throws UserNotFoundException {
-        if (!userRepository.existsById(id)) {
-            throw new UserNotFoundException("User not found");
-        }
-
         log.info("Admin with id {} successfully deleted user with id {}", adminId, id);
         userRepository.deleteById(id);
     }
@@ -372,6 +392,14 @@ public class UserService {
         if (email == null || !email.contains("@")) return "***";
         int at = email.indexOf('@');
         return email.substring(0, Math.min(2, at)) + "***" + email.substring(at);
+    }
+    /**
+     * Normalizes a user's email.
+     * @param email the email to be masked.
+     * @return the user's email in its normalized state.
+     */
+    private String normalizeEmail(String email) {
+        return email.trim().toLowerCase();
     }
     
     // -------------------------------------------------------------------------
