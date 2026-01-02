@@ -30,7 +30,7 @@ spring:
     locations: classpath:db/migration/account
 
 jwt:
-  secret: u7SKcmP9z3LfA6NvTyExB1QdReGmZx2W
+  secret: ${JWT_SECRET}
 
 eureka:
   client:

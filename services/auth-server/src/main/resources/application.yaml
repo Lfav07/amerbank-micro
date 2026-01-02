@@ -17,7 +17,7 @@ jpa:
     enabled: true
     locations: classpath:db/migration/auth
 jwt:
-  secret: u7SKcmP9z3LfA6NvTyExB1QdReGmZx2W
+  secret: ${JWT_SECRET}
 
 eureka:
   client:
