@@ -14,10 +14,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang.NullArgumentException;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.*;
@@ -34,7 +31,7 @@ public class CustomerService {
 
     private final CustomerRepository customerRepository;
     private final CustomerMapper customerMapper;
-    private final RestTemplate restTemplate;
+    private final RestClient restClient;
     private  final JwtService jwtService;
     private final KafkaTemplate<String, CustomerDeletedEvent> kafkaTemplate;
     /**
@@ -117,11 +114,13 @@ public class CustomerService {
 
         UserResponse userResponse;
         try {
-            userResponse = restTemplate.postForObject(
-                    "http://auth-server/auth/register",
-                    userRegisterRequest,
-                    UserResponse.class
-            );
+             userResponse = restClient.post()
+                    .uri("http://auth-server/auth/register")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .body(userRegisterRequest)
+                    .retrieve()
+                    .body(UserResponse.class);
         } catch (HttpClientErrorException e) {
             throw new UserRegistrationFailedException("User registration failed: " + e);
         } catch (HttpServerErrorException e) {
@@ -283,14 +282,16 @@ public class CustomerService {
 
         HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-        ResponseEntity<UserResponse> response;
+        UserResponse userResponse;
         try {
-            response = restTemplate.exchange(url, HttpMethod.GET, entity, UserResponse.class);
+            userResponse = restClient.get()
+                    .uri(url)
+                    .retrieve()
+                    .toEntity(UserResponse.class).getBody();
         } catch (RestClientException e) {
             throw new AuthServiceUnavailableException("Auth service unavailable");
         }
 
-        UserResponse userResponse = response.getBody();
 
         if (userResponse == null || userResponse.id() == null) {
             throw new CustomerNotFoundException("User not found with email: " + email);
