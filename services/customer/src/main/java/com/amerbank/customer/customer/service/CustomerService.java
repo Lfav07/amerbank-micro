@@ -111,13 +111,18 @@ public class CustomerService {
                 request.email(),
                 request.password()
         );
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(jwtService.generateServiceToken());
 
         UserResponse userResponse;
         try {
-             userResponse = restClient.post()
-                    .uri("http://auth-server/auth/register")
+            String serviceToken = jwtService.generateServiceToken();
+
+            userResponse = restClient.post()
+                    .uri("http://auth-server/auth/internal/register")
                     .contentType(MediaType.APPLICATION_JSON)
                     .accept(MediaType.APPLICATION_JSON)
+                    .headers(h -> h.setBearerAuth(serviceToken))
                     .body(userRegisterRequest)
                     .retrieve()
                     .body(UserResponse.class);

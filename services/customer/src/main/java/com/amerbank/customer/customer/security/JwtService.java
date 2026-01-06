@@ -10,10 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -25,6 +22,9 @@ public class JwtService {
 
     @Value("${jwt.expiration-ms:3600000}") // 1 hour default
     private long expirationMs;
+
+    @Value("${jwt.service-token-expiration-ms:120000}") // 2 minutes for service tokens
+    private long serviceTokenExpirationMs;
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes());
@@ -43,6 +43,19 @@ public class JwtService {
     }
     public  Long extractCustomerId(String token) {
         return  extractClaim(token, claims -> claims.get("customerId", Long.class));
+    }
+
+    public String generateServiceToken(){
+        return Jwts.builder()
+                .issuer("customer-service")
+                .subject("customer-service")
+                .audience().add("auth-server").and()
+                .claim("serviceName", "customer-service")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + serviceTokenExpirationMs))
+                .signWith(getSigningKey())
+                .id(UUID.randomUUID().toString())
+                .compact();
     }
 
 

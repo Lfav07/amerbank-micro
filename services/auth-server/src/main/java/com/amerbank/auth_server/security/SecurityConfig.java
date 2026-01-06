@@ -2,6 +2,7 @@ package com.amerbank.auth_server.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -47,23 +48,40 @@ public class SecurityConfig {
     }
 
     @Bean
+    @Order(1)
+    public SecurityFilterChain serviceSecurityFilterChain(HttpSecurity http, JwtService serviceJwtService) throws Exception {
+        http
+                .securityMatcher("/auth/internal/**")
+                .authorizeHttpRequests(auth -> auth
+                        .anyRequest().hasAuthority("SCOPE_service")
+                )
+                .addFilterBefore(new ServiceJwtAuthFilter(serviceJwtService), UsernamePasswordAuthenticationFilter.class)
+                .csrf(csrf -> csrf.disable());
+        return http.build();
+    }
+
+    @Bean
+    @Order(2)
     public SecurityFilterChain filterChain(HttpSecurity http,
                                            AuthenticationProvider provider) throws Exception {
 
         http.csrf(csrf -> csrf.disable())
+                .securityMatcher("/auth/**")
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/register", "/auth/login").permitAll()
+                        .requestMatchers( "/auth/login").permitAll()
                         /* demo only */ .requestMatchers("/auth/admin/register", "/auth/admin/login").permitAll()
                         .requestMatchers("/auth/me", "/auth/me/password", "/auth/me/email").authenticated()
                         .requestMatchers("/auth/admin/**").hasRole("ADMIN")
                         .anyRequest().hasRole(("ADMIN"))
-                )
+                )//
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(provider)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
+
+
 }
 
 

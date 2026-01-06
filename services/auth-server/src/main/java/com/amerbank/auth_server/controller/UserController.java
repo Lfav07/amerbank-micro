@@ -33,7 +33,7 @@ public class UserController {
     }
 
     // -------------------- Public Endpoints --------------------
-    @PostMapping("/register")
+    @PostMapping("/internal/register")
     public ResponseEntity<UserResponse> register(@Valid @RequestBody UserRegisterRequest request) {
         UserResponse response = userService.registerUser(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);

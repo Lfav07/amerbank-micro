@@ -22,6 +22,20 @@ public class SecurityConfig {
     }
 
     @Bean
+    @Order(1)
+    public SecurityFilterChain serviceSecurityFilterChain(HttpSecurity http, JwtService serviceJwtService) throws Exception {
+        http
+                .securityMatcher("/accounts/internal/**")
+                .authorizeHttpRequests(auth -> auth
+                        .anyRequest().hasAuthority("SCOPE_service")
+                )
+                .addFilterBefore(new ServiceJwtAuthFilter(serviceJwtService), UsernamePasswordAuthenticationFilter.class)
+                .csrf(csrf -> csrf.disable());
+        return http.build();
+    }
+
+    @Bean
+    @Order(2)
     SecurityFilterChain chain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
                 .securityMatcher("/accounts/**")
@@ -45,25 +59,13 @@ public class SecurityConfig {
                                 "/accounts/{accountNumber}/balance", // get balance
                                 "/accounts/{accountNumber}"          // delete account
                         ).hasRole("ADMIN")
-                        .anyRequest().authenticated())  // fallback: authenticated
+                        .anyRequest().hasRole("ADMIN"))  // fallback: admin
                 .sessionManagement(sess -> sess
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .addFilterBefore(jwtAuthFilter,
                         UsernamePasswordAuthenticationFilter.class);
 
-        return http.build();
-    }
-    @Bean
-    @Order(2)
-    public SecurityFilterChain serviceSecurityFilterChain(HttpSecurity http, JwtService serviceJwtService) throws Exception {
-        http
-                .securityMatcher("/accounts/internal/**")
-                .authorizeHttpRequests(auth -> auth
-                        .anyRequest().hasAuthority("SCOPE_service")
-                )
-                .addFilterBefore(new ServiceJwtAuthFilter(serviceJwtService), UsernamePasswordAuthenticationFilter.class)
-                .csrf(csrf -> csrf.disable());
         return http.build();
     }
 }

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.Set;
 import java.util.function.Function;
 
 @Service
@@ -27,12 +28,35 @@ public class JwtService {
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
+
+    public String extractSubject(String token) {
+        return extractClaim(token, Claims::getSubject);
+    }
+
     public Long extractUserId(String token) {
         return  extractClaim(token, claims -> claims.get("userId", Long.class));
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> resolver) {
         return resolver.apply(extractAllClaims(token));
+    }
+
+
+    public boolean validateCustomerServiceToken(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+
+            // Check expiration
+            if (claims.getExpiration().before(new Date())) return false;
+
+            // Check audience
+            Set<String> audience = claims.getAudience();
+            if (audience == null || !audience.contains("auth-server")) return false;
+            // Check issuer
+            return "customer-service".equals(claims.getIssuer());
+        } catch (JwtException e) {
+            return false;
+        }
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
