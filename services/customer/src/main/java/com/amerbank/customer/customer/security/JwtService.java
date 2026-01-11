@@ -1,7 +1,7 @@
 package com.amerbank.customer.customer.security;
 
-import com.amerbank.common_dto.Role;
 
+import com.amerbank.customer.customer.dto.Role;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;

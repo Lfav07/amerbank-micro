@@ -1,6 +1,6 @@
 package com.amerbank.customer.customer.security;
 
-import com.amerbank.common_dto.Role;
+import com.amerbank.customer.customer.dto.Role;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

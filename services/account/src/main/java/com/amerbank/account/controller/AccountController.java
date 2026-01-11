@@ -4,7 +4,6 @@ import com.amerbank.account.dto.*;
 import com.amerbank.account.model.AccountType;
 import com.amerbank.account.security.JwtUserPrincipal;
 import com.amerbank.account.service.AccountService;
-import com.amerbank.common_dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

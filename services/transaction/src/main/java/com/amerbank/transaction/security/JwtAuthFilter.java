@@ -1,6 +1,7 @@
 package com.amerbank.transaction.security;
 
-import com.amerbank.common_dto.Role;
+
+import com.amerbank.transaction.dto.Role;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
