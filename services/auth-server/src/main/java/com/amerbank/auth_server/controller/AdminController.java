@@ -1,13 +1,8 @@
 package com.amerbank.auth_server.controller;
 
-import com.amerbank.auth_server.dto.AdminEmailUpdateRequest;
-import com.amerbank.auth_server.dto.AdminPasswordUpdateRequest;
+import com.amerbank.auth_server.dto.*;
 import com.amerbank.auth_server.security.JwtUserPrincipal;
 import com.amerbank.auth_server.service.UserService;
-import com.amerbank.common_dto.AuthenticationResponse;
-import com.amerbank.common_dto.UserLoginRequest;
-import com.amerbank.common_dto.UserRegisterRequest;
-import com.amerbank.common_dto.UserResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

@@ -2,7 +2,6 @@ package com.amerbank.account.service;
 
 import com.amerbank.account.dto.*;
 import com.amerbank.account.exception.AccountNotFoundException;
-import com.amerbank.account.exception.CustomerServiceUnavailableException;
 import com.amerbank.account.exception.InactiveAccountException;
 import com.amerbank.account.exception.InsufficientFundsAvailableException;
 import com.amerbank.account.model.Account;
@@ -10,22 +9,15 @@ import com.amerbank.account.model.AccountStatus;
 import com.amerbank.account.model.AccountType;
 import com.amerbank.account.repository.AccountRepository;
 import com.amerbank.account.security.JwtService;
-import com.amerbank.common_dto.CustomerResponse;
-
-import com.amerbank.common_dto.DepositBalanceRequest;
-import com.amerbank.common_dto.PaymentBalanceRequest;
-import com.amerbank.common_dto.RefundBalanceRequest;
+import com.amerbank.account.dto.DepositBalanceRequest;
+import com.amerbank.account.dto.PaymentBalanceRequest;
+import com.amerbank.account.dto.RefundBalanceRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;

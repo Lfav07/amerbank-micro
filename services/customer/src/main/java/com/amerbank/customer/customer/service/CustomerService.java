@@ -1,11 +1,9 @@
 package com.amerbank.customer.customer.service;
 
-import com.amerbank.common_dto.*;
+import com.amerbank.customer.customer.dto.*;
 import com.amerbank.customer.customer.exception.AuthServiceUnavailableException;
 import com.amerbank.customer.customer.exception.CustomerAlreadyExistsException;
 import com.amerbank.customer.customer.exception.CustomerNotFoundException;
-import com.amerbank.customer.customer.dto.CustomerRequest;
-import com.amerbank.customer.customer.dto.CustomerUpdateRequest;
 import com.amerbank.customer.customer.exception.UserRegistrationFailedException;
 import com.amerbank.customer.customer.model.Customer;
 import com.amerbank.customer.customer.repository.CustomerRepository;

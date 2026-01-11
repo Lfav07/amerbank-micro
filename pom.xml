@@ -9,7 +9,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>services/common-dto</module>
         <module>services/auth-server</module>
         <module>services/customer</module>
        <module>services/account</module>

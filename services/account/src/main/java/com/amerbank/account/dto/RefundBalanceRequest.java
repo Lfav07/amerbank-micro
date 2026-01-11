@@ -1,9 +1,8 @@
-package com.amerbank.common_dto;
+package com.amerbank.account.dto;
 
 import java.math.BigDecimal;
-import java.util.UUID;
 
- public record RefundBalanceRequest(
+public record RefundBalanceRequest(
          String fromAccountNumber,
          String toAccountNumber,
         BigDecimal amount

@@ -1,4 +1,4 @@
-package com.amerbank.common_dto;
+package com.amerbank.auth_server.dto;
 
 public record AuthenticationResponse(
         String token

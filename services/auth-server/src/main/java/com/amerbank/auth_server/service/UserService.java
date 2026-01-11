@@ -1,12 +1,11 @@
 package com.amerbank.auth_server.service;
 
-import com.amerbank.auth_server.dto.PasswordUpdateRequest;
+import com.amerbank.auth_server.dto.*;
 import com.amerbank.auth_server.exception.EmailAlreadyTakenException;
 import com.amerbank.auth_server.exception.UserNotFoundException;
 import com.amerbank.auth_server.model.User;
 import com.amerbank.auth_server.repository.UserRepository;
 import com.amerbank.auth_server.security.JwtService;
-import com.amerbank.common_dto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;

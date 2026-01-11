@@ -1,10 +1,12 @@
-package com.amerbank.common_dto;
+package com.amerbank.transaction.dto;
 
 import java.math.BigDecimal;
 
-public record ServicePaymentRequest(
+public record ServiceRefundBalanceRequest(
         Long customerId,
         String fromAccountNumber,
         String toAccountNumber,
         BigDecimal amount
-) {}
+) {
+}
+

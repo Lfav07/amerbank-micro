@@ -1,4 +1,4 @@
-package com.amerbank.common_dto;
+package com.amerbank.transaction.dto;
 
 import java.math.BigDecimal;
 

@@ -1,6 +1,6 @@
 package com.amerbank.auth_server.config;
 
-import com.amerbank.common_dto.CustomerDeletedEvent;
+import com.amerbank.auth_server.dto.CustomerDeletedEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.context.annotation.Bean;
@@ -24,7 +24,7 @@ public class KafkaConsumerConfig {
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "com.amerbank.common_dto.CustomerDeletedEvent");
+        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "com.amerbank.auth_server.dto.CustomerDeletedEvent");
         return new DefaultKafkaConsumerFactory<>(props);
     }
 

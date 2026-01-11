@@ -1,14 +1,9 @@
 package com.amerbank.auth_server.controller;
 
 import com.amerbank.auth_server.dto.*;
-import com.amerbank.auth_server.model.User;
 import com.amerbank.auth_server.security.JwtUserPrincipal;
 import com.amerbank.auth_server.service.UserMapper;
 import com.amerbank.auth_server.service.UserService;
-import com.amerbank.common_dto.AuthenticationResponse;
-import com.amerbank.common_dto.UserLoginRequest;
-import com.amerbank.common_dto.UserRegisterRequest;
-import com.amerbank.common_dto.UserResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController

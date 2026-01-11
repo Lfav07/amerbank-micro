@@ -1,4 +1,4 @@
-package com.amerbank.common_dto;
+package com.amerbank.account.dto;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

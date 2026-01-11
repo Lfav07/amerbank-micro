@@ -1,8 +1,6 @@
 package com.amerbank.auth_server.service;
-
+import com.amerbank.auth_server.dto.UserResponse;
 import com.amerbank.auth_server.model.User;
-import com.amerbank.common_dto.UserResponse;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 
 @Service

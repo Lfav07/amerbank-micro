@@ -1,4 +1,4 @@
-package com.amerbank.common_dto;
+package com.amerbank.account.dto;
 
 public enum Role {
     ROLE_USER,

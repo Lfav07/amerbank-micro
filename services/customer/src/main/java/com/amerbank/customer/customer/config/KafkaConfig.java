@@ -1,6 +1,7 @@
 package com.amerbank.customer.customer.config;
 
-import com.amerbank.common_dto.CustomerDeletedEvent;
+
+import com.amerbank.customer.customer.dto.CustomerDeletedEvent;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.context.annotation.Bean;
