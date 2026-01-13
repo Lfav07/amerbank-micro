@@ -51,16 +51,6 @@ public class UserService {
         return userRepository.existsByEmailIgnoreCase(normalizeEmail(email));
     }
 
-    /**
-     * Checks whether a user with the given ID exists.
-     *
-     * @param id the user ID to check
-     * @return true if the user exists; false otherwise
-     */
-    public boolean existsById(Long id) {
-        return userRepository.existsById(id);
-    }
-
 
     // -------------------------------------------------------------------------
     // Registration
