@@ -1,20 +1,18 @@
 package com.amerbank.customer.customer.service;
 
 import com.amerbank.customer.customer.dto.*;
-import com.amerbank.customer.customer.exception.AuthServiceUnavailableException;
-import com.amerbank.customer.customer.exception.CustomerAlreadyExistsException;
-import com.amerbank.customer.customer.exception.CustomerNotFoundException;
-import com.amerbank.customer.customer.exception.UserRegistrationFailedException;
+import com.amerbank.customer.customer.exception.*;
 import com.amerbank.customer.customer.model.Customer;
 import com.amerbank.customer.customer.repository.CustomerRepository;
 import com.amerbank.customer.customer.security.JwtService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang.NullArgumentException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.*;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.client.*;
 
 import java.util.List;
@@ -45,12 +43,23 @@ public class CustomerService {
     }
 
     /**
+     * Retrieves a customer by their database ID and maps it to a CustomerResponse DTO.
+     *
+     * @param id the customer's ID
+     * @return the found Customer entity
+     * @throws CustomerNotFoundException if no customer is found with the given ID
+     */
+    public CustomerResponse findCustomerByIdMapped(Long id) {
+        return customerMapper.toResponse(findCustomerById(id));
+    }
+
+    /**
      * Retrieves all the customers in the database.
      * @return a List of customers
      */
 
-    public List<Customer> findAllCustomers() {
-        return customerRepository.findAll();
+    public List<CustomerResponse> findAllCustomers() {
+        return customerRepository.findAll().stream().map(customerMapper::toResponse).toList();
     }
 
     /**
@@ -72,7 +81,7 @@ public class CustomerService {
      * @return a response DTO with customer information
      */
     public CustomerResponse getCustomerInfo(Long customerId) {
-        return customerMapper.fromCustomer(findCustomerById(customerId));
+        return customerMapper.toResponse(findCustomerById(customerId));
     }
 
     /**
@@ -81,8 +90,8 @@ public class CustomerService {
      * @param userId the user's ID
      * @return a response DTO with customer information
      */
-    public CustomerResponse getCustomerInfoByUserId(Long userId) {
-        return customerMapper.fromCustomer(findCustomerByUserId(userId));
+    public CustomerResponse findCustomerByUserIdMapped(Long userId) {
+        return customerMapper.toResponse(findCustomerByUserId(userId));
     }
 
     /**
@@ -102,15 +111,13 @@ public class CustomerService {
      * @throws CustomerAlreadyExistsException if a customer already exists for the given user ID
      * @throws UserRegistrationFailedException if the authentication service returns null or a client-side error occurs
      * @throws AuthServiceUnavailableException if the authentication service cannot be reached or returns a server-side error
-     * @throws IllegalStateException if an unexpected error occurs during REST call or saving the customer (e.g., data integrity violation)
+     * @throws CustomerRegistrationFailedException if an unexpected error occurs during REST call or saving the customer (e.g., data integrity violation)
      */
     public CustomerResponse registerCustomer(CustomerRequest request) {
         UserRegisterRequest userRegisterRequest = new UserRegisterRequest(
                 request.email(),
                 request.password()
         );
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(jwtService.generateServiceToken());
 
         UserResponse userResponse;
         try {
@@ -129,9 +136,9 @@ public class CustomerService {
         } catch (HttpServerErrorException e) {
             throw new AuthServiceUnavailableException("Auth server error: " + e);
         } catch (ResourceAccessException e) {
-            throw new AuthServiceUnavailableException("Cannot reach auth server" + e);
+            throw new AuthServiceUnavailableException("Cannot reach auth server " + e);
         } catch (RestClientException e) {
-            throw new IllegalStateException("Unexpected error during user registration", e);
+            throw new UserRegistrationFailedException("Unexpected error during user registration " +  e);
         }
 
         if (userResponse == null || userResponse.id() == null) {
@@ -149,9 +156,11 @@ public class CustomerService {
 
         try {
             Customer saved = customerRepository.save(customer);
-            return customerMapper.fromCustomer(saved);
+            return customerMapper.toResponse(saved);
         } catch (DataIntegrityViolationException e) {
-            throw new IllegalStateException("Failed to save customer: data integrity violation", e);
+            CustomerDeletedEvent event = new CustomerDeletedEvent(userId);
+            kafkaTemplate.send("customer.deleted", event);
+            throw new CustomerRegistrationFailedException("Failed to save customer: data integrity violation " + e);
         }
     }
 
@@ -170,7 +179,7 @@ public class CustomerService {
         customer.setFirstName(request.firstName());
         customer.setLastName(request.lastName());
         customerRepository.save(customer);
-        return customerMapper.fromCustomer(customer);
+        return customerMapper.toResponse(customer);
     }
 
     /**
@@ -193,14 +202,10 @@ public class CustomerService {
      * @throws CustomerNotFoundException if the customer is not found
      */
     @Transactional
-    public void unVerifyKyc(Long customerId) {
+    public void revokeKyc(Long customerId) {
         Customer customer = findCustomerById(customerId);
         customer.setKycVerified(false);
         customerRepository.save(customer);
-    }
-
-    public void deleteAllCustomers() {
-        customerRepository.deleteAll();
     }
 
     /**
@@ -211,90 +216,64 @@ public class CustomerService {
      */
     @Transactional
     public void deleteCustomerById(Long id) {
-        if (!customerRepository.existsById(id)) {
-            throw new CustomerNotFoundException("Customer not found with ID " + id);
-        }
         Customer customer = findCustomerById(id);
         customerRepository.delete(customer);
-        Long userId = customer.getUserId();
 
-        CustomerDeletedEvent event = new CustomerDeletedEvent(userId);
-        kafkaTemplate.send("customer.deleted", event);
-
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        kafkaTemplate.send("customer.deleted",
+                                new CustomerDeletedEvent(customer.getUserId()));
+                    }
+                }
+        );
     }
 
-    /**
-     * Deletes a customer and their user by ID.
-     *
-     * @param id the customer's ID
-     * @throws CustomerNotFoundException if no customer is found
-     */
-    @Transactional
-    public void deleteCustomerById2(Long id) {
-        if (!customerRepository.existsById(id)) {
-            throw new CustomerNotFoundException("Customer not found with ID " + id);
-        }
-        customerRepository.deleteById(id);
-    }
 
     /**
-     * Retrieves customer info for the authenticated user by calling /auth/manage/me.
+     * Retrieves customer info for the current authenticated user.
      *
-     * @param jwtToken the JWT token for authorization
+     * @param customerId the authenticated user's customer id
      * @return the corresponding CustomerResponse
      * @throws CustomerNotFoundException if the user or customer is not found
      * @throws AuthServiceUnavailableException if the auth service is unavailable
      */
-    public CustomerResponse getMyCustomerInfo(String jwtToken) {
-        Long customerId = jwtService.extractCustomerId(jwtToken);
-
-        Customer customer = findCustomerById(customerId);
-
-        return customerMapper.fromCustomer(customer);
+    public CustomerInfo getMyCustomerInfo(Long customerId) {
+        CustomerResponse customer = findCustomerByIdMapped(customerId);
+        return customerMapper.getInfoFromCustomer(customer);
     }
 
-    /**
-     * Retrieves customer info for the authenticated user by calling /auth/manage/me.
-     *
-     * @param id the Customer's id
-     * @return the corresponding CustomerResponse
-     * @throws CustomerNotFoundException if the user or customer is not found
-     * @throws AuthServiceUnavailableException if the auth service is unavailable
-     */
-    public CustomerResponse getMyCustomerInfoById(Long id) {
 
-        Customer customer = findCustomerById(id);
-
-        return customerMapper.fromCustomer(customer);
-    }
-
+    // NOTE: In production, this would be handled via Saga or Outbox pattern.
+    // This Kafka event is used here to demonstrate eventual consistency handling.
     /**
      * Retrieves customer info by email. Intended for admin users only.
      *
      * @param email the user's email
-     * @param jwtToken the JWT token for authorization
      * @return the corresponding CustomerResponse
      * @throws CustomerNotFoundException if the user or customer is not found
      * @throws AuthServiceUnavailableException if the auth service is unavailable
      */
-    public CustomerResponse getCustomerInfoByEmail(String email, String jwtToken) {
-        String url = "http://auth-server/auth/manage/by-email/" + email;
+    public CustomerResponse getCustomerInfoByEmail(String email){
+        String url = "http://auth-server/admin/auth/users/by-email/" + email;
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(jwtToken);
-
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        String serviceToken = jwtService.generateServiceToken();
 
         UserResponse userResponse;
         try {
             userResponse = restClient.get()
                     .uri(url)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .headers(h -> h.setBearerAuth(serviceToken))
                     .retrieve()
                     .toEntity(UserResponse.class).getBody();
-        } catch (RestClientException e) {
-            throw new AuthServiceUnavailableException("Auth service unavailable");
+        } catch (HttpClientErrorException.NotFound e) {
+            throw new CustomerNotFoundException("Customer not found for user email " + email);
         }
-
+        catch (HttpServerErrorException e) {
+            throw new AuthServiceUnavailableException("Cannot reach auth server " + e);
+        }
 
         if (userResponse == null || userResponse.id() == null) {
             throw new CustomerNotFoundException("User not found with email: " + email);
@@ -303,11 +282,11 @@ public class CustomerService {
         Customer customer = customerRepository.findByUserId(userResponse.id())
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found for user with email: " + email));
 
-        return customerMapper.fromCustomer(customer);
+        return customerMapper.toResponse(customer);
     }
 
     /**
-     *
+     * Returns a customer's id based on their associated user id.
      * @param userId the user's id
      * @return the customer's id for the corresponding user
      * @throws CustomerNotFoundException if no customer is found for the user

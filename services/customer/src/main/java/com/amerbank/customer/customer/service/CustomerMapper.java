@@ -23,7 +23,7 @@ public class CustomerMapper {
         return customer;
     }
 
-    public CustomerResponse fromCustomer(Customer customer) {
+    public CustomerResponse toResponse(Customer customer) {
         if (customer == null) {
             return null;
         }
@@ -38,6 +38,8 @@ public class CustomerMapper {
                 customer.getCreatedAt()
         );
     }
+
+
 
     public CustomerInfo getInfoFromCustomer(CustomerResponse response) {
         if (response == null) {
