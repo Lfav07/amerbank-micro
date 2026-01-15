@@ -109,14 +109,13 @@ public class AdminController {
     }
 
     @PatchMapping("/users/{id}/email")
-    public ResponseEntity<Void> updateUserEmail(
+    public ResponseEntity<Map<String, String>> updateUserEmail(
             @PathVariable Long id,
             @Valid @RequestBody AdminEmailUpdateRequest request,
             @AuthenticationPrincipal JwtUserPrincipal admin) {
 
 
         userService.updateEmailById(admin.userId(), id, request.email());
-
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(message("Email successfully updated for user " + id));
     }
 }
