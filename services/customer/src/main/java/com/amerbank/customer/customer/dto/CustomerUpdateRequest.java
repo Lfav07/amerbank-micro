@@ -4,10 +4,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public record CustomerUpdateRequest(
-
-        @NotNull(message = "Customer ID is required")
-        Long customerId,
-
         @NotBlank(message = "First name is required")
         String firstName,
 
