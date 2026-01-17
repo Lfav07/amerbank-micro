@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
 
 @Service
@@ -20,6 +21,9 @@ public class JwtService {
 
     @Value("${jwt.expiration-ms:3600000}") // 1 hour default
     private long expirationMs;
+
+    @Value("${jwt.service-token-expiration-ms:120000}") // 2 minutes for service tokens
+    private long serviceTokenExpirationMs;
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes());
@@ -72,6 +76,7 @@ public class JwtService {
         return Jwts.builder()
                 .issuer("auth-server")
                 .subject(user.getEmail())
+                .audience().add(("customer-service")).and()
                 .claim("userId", user.getId())
                 .claim("customerId", customerId)
                 .claim("roles", user.getRoles().stream().map(Enum::name).toList())
@@ -80,6 +85,20 @@ public class JwtService {
                 .signWith(getSigningKey())
                 .compact();
     }
+
+    public String generateServiceToken() {
+        return Jwts.builder()
+                .issuer("auth-server")
+                .subject("auth-server")
+                .audience().add("customer-service").and()
+                .claim("serviceName", "auth-server")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + serviceTokenExpirationMs))
+                .signWith(getSigningKey())
+                .id(UUID.randomUUID().toString())
+                .compact();
+    }
+
 
     public String generateAdminToken(User user) {
         return Jwts.builder()

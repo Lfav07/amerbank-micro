@@ -116,6 +116,30 @@ public class CustomerService {
     }
 
     /**
+     *
+     * @param userId the user's id
+     * @return the customer's id for the corresponding user
+     * @throws CustomerNotFoundException if no customer is found for the user
+     */
+
+    public Long getCustomerIdByUserId(Long userId) {
+        Customer customer = findCustomerByUserId(userId);
+        return  customer.getId();
+    }
+
+    /**
+     * Retrieves a customer using their associated user ID.
+     *
+     * @param userId the user's ID
+     * @return the corresponding Customer entity
+     * @throws CustomerNotFoundException if no customer is found for the user
+     */
+    public Customer findCustomerByUserId(Long userId) {
+        return customerRepository.findByUserId(userId)
+                .orElseThrow(() -> new CustomerNotFoundException("Customer not found for User ID " + userId));
+    }
+
+    /**
      * Retrieves a customer by their database ID and maps it to a CustomerResponse DTO.
      *
      * @param id the customer's ID
@@ -241,12 +265,16 @@ public class CustomerService {
 
     // -------------------- Deletion --------------------
 
+    // NOTE: In production, this would be handled via Saga or Outbox pattern.
+    // This Kafka event is used here to demonstrate eventual consistency handling.
+
     /**
      * Deletes a customer by ID.
      *
      * @param id the customer's ID
      * @throws CustomerNotFoundException if no customer is found
      */
+
     @Transactional
     public void deleteCustomerById(Long id) {
         Customer customer = findCustomerById(id);
@@ -262,7 +290,4 @@ public class CustomerService {
                 }
         );
     }
-
-    // NOTE: In production, this would be handled via Saga or Outbox pattern.
-    // This Kafka event is used here to demonstrate eventual consistency handling.
 }

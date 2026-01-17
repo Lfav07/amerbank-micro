@@ -34,8 +34,30 @@ public class JwtService {
         return extractClaim(token, Claims::getSubject);
     }
 
+    public String extractSubject(String token) {
+        return extractClaim(token, Claims::getSubject);
+    }
+
     public <T> T extractClaim(String token, Function<Claims, T> resolver) {
         return resolver.apply(extractAllClaims(token));
+    }
+
+
+    public boolean validateAuthServiceToken(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+
+            // Check expiration
+            if (claims.getExpiration().before(new Date())) return false;
+
+            // Check audience
+            Set<String> audience = claims.getAudience();
+            if (audience == null || !audience.contains("customer-service")) return false;
+            // Check issuer
+            return "auth-server".equals(claims.getIssuer());
+        } catch (JwtException e) {
+            return false;
+        }
     }
 
     public Long extractUserId(String token) {
@@ -104,4 +126,5 @@ public class JwtService {
                 .parseSignedClaims(token)
                 .getPayload();
     }
+
 }

@@ -43,4 +43,10 @@ public class CustomerController {
         CustomerInfo resp = service.getMyCustomerInfo(principal.customerId());
         return ResponseEntity.ok(resp);
     }
+
+    @GetMapping("/internal/by-user/{userId}")
+    public ResponseEntity<Long> getCustomerIdByUserId(@PathVariable Long userId) {
+        Long id = service.getCustomerIdByUserId(userId);
+        return ResponseEntity.ok(id);
+    }
 }
