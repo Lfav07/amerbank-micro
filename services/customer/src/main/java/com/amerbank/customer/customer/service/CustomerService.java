@@ -7,9 +7,13 @@ import com.amerbank.customer.customer.repository.CustomerRepository;
 import com.amerbank.customer.customer.security.JwtService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.*;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -21,6 +25,7 @@ import java.util.List;
  * Service layer for handling customer-related operations such as registration,
  * authentication, KYC verification, and information updates.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CustomerService {
@@ -31,6 +36,29 @@ public class CustomerService {
     private final JwtService jwtService;
     private final KafkaTemplate<String, CustomerDeletedEvent> kafkaTemplate;
 
+    @Value("${auth.service.url:http://auth-server}")
+    private String authServiceUrl;
+
+    @Value("${auth.service.register.path:/auth/internal/register}")
+    private String authRegisterPath;
+
+    @Value("${auth.service.user-by-email.path:/admin/auth/users/by-email}")
+    private String authUserByEmailPath;
+
+    // -------------------------------------------------------------------------
+    // Utilities
+    // -------------------------------------------------------------------------
+
+    private String maskEmail(String email) {
+        if (email == null || !email.contains("@")) return "***";
+        int at = email.indexOf('@');
+        return email.substring(0, Math.min(2, at)) + "***" + email.substring(at);
+    }
+
+    private String normalizeEmail(String email) {
+        return email.trim().toLowerCase();
+    }
+
     // -------------------- Registration --------------------
 
     /**
@@ -38,7 +66,7 @@ public class CustomerService {
      * <p>
      * This method performs the following steps:
      * <ol>
-     *     <li>Creates a {@link UserRegisterRequest} from the provided {@link CustomerRequest}.</li>
+     *     <li>Creates a {@link UserRegisterRequest} from the provided {@link CustomerRequest} with normalized email.</li>
      *     <li>Calls the authentication service via HTTP to register a new user.</li>
      *     <li>Validates the response from the authentication service.</li>
      *     <li>Checks if a customer already exists for the returned user ID.</li>
@@ -51,18 +79,25 @@ public class CustomerService {
      * @throws AuthServiceUnavailableException     if the authentication service cannot be reached or returns a server-side error
      * @throws CustomerRegistrationFailedException if an unexpected error occurs during REST call or saving the customer (e.g., data integrity violation)
      */
+    @Transactional
     public void registerCustomer(CustomerRequest request) {
+        String maskedEmail = maskEmail(request.email());
+        log.info("Attempting to register new customer with email {} ...", maskedEmail);
+
         UserRegisterRequest userRegisterRequest = new UserRegisterRequest(
-                request.email(),
+                normalizeEmail(request.email()),
                 request.password()
         );
 
         UserResponse userResponse;
         try {
             String serviceToken = jwtService.generateServiceToken();
+            String registerUrl = authServiceUrl + authRegisterPath;
+
+            log.debug("Calling auth service at: {}", registerUrl);
 
             userResponse = restClient.post()
-                    .uri("http://auth-server/auth/internal/register")
+                    .uri(registerUrl)
                     .contentType(MediaType.APPLICATION_JSON)
                     .accept(MediaType.APPLICATION_JSON)
                     .headers(h -> h.setBearerAuth(serviceToken))
@@ -70,34 +105,49 @@ public class CustomerService {
                     .retrieve()
                     .body(UserResponse.class);
         } catch (HttpClientErrorException e) {
-            throw new UserRegistrationFailedException("User registration failed: " + e);
+            log.error("User registration failed for email {}", maskedEmail);
+            throw new UserRegistrationFailedException("User registration failed");
         } catch (HttpServerErrorException e) {
-            throw new AuthServiceUnavailableException("Auth server error: " + e);
+            log.error("Auth server error while registering user with email {}", maskedEmail);
+            throw new AuthServiceUnavailableException("Auth server error");
         } catch (ResourceAccessException e) {
-            throw new AuthServiceUnavailableException("Cannot reach auth server " + e);
+            log.error("Cannot reach auth server while registering user with email {}", maskedEmail);
+            throw new AuthServiceUnavailableException("Cannot reach auth server");
         } catch (RestClientException e) {
-            throw new UserRegistrationFailedException("Unexpected error during user registration " + e);
+            log.error("Unexpected error during user registration for email {}", maskedEmail);
+            throw new UserRegistrationFailedException("Unexpected error during user registration");
         }
 
         if (userResponse == null || userResponse.id() == null) {
+            log.error("Auth server returned null response for email {}", maskedEmail);
             throw new UserRegistrationFailedException("Auth server returned null response");
         }
 
         Long userId = userResponse.id();
+        log.debug("User registered successfully with userId: {}", userId);
 
         if (customerRepository.existsByUserId(userId)) {
+            log.warn("Customer registration failed: customer already exists for userId {}", userId);
             throw new CustomerAlreadyExistsException("Customer already exists for userId: " + userId);
         }
 
         Customer customer = customerMapper.toCustomer(request, userId);
         customer.setKycVerified(true);
 
+        log.debug("Customer entity prepared for registration with userId: {}", userId);
+
         try {
-             customerRepository.save(customer);
+            customerRepository.save(customer);
+            log.info("Customer successfully registered with email {}", maskedEmail);
         } catch (DataIntegrityViolationException e) {
+            log.error("Failed to save customer for userId {}", userId);
             CustomerDeletedEvent event = new CustomerDeletedEvent(userId);
-            kafkaTemplate.send ("customer.deleted", event);
-            throw new CustomerRegistrationFailedException("Failed to save customer: data integrity violation " + e);
+            try {
+                kafkaTemplate.send("customer.deleted", event);
+            } catch (Exception kafkaEx) {
+                log.error("Failed to send customer.deleted event to Kafka", kafkaEx);
+            }
+            throw new CustomerRegistrationFailedException("Failed to save customer: data integrity violation");
         }
     }
 
@@ -124,7 +174,7 @@ public class CustomerService {
 
     public Long getCustomerIdByUserId(Long userId) {
         Customer customer = findCustomerByUserId(userId);
-        return  customer.getId();
+        return customer.getId();
     }
 
     /**
@@ -191,7 +241,12 @@ public class CustomerService {
      * @throws AuthServiceUnavailableException if the auth service is unavailable
      */
     public CustomerResponse getCustomerInfoByEmail(String email) {
-        String url = "http://auth-server/admin/auth/users/by-email/" + email;
+        String maskedEmail = maskEmail(email);
+        log.debug("Attempting to find customer by email {} ...", maskedEmail);
+
+        String normalizedEmail = normalizeEmail(email);
+
+        String url = authServiceUrl + authUserByEmailPath + "/" + normalizedEmail;
 
         String serviceToken = jwtService.generateServiceToken();
 
@@ -204,18 +259,22 @@ public class CustomerService {
                     .retrieve()
                     .toEntity(UserResponse.class).getBody();
         } catch (HttpClientErrorException.NotFound e) {
+            log.warn("Customer not found for user email {}", maskedEmail);
             throw new CustomerNotFoundException("Customer not found for user email " + email);
         } catch (HttpServerErrorException e) {
-            throw new AuthServiceUnavailableException("Cannot reach auth server " + e);
+            log.error("Auth server error while looking up user by email {}", maskedEmail);
+            throw new AuthServiceUnavailableException("Cannot reach auth server");
         }
 
         if (userResponse == null || userResponse.id() == null) {
+            log.warn("User not found with email {}", maskedEmail);
             throw new CustomerNotFoundException("User not found with email: " + email);
         }
 
         Customer customer = customerRepository.findByUserId(userResponse.id())
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found for user with email: " + email));
 
+        log.info("Customer successfully found with email {}", maskedEmail);
         return customerMapper.toResponse(customer);
     }
 
@@ -232,7 +291,7 @@ public class CustomerService {
         customer.setFirstName(request.firstName());
         customer.setLastName(request.lastName());
         customerRepository.save(customer);
-        customerMapper.toResponse(customer);
+        log.info("Customer with id {} successfully updated their profile", customerId);
     }
 
     // -------------------- KYC Management --------------------
@@ -248,6 +307,7 @@ public class CustomerService {
         Customer customer = findCustomerById(customerId);
         customer.setKycVerified(true);
         customerRepository.save(customer);
+        log.info("Customer with id {} successfully verified KYC", customerId);
     }
 
     /**
@@ -261,6 +321,7 @@ public class CustomerService {
         Customer customer = findCustomerById(customerId);
         customer.setKycVerified(false);
         customerRepository.save(customer);
+        log.info("Customer with id {} successfully revoked KYC", customerId);
     }
 
     // -------------------- Deletion --------------------
@@ -289,5 +350,6 @@ public class CustomerService {
                     }
                 }
         );
+        log.info("Customer with id {} successfully deleted", id);
     }
 }

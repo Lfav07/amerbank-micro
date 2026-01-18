@@ -28,6 +28,15 @@ cloud:
 jwt:
   secret: ${JWT_SECRET}
 
+auth:
+  service:
+    url: http://auth-server
+    timeout: 5000
+    register:
+      path: /auth/internal/register
+    user-by-email:
+      path: /admin/auth/users/by-email
+
 kafka:
   bootstrap-servers: localhost:9092
   producer:
