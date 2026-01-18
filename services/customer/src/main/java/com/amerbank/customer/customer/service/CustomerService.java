@@ -12,8 +12,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.*;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -104,17 +102,15 @@ public class CustomerService {
                     .body(userRegisterRequest)
                     .retrieve()
                     .body(UserResponse.class);
+
         } catch (HttpClientErrorException e) {
-            log.error("User registration failed for email {}", maskedEmail);
+            log.error("User registration failed for email {}", maskedEmail, e);
             throw new UserRegistrationFailedException("User registration failed");
-        } catch (HttpServerErrorException e) {
-            log.error("Auth server error while registering user with email {}", maskedEmail);
-            throw new AuthServiceUnavailableException("Auth server error");
-        } catch (ResourceAccessException e) {
-            log.error("Cannot reach auth server while registering user with email {}", maskedEmail);
-            throw new AuthServiceUnavailableException("Cannot reach auth server");
+        } catch (HttpServerErrorException | ResourceAccessException e) {
+            log.error("Auth service unavailable while registering user with email {}", maskedEmail, e);
+            throw new AuthServiceUnavailableException("Auth service unavailable");
         } catch (RestClientException e) {
-            log.error("Unexpected error during user registration for email {}", maskedEmail);
+            log.error("Unexpected error during user registration for email {}", maskedEmail, e);
             throw new UserRegistrationFailedException("Unexpected error during user registration");
         }
 
@@ -124,32 +120,44 @@ public class CustomerService {
         }
 
         Long userId = userResponse.id();
-        log.debug("User registered successfully with userId: {}", userId);
+        log.debug("User registered successfully with userId {}", userId);
 
         if (customerRepository.existsByUserId(userId)) {
-            log.warn("Customer registration failed: customer already exists for userId {}", userId);
+            log.warn("Customer already exists for userId {}", userId);
             throw new CustomerAlreadyExistsException("Customer already exists for userId: " + userId);
         }
 
         Customer customer = customerMapper.toCustomer(request, userId);
         customer.setKycVerified(true);
 
-        log.debug("Customer entity prepared for registration with userId: {}", userId);
-
         try {
             customerRepository.save(customer);
             log.info("Customer successfully registered with email {}", maskedEmail);
         } catch (DataIntegrityViolationException e) {
-            log.error("Failed to save customer for userId {}", userId);
+            log.error("Data integrity violation while saving customer for userId {}", userId, e);
+
             CustomerDeletedEvent event = new CustomerDeletedEvent(userId);
-            try {
-                kafkaTemplate.send("customer.deleted", event);
-            } catch (Exception kafkaEx) {
-                log.error("Failed to send customer.deleted event to Kafka", kafkaEx);
-            }
-            throw new CustomerRegistrationFailedException("Failed to save customer: data integrity violation");
+
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            try {
+                                kafkaTemplate.send("customer.deleted", event);
+                                log.info("Compensation event customer.deleted sent for userId {}", userId);
+                            } catch (Exception kafkaEx) {
+                                log.error("Failed to send customer.deleted event for userId {}", userId, kafkaEx);
+                            }
+                        }
+                    }
+            );
+
+            throw new CustomerRegistrationFailedException(
+                    "Failed to save customer due to data integrity violation"
+            );
         }
     }
+
 
     // -------------------- Retrieval --------------------
 
