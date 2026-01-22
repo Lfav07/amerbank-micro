@@ -3,6 +3,7 @@ package com.amerbank.auth_server.config;
 import com.amerbank.auth_server.dto.CustomerDeletedEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
@@ -14,19 +15,37 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
+@EnableConfigurationProperties(KafkaProperties.class)
 public class KafkaConsumerConfig {
+
+    private final KafkaProperties kafkaProperties;
+
+    public KafkaConsumerConfig(KafkaProperties kafkaProperties) {
+        this.kafkaProperties = kafkaProperties;
+    }
 
     @Bean
     public ConsumerFactory<String, CustomerDeletedEvent> consumerFactory() {
         Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "auth-service");
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "com.amerbank.auth_server.dto.CustomerDeletedEvent");
+
+
+        props.put(JsonDeserializer.TYPE_MAPPINGS,
+                "com.amerbank.customer.customer.dto.CustomerDeletedEvent:" +
+                        "com.amerbank.auth_server.dto.CustomerDeletedEvent");
+
+
+        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE,
+                "com.amerbank.auth_server.dto.CustomerDeletedEvent");
+
         return new DefaultKafkaConsumerFactory<>(props);
     }
+
 
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, CustomerDeletedEvent> kafkaListenerContainerFactory() {
