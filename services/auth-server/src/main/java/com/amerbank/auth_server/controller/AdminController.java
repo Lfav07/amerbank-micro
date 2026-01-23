@@ -4,6 +4,7 @@ import com.amerbank.auth_server.dto.*;
 import com.amerbank.auth_server.security.JwtUserPrincipal;
 import com.amerbank.auth_server.service.UserService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -63,7 +64,7 @@ public class AdminController {
 
     @GetMapping("/users/by-email")
     public ResponseEntity<UserResponse> getUserByEmail(
-            @RequestParam String email) {
+            @RequestParam @Email String email) {
 
         return ResponseEntity.ok(userService.findByEmailMapped(email));
     }
