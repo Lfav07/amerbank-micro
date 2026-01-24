@@ -32,6 +32,12 @@ spring:
 jwt:
   secret: ${JWT_SECRET}
 
+account:
+  prefix: "ACCT"
+  body-digits: 10
+  upper-bound: 10000000000
+  max-attempts: 5
+
 eureka:
   client:
     service-url:
