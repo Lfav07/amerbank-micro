@@ -1,5 +1,6 @@
 package com.amerbank.account.service;
 
+import com.amerbank.account.config.AccountProperties;
 import com.amerbank.account.dto.*;
 import com.amerbank.account.exception.AccountNotFoundException;
 import com.amerbank.account.exception.InactiveAccountException;
@@ -16,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -24,6 +26,7 @@ import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Service class responsible for managing accounts, including creation,
@@ -34,11 +37,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AccountService {
 
-    private static final String PREFIX = "ACCT";
-    private static final int BODY_DIGITS = 10;
-    private static final long UPPER_BOUND = 1_000_000_0000L;
     private static final SecureRandom RNG = new SecureRandom();
-
+    private final AccountProperties accountProperties;
     private final AccountRepository accountRepository;
     private final AccountMapper accountMapper;
     private final RestTemplate restTemplate;
@@ -49,19 +49,34 @@ public class AccountService {
     // -------------------------------
 
     /**
-     * Generates a unique account number with a fixed prefix and a 10-digit body.
-     * Ensures that the generated account number does not already exist in the database.
+     * Generates a unique account number for a new account.
      *
-     * @return a unique account number string.
+     * The account number consists of a configurable prefix and a numeric body
+     * with a length defined by {@link AccountProperties}.
+     * The numeric body is randomly generated using a thread-safe RNG.
+     * <p>
+     * Uniqueness is ensured by checking the repository for existing account numbers.
+     * Retry attempts are made in case of collisions.
+     *
+     * @return a unique account number string
+     * @throws IllegalStateException if a unique number cannot be generated after a few attempts
      */
     public String generateAccountNumber() {
-        String candidate;
-        do {
-            long body = Math.abs(RNG.nextLong()) % UPPER_BOUND;
-            candidate = PREFIX + String.format("%0" + BODY_DIGITS + "d", body);
-        } while (accountRepository.existsByAccountNumber(candidate));
-        return candidate;
+        int maxAttempts = accountProperties.getMaxAttempts();
+
+        for (int attempt = 0; attempt < maxAttempts; attempt++) {
+            long body = ThreadLocalRandom.current().nextLong(accountProperties.getUpperBound());
+            String candidate = accountProperties.getPrefix()
+                    + String.format("%0" + accountProperties.getBodyDigits() + "d", body);
+
+            if (!accountRepository.existsByAccountNumber(candidate)) {
+                return candidate;
+            }
+        }
+        throw new IllegalStateException("Unable to generate unique account number after " + maxAttempts + " attempts");
     }
+
+
 
     /**
      * Creates a new account for the authenticated customer with the given request details.
