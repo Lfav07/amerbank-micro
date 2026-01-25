@@ -37,6 +37,7 @@ account:
   body-digits: 10
   upper-bound: 10000000000
   max-attempts: 5
+  initial-balance: 1000.00
 
 eureka:
   client:

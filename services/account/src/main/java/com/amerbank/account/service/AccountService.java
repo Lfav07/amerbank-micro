@@ -2,9 +2,7 @@ package com.amerbank.account.service;
 
 import com.amerbank.account.config.AccountProperties;
 import com.amerbank.account.dto.*;
-import com.amerbank.account.exception.AccountNotFoundException;
-import com.amerbank.account.exception.InactiveAccountException;
-import com.amerbank.account.exception.InsufficientFundsAvailableException;
+import com.amerbank.account.exception.*;
 import com.amerbank.account.model.Account;
 import com.amerbank.account.model.AccountStatus;
 import com.amerbank.account.model.AccountType;
@@ -14,12 +12,16 @@ import com.amerbank.account.dto.DepositBalanceRequest;
 import com.amerbank.account.dto.PaymentBalanceRequest;
 import com.amerbank.account.dto.RefundBalanceRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
@@ -35,6 +37,7 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AccountService {
 
     private static final SecureRandom RNG = new SecureRandom();
@@ -87,20 +90,46 @@ public class AccountService {
      * @return the created account response DTO.
      * @throws IllegalStateException if account of the requested type already exists for the customer.
      */
+    @Transactional
     public AccountResponse createAccount(AccountRequest request, Long customerId) {
 
-        boolean exists = accountRepository.existsByCustomerIdAndType(customerId, request.type());
-        if (exists) {
-            throw new IllegalStateException("Customer already has an account of type: " + request.type());
-        }
         Account account = accountMapper.toAccount(request);
         account.setAccountNumber(generateAccountNumber());
         account.setCustomerId(customerId);
-        //demo balance
-        account.setBalance(BigDecimal.valueOf(1000.00));
-        Account saved = accountRepository.save(account);
-        return accountMapper.fromAccount(saved);
+        account.setBalance((accountProperties.getInitialBalance()));
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        log.info("Account {} created for customer {}",
+                                account.getAccountNumber(), customerId);
+                    }
+                }
+        );
+        try {
+            accountRepository.save(account);
+        } catch (DataIntegrityViolationException e) {
+            if (isUniqueConstraintViolation(e)) {
+                log.warn("Duplicate account creation attempt for customerId {}", customerId);
+                throw new AccountAlreadyExistsException(customerId, request.type());
+            }
+            log.error("Unexpected failure while creating account for customerId {}", customerId, e);
+            throw new AccountRegistrationFailedException("Failed to create account", e);
+        }
+        return accountMapper.toResponse(account);
     }
+
+    private boolean isUniqueConstraintViolation(DataIntegrityViolationException e) {
+        Throwable t = e;
+        while (t != null) {
+            if (t instanceof ConstraintViolationException cve) {
+                return "unique_customer_account_type".equals(cve.getConstraintName());
+            }
+            t = t.getCause();
+        }
+        return false;
+    }
+
 
     // -------------------------------
     // RETRIEVAL (GET) METHODS
@@ -118,7 +147,7 @@ public class AccountService {
     public AccountResponse getAccountByAccountNumber(String accountNumber) {
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new AccountNotFoundException("Account not found with accountNumber " + accountNumber));
-        return accountMapper.fromAccount(account);
+        return accountMapper.toResponse(account);
     }
 
     /**
@@ -134,7 +163,7 @@ public class AccountService {
             throw new AccountNotFoundException("No accounts found for customerId " + customerId);
         }
         return accounts.stream()
-                .map(accountMapper::fromAccount)
+                .map(accountMapper::toResponse)
                 .toList();
     }
 
@@ -151,7 +180,7 @@ public class AccountService {
             throw new AccountNotFoundException("No accounts found for authenticated customer");
         }
         return accounts.stream()
-                .map(accountMapper::fromAccount)
+                .map(accountMapper::toResponse)
                 .map(accountMapper::getAccountInfo)
                 .toList();
     }
@@ -168,7 +197,7 @@ public class AccountService {
         Account account = accountRepository.findByCustomerIdAndType(customerId, type)
                 .orElseThrow(() -> new AccountNotFoundException(
                         "No account found for customerId " + customerId + " and type " + type));
-        return accountMapper.fromAccount(account);
+        return accountMapper.toResponse(account);
     }
 
     /**
@@ -261,7 +290,7 @@ public class AccountService {
         }
 
         existing.setType(request.type());
-        return accountMapper.fromAccount(accountRepository.save(existing));
+        return accountMapper.toResponse(accountRepository.save(existing));
     }
 
     /**
@@ -275,7 +304,7 @@ public class AccountService {
     public AccountResponse updateAccountStatus(String accountNumber, AccountUpdateStatusRequest request) {
         Account existing = findAccountEntity(accountNumber);
         existing.setStatus(request.status());
-        return accountMapper.fromAccount(accountRepository.save(existing));
+        return accountMapper.toResponse(accountRepository.save(existing));
     }
 
     /**
@@ -289,7 +318,7 @@ public class AccountService {
     public AccountResponse suspendAccount(String accountNumber) {
         Account account = findAccountEntity(accountNumber);
         account.setStatus(AccountStatus.SUSPENDED);
-        return accountMapper.fromAccount(accountRepository.save(account));
+        return accountMapper.toResponse(accountRepository.save(account));
     }
 
     /**

@@ -6,11 +6,15 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 @ConfigurationProperties(prefix = "account")
 @Getter
 @Setter
 public class AccountProperties {
 
+    //Account number generation
     @NotBlank
     private String prefix;
 
@@ -22,6 +26,13 @@ public class AccountProperties {
 
     @Min(1)
     private int maxAttempts;
+
+    public BigDecimal getInitialBalance() {
+        return initialBalance.setScale(2, RoundingMode.UNNECESSARY);
+    }
+
+    //Account registration
+    private BigDecimal initialBalance;
 
 
 }
