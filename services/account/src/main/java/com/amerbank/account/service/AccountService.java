@@ -7,7 +7,6 @@ import com.amerbank.account.model.Account;
 import com.amerbank.account.model.AccountStatus;
 import com.amerbank.account.model.AccountType;
 import com.amerbank.account.repository.AccountRepository;
-import com.amerbank.account.security.JwtService;
 import com.amerbank.account.dto.DepositBalanceRequest;
 import com.amerbank.account.dto.PaymentBalanceRequest;
 import com.amerbank.account.dto.RefundBalanceRequest;
@@ -22,10 +21,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
-import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -40,12 +37,9 @@ import java.util.concurrent.ThreadLocalRandom;
 @Slf4j
 public class AccountService {
 
-    private static final SecureRandom RNG = new SecureRandom();
     private final AccountProperties accountProperties;
     private final AccountRepository accountRepository;
     private final AccountMapper accountMapper;
-    private final RestTemplate restTemplate;
-    private final JwtService jwtService;
 
     // -------------------------------
     // ACCOUNT CREATION & GENERATION
@@ -53,7 +47,6 @@ public class AccountService {
 
     /**
      * Generates a unique account number for a new account.
-     *
      * The account number consists of a configurable prefix and a numeric body
      * with a length defined by {@link AccountProperties}.
      * The numeric body is randomly generated using a thread-safe RNG.
