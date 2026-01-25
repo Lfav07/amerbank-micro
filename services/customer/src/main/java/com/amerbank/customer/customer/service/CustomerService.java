@@ -77,7 +77,7 @@ public class CustomerService {
      * @throws AuthServiceUnavailableException     if the authentication service cannot be reached or returns a server-side error
      * @throws CustomerRegistrationFailedException if an unexpected error occurs during REST call or saving the customer (e.g., data integrity violation)
      */
-    @Transactional
+
     public void registerCustomer(CustomerRequest request) {
         String maskedEmail = maskEmail(request.email());
         log.info("Attempting to register new customer with email {} ...", maskedEmail);
@@ -138,7 +138,7 @@ public class CustomerService {
     }
 
     @Transactional
-    void saveCustomerTransactional(CustomerRequest request, Long userId) {
+    public void saveCustomerTransactional(CustomerRequest request, Long userId) {
         if (customerRepository.existsByUserId(userId)) {
             throw new CustomerAlreadyExistsException(
                     "Customer already exists for userId: " + userId
