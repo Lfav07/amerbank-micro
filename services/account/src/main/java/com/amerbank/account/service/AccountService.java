@@ -136,7 +136,7 @@ public class AccountService {
      * @return the account response DTO.
      * @throws AccountNotFoundException if no account with the given number exists.
      */
-    @Cacheable(value = "accounts", key = "#accountNumber")
+    @Cacheable( value = "account-by-number", key = "#accountNumber")
     public AccountResponse getAccountByAccountNumber(String accountNumber) {
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new AccountNotFoundException("Account not found with accountNumber " + accountNumber));
@@ -150,6 +150,12 @@ public class AccountService {
      * @return a list of account response DTOs.
      * @throws AccountNotFoundException if the customer has no accounts.
      */
+
+    @Cacheable(
+            value = "accounts-by-customer",
+            key = "#customerId",
+            unless = "#result == null || #result.isEmpty()"
+    )
     public List<AccountResponse> getAccountsByCustomerId(Long customerId) {
         List<Account> accounts = accountRepository.findAllByCustomerId(customerId);
         if (accounts.isEmpty()) {
@@ -167,13 +173,14 @@ public class AccountService {
      * @return a list of account info DTOs.
      * @throws AccountNotFoundException if the authenticated customer has no accounts.
      */
+
+
     public List<AccountInfo> getMyAccounts(Long customerId) {
-        List<Account> accounts = accountRepository.findAllByCustomerId(customerId);
+        List<AccountResponse> accounts = getAccountsByCustomerId(customerId);
         if (accounts.isEmpty()) {
             throw new AccountNotFoundException("No accounts found for authenticated customer");
         }
         return accounts.stream()
-                .map(accountMapper::toResponse)
                 .map(accountMapper::getAccountInfo)
                 .toList();
     }
