@@ -27,6 +27,16 @@ public class AccountMapper {
                 account.getStatus()
         );
     }
+    public AccountInfo getAccountInfoFromAccount(Account account) {
+        return new AccountInfo(
+                account.getId(),
+                account.getAccountNumber(),
+                account.getBalance(),
+                account.getType(),
+                account.getStatus()
+        );
+    }
+
 
     public AccountInfo getAccountInfo(AccountResponse response) {
         return new AccountInfo(
