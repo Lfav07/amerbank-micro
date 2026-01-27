@@ -12,6 +12,7 @@
         <module>services/auth-server</module>
         <module>services/customer</module>
        <module>services/account</module>
+        <module>services/config-server</module>
         <module>services/transaction</module>
         <module>services/loan</module>
         <module>services/audit-logging</module>
