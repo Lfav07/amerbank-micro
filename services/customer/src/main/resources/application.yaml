@@ -4,47 +4,8 @@ server:
 spring:
   application:
     name: customer
-  datasource:
-    url: jdbc:postgresql://localhost:5432/amerbank?currentSchema=customer
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-    driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-  flyway:
-    outOfOrder: true
-    schemas: customer
-    enabled: true
-    locations: classpath:db/migration/customer
 
-cloud:
   config:
-    enabled: false
-    fail-fast: true
-    label: main
+    import: "optional:configserver:"
 
-jwt:
-  secret: ${JWT_SECRET}
 
-auth:
-  service:
-    url: http://auth-server
-    timeout: 5000
-    register:
-      path: /auth/internal/register
-    user-by-email:
-      path: /admin/auth/users/by-email
-
-kafka:
-  bootstrap-servers: localhost:9092
-  producer:
-    key-serializer: org.apache.kafka.common.serialization.StringSerializer
-    value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-  consumer:
-    group-id: customer-service
-    key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-    value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-    properties:
-      spring.json.trusted.packages: "*"
