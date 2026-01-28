@@ -28,4 +28,6 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     boolean existsByCustomerIdAndType(Long customerId, @NotNull AccountType type);
 
     Optional<Account> findByCustomerIdAndType(Long customerId, AccountType type);
+
+    void deleteByAccountNumber(String accountNumber);
 }

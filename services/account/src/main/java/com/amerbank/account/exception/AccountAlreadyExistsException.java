@@ -2,7 +2,9 @@ package com.amerbank.account.exception;
 
 import com.amerbank.account.model.AccountType;
 import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
 
+@Getter
 public class AccountAlreadyExistsException extends RuntimeException {
 
     private final Long customerId;
@@ -15,11 +17,4 @@ public class AccountAlreadyExistsException extends RuntimeException {
         this.accountType = accountType;
     }
 
-    public Long getCustomerId() {
-        return customerId;
-    }
-
-    public AccountType getAccountType() {
-        return accountType;
-    }
 }

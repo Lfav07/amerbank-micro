@@ -16,6 +16,7 @@ import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -84,6 +85,7 @@ public class AccountService {
      * @throws IllegalStateException if account of the requested type already exists for the customer.
      */
     @Transactional
+    @CacheEvict(value = "accounts-by-customer", key = "#customerId")
     public AccountResponse createAccount(AccountRequest request, Long customerId) {
 
         Account account = accountMapper.toAccount(request);
@@ -252,7 +254,7 @@ public class AccountService {
         AccountResponse response = getAccountByAccountNumber(accountNumber);
         BigDecimal balance = response.balance();
         if (balance == null) {
-            throw new IllegalStateException("Account balance is null");
+            throw new NullAccountBalanceException("Account balance is null");
         }
         return balance;
     }
@@ -280,7 +282,14 @@ public class AccountService {
      * @throws IllegalStateException    if customer already has an account of the new type.
      * @throws AccountNotFoundException if the account is not found.
      */
-    @CachePut(value = "accounts", key = "#request.accountNumber()")
+    @Caching(
+            put = {
+                    @CachePut(value = "account-by-number", key = "#result.accountNumber")
+            },
+            evict = {
+                    @CacheEvict(value = "accounts-by-customer", key = "#result.customerId")
+            }
+    )
     public AccountResponse updateAccountType(String accountNumber, AccountUpdateTypeRequest request) {
         Account existing = findAccountEntity(accountNumber);
         Long customerId = existing.getCustomerId();
@@ -300,7 +309,14 @@ public class AccountService {
      * @return the updated account response DTO.
      * @throws AccountNotFoundException if the account is not found.
      */
-    @CachePut(value = "accounts", key = "#request.accountNumber()")
+    @Caching(
+            put = {
+                    @CachePut(value = "account-by-number", key = "#result.accountNumber")
+            },
+            evict = {
+                    @CacheEvict(value = "accounts-by-customer", key = "#result.customerId")
+            }
+    )
     public AccountResponse updateAccountStatus(String accountNumber, AccountUpdateStatusRequest request) {
         Account existing = findAccountEntity(accountNumber);
         existing.setStatus(request.status());
@@ -314,7 +330,14 @@ public class AccountService {
      * @return the updated account response DTO.
      * @throws AccountNotFoundException if the account is not found.
      */
-    @CachePut(value = "accounts", key = "#accountNumber")
+    @Caching(
+            put = {
+                    @CachePut(value = "account-by-number", key = "#result.accountNumber")
+            },
+            evict = {
+                    @CacheEvict(value = "accounts-by-customer", key = "#result.customerId")
+            }
+    )
     public AccountResponse suspendAccount(String accountNumber) {
         Account account = findAccountEntity(accountNumber);
         account.setStatus(AccountStatus.SUSPENDED);
@@ -330,6 +353,10 @@ public class AccountService {
      * @throws IllegalArgumentException if the deposit amount is negative or zero
      */
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "account-by-number", key = "#request.accountNumber()"),
+            @CacheEvict(value = "accounts-by-customer", key = "#customerId")
+    })
     public void performDeposit(Long customerId, DepositBalanceRequest request) {
         if (request.amount() == null || request.amount().signum() <= 0) {
             throw new IllegalArgumentException("Deposit amount must be positive");
@@ -359,6 +386,10 @@ public class AccountService {
      * @throws InsufficientFundsAvailableException if the source account has insufficient balance
      */
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "account-by-number", allEntries = true),
+            @CacheEvict(value = "accounts-by-customer", allEntries = true)
+    })
     public void performPayment(Long customerId, PaymentBalanceRequest request) {
         if (request.amount() == null || request.amount().signum() <= 0) {
             throw new IllegalArgumentException("Payment amount must be positive");
@@ -415,6 +446,10 @@ public class AccountService {
      * @throws InsufficientFundsAvailableException if the sender account lacks sufficient balance for the refund
      */
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "account-by-number", allEntries = true),
+            @CacheEvict(value = "accounts-by-customer", allEntries = true)
+    })
     public void performRefund(Long customerId, RefundBalanceRequest request) {
         if (request.amount() == null || request.amount().signum() <= 0) {
             throw new IllegalArgumentException("Refund amount must be positive");
@@ -518,10 +553,12 @@ public class AccountService {
      * @param accountNumber the account number to delete.
      * @throws AccountNotFoundException if the account is not found.
      */
-    @CacheEvict(value = "accounts", key = "#accountNumber")
-    public void deleteAccount(String accountNumber) {
-        Account account = findAccountEntity(accountNumber);
-        accountRepository.delete(account);
+    @Caching(evict = {
+            @CacheEvict(value = "account-by-number", key = "#accountNumber"),
+            @CacheEvict(value = "accounts-by-customer", key = "#customerId")
+    })
+    public void deleteAccount(String accountNumber, Long customerId) {
+        accountRepository.deleteByAccountNumber(accountNumber);
     }
 
     // -------------------------------
