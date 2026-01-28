@@ -56,7 +56,7 @@ public class AccountService {
      * Retry attempts are made in case of collisions.
      *
      * @return a unique account number string
-     * @throws IllegalStateException if a unique number cannot be generated after a few attempts
+     * @throws FailedToGenerateAccountNumberException if a unique number cannot be generated after a few attempts
      */
     public String generateAccountNumber() {
         int maxAttempts = accountProperties.getMaxAttempts();
@@ -70,7 +70,7 @@ public class AccountService {
                 return candidate;
             }
         }
-        throw new IllegalStateException("Unable to generate unique account number after " + maxAttempts + " attempts");
+        throw new FailedToGenerateAccountNumberException("Unable to generate unique account number after " + maxAttempts + " attempts");
     }
 
 
@@ -82,7 +82,7 @@ public class AccountService {
      * @param request    the account creation request details.
      * @param customerId the customer's id.
      * @return the created account response DTO.
-     * @throws IllegalStateException if account of the requested type already exists for the customer.
+     * @throws AccountAlreadyExistsException if account of the requested type already exists for the customer.
      */
     @Transactional
     @CacheEvict(value = "accounts-by-customer", key = "#customerId")
@@ -209,7 +209,7 @@ public class AccountService {
      * @param type       the type of the account.
      * @return the account balance.
      * @throws AccountNotFoundException if no matching account is found.
-     * @throws IllegalStateException    if the account balance is null.
+     * @throws NullAccountBalanceException    if the account balance is null.
      */
     public BigDecimal getAccountBalance(Long customerId, AccountType type) {
         Account account = accountRepository.findByCustomerIdAndType(customerId, type)
@@ -217,7 +217,7 @@ public class AccountService {
                         "No account found for authenticated customer with type " + type));
         BigDecimal balance = account.getBalance();
         if (balance == null) {
-            throw new IllegalStateException("Account balance is null");
+            throw new NullAccountBalanceException("Account balance is null");
         }
         return balance;
     }
@@ -235,10 +235,12 @@ public class AccountService {
             throw new AccountNotFoundException("No accounts found for authenticated customer");
         }
         return accounts.stream()
-                .map(account -> new AccountBalanceInfo(
-                        account.getAccountNumber(),
-                        account.getType(),
-                        account.getBalance() != null ? account.getBalance() : BigDecimal.ZERO))
+                .map(account -> {
+                    if (account.getBalance() == null) {
+                        throw new NullAccountBalanceException("Account balance is null for account " + account.getAccountNumber());
+                    }
+                    return new AccountBalanceInfo(account.getAccountNumber(), account.getType(), account.getBalance());
+                })
                 .toList();
     }
 
@@ -248,7 +250,7 @@ public class AccountService {
      * @param accountNumber the account number.
      * @return the account balance.
      * @throws AccountNotFoundException if no such account exists.
-     * @throws IllegalStateException    if the account balance is null.
+     * @throws NullAccountBalanceException    if the account balance is null.
      */
     public BigDecimal getAccountBalanceByAccountNumber(String accountNumber) {
         AccountResponse response = getAccountByAccountNumber(accountNumber);
@@ -279,7 +281,7 @@ public class AccountService {
      *
      * @param request the update request containing the account number and new type.
      * @return the updated account response DTO.
-     * @throws IllegalStateException    if customer already has an account of the new type.
+     * @throws AccountAlreadyExistsException    if customer already has an account of the new type.
      * @throws AccountNotFoundException if the account is not found.
      */
     @Caching(
@@ -295,7 +297,7 @@ public class AccountService {
         Long customerId = existing.getCustomerId();
 
         if (accountRepository.existsByCustomerIdAndType(customerId, request.type())) {
-            throw new IllegalStateException("Customer already has an account of type: " + request.type());
+            throw new AccountAlreadyExistsException(customerId, request.type());
         }
 
         existing.setType(request.type());
@@ -350,6 +352,7 @@ public class AccountService {
      * @param customerId the customer's id for the authenticated user.
      * @param request    contains account number and amount to deposit
      * @throws AccountNotFoundException if the account does not exist or does not belong to the user
+     * @throws InactiveAccountException if the account is not active
      * @throws IllegalArgumentException if the deposit amount is negative or zero
      */
     @Transactional
@@ -361,11 +364,13 @@ public class AccountService {
         if (request.amount() == null || request.amount().signum() <= 0) {
             throw new IllegalArgumentException("Deposit amount must be positive");
         }
-        if (!isAccountActive(request.accountNumber())) {
+
+        Account account = findAccountEntityForUpdate(request.accountNumber()); // Lock account
+
+
+        if (!account.getStatus().equals(AccountStatus.ACTIVE)) {
             throw new InactiveAccountException("Account is not active");
         }
-
-        Account account = findAccountEntityForUpdate(request.accountNumber());
 
         if (!account.getCustomerId().equals(customerId)) {
             throw new AccountNotFoundException("Account does not belong to authenticated customer");
@@ -382,7 +387,8 @@ public class AccountService {
      * @param customerId the customer's id for the authenticated user.
      * @param request    contains source (from) and destination (to) account numbers, and the payment amount
      * @throws AccountNotFoundException            if the source account does not exist or is not owned by the user
-     * @throws IllegalArgumentException            if the payment amount is negative or zero
+     * @throws IllegalArgumentException        if the payment amount is negative or zero
+     * @throws IllegalArgumentException          if the source and destination accounts are the same
      * @throws InsufficientFundsAvailableException if the source account has insufficient balance
      */
     @Transactional
@@ -399,11 +405,6 @@ public class AccountService {
             throw new IllegalArgumentException("Source and destination accounts must be different");
         }
 
-        if (!isAccountActive(request.fromAccountNumber()) || !isAccountActive(request.toAccountNumber())) {
-            throw new InactiveAccountException("Account is not active");
-        }
-
-
         List<Account> locked = lockAccountsOrdered(
                 request.fromAccountNumber(),
                 request.toAccountNumber()
@@ -417,6 +418,12 @@ public class AccountService {
                 .filter(a -> a.getAccountNumber().equals(request.toAccountNumber()))
                 .findFirst()
                 .orElseThrow();
+
+
+        if (!fromAccount.getStatus().equals(AccountStatus.ACTIVE) ||
+                !toAccount.getStatus().equals(AccountStatus.ACTIVE)) {
+            throw new InactiveAccountException("Account is not active");
+        }
 
         if (!fromAccount.getCustomerId().equals(customerId)) {
             throw new AccountNotFoundException("Account does not belong to authenticated customer");
@@ -442,7 +449,8 @@ public class AccountService {
      * @param customerId the customer's id for the authenticated user.
      * @param request    contains the account numbers involved in the original transaction and the refund amount
      * @throws AccountNotFoundException            if the sender (original recipient) account is not owned by the user
-     * @throws IllegalArgumentException            if the refund amount is negative or zero
+     * @throws SameRefundAccountsException          if the source and destination accounts are the same
+     * @throws NegativeRefundAmountException            if the refund amount is negative or zero
      * @throws InsufficientFundsAvailableException if the sender account lacks sufficient balance for the refund
      */
     @Transactional
@@ -451,53 +459,50 @@ public class AccountService {
             @CacheEvict(value = "accounts-by-customer", allEntries = true)
     })
     public void performRefund(Long customerId, RefundBalanceRequest request) {
-        if (request.amount() == null || request.amount().signum() <= 0) {
-            throw new IllegalArgumentException("Refund amount must be positive");
+            if (request.amount() == null || request.amount().signum() <= 0) {
+                throw new NegativeRefundAmountException("Refund amount must be positive");
+            }
+
+            if (request.fromAccountNumber().equals(request.toAccountNumber())) {
+                throw new SameRefundAccountsException("Source and destination accounts must be different");
+            }
+
+            List<Account> locked = lockAccountsOrdered(
+                    request.fromAccountNumber(),
+                    request.toAccountNumber()
+            );
+
+            Account sender = locked.stream()
+                    .filter(a -> a.getAccountNumber().equals(request.fromAccountNumber()))
+                    .findFirst()
+                    .orElseThrow();
+            Account recipient = locked.stream()
+                    .filter(a -> a.getAccountNumber().equals(request.toAccountNumber()))
+                    .findFirst()
+                    .orElseThrow();
+
+
+            if (!sender.getStatus().equals(AccountStatus.ACTIVE) ||
+                    !recipient.getStatus().equals(AccountStatus.ACTIVE)) {
+                throw new InactiveAccountException("Account is not active");
+            }
+
+            if (!sender.getCustomerId().equals(customerId)) {
+                throw new AccountNotFoundException("Account does not belong to authenticated customer");
+            }
+
+            BigDecimal amount = request.amount();
+
+            if (sender.getBalance().compareTo(amount) < 0) {
+                throw new InsufficientFundsAvailableException("Insufficient funds to perform refund.");
+            }
+
+            sender.setBalance(sender.getBalance().subtract(amount));
+            recipient.setBalance(recipient.getBalance().add(amount));
+
+            accountRepository.save(sender);
+            accountRepository.save(recipient);
         }
-
-        if (!isAccountActive(request.fromAccountNumber()) || !isAccountActive(request.toAccountNumber())) {
-            throw new InactiveAccountException("Account is not active");
-        }
-
-        if (request.fromAccountNumber().equals(request.toAccountNumber())) {
-            throw new IllegalArgumentException("Source and destination accounts must be different");
-        }
-
-
-        List<Account> locked = lockAccountsOrdered(
-                request.fromAccountNumber(),
-                request.toAccountNumber()
-        );
-
-        BigDecimal amount = request.amount();
-
-
-        // The one sending the refund is the RECIPIENT of the original transaction
-        //  - original recipient
-        Account sender = locked.stream()
-                .filter(a -> a.getAccountNumber().equals(request.fromAccountNumber()))
-                .findFirst()
-                .orElseThrow();
-        // original sender
-        Account recipient =  locked.stream()
-                .filter(a -> a.getAccountNumber().equals(request.toAccountNumber()))
-                .findFirst()
-                .orElseThrow();
-
-        if (!sender.getCustomerId().equals(customerId)) {
-            throw new AccountNotFoundException("Account does not belong to authenticated customer");
-        }
-
-        if (sender.getBalance().compareTo(amount) < 0) {
-            throw new InsufficientFundsAvailableException("Insufficient funds to perform refund.");
-        }
-
-        sender.setBalance(sender.getBalance().subtract(amount));
-        recipient.setBalance(recipient.getBalance().add(amount));
-
-        accountRepository.save(sender);
-        accountRepository.save(recipient);
-    }
 
 
     // -------------------------------
@@ -522,7 +527,7 @@ public class AccountService {
      * @param amountToTransfer the amount to check against the balance.
      * @return true if the account balance is greater than or equal to the amount, false otherwise.
      * @throws AccountNotFoundException if no matching account is found.
-     * @throws IllegalStateException    if the account balance is null.
+     * @throws NullAccountBalanceException    if the account balance is null.
      */
     public boolean hasSufficientFundsByType(Long customerId, AccountType type, BigDecimal amountToTransfer) {
         BigDecimal balance = getAccountBalance(customerId, type);
@@ -536,7 +541,7 @@ public class AccountService {
      * @param amountToTransfer the amount to check against the balance.
      * @return true if the account balance is greater than or equal to the amount, false otherwise.
      * @throws AccountNotFoundException if no matching account is found.
-     * @throws IllegalStateException    if the account balance is null.
+     * @throws NullAccountBalanceException    if the account balance is null.
      */
     public boolean hasSufficientFundsByAccountNumber(String accountNumber, BigDecimal amountToTransfer) {
         BigDecimal balance = getAccountBalanceByAccountNumber(accountNumber);
@@ -624,7 +629,7 @@ public class AccountService {
      */
     public boolean isAccountOwnedByCustomer(Long customerId, String accountNumber) {
         Account account = findAccountEntity(accountNumber);
-        return account.getCustomerId().equals(customerId);
+        return customerId != null && customerId.equals(account.getCustomerId());
     }
 
 }
