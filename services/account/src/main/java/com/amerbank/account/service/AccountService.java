@@ -177,14 +177,19 @@ public class AccountService {
      */
 
 
-    public List<AccountInfo> getMyAccounts(Long customerId) {
-        List<AccountResponse> accounts = getAccountsByCustomerId(customerId);
-        if (accounts.isEmpty()) {
-            throw new AccountNotFoundException("No accounts found for authenticated customer");
+        public List<AccountInfo> getMyAccounts(Long customerId) {
+            List<Account> accounts = accountRepository.findAllByCustomerId(customerId);
+
+            return accounts.stream()
+                    .map(accountMapper::getAccountInfoFromAccount)
+                    .toList();
         }
-        return accounts.stream()
-                .map(accountMapper::getAccountInfo)
-                .toList();
+
+    public AccountInfo getMyAccountByType(Long customerId, AccountType type) {
+        Account account = accountRepository.findByCustomerIdAndType(customerId, type)
+                .orElseThrow(() -> new AccountNotFoundException(
+                        "No account found for customerId " + customerId + " and type " + type));
+        return accountMapper.getAccountInfoFromAccount(account);
     }
 
     /**
@@ -631,5 +636,6 @@ public class AccountService {
         Account account = findAccountEntity(accountNumber);
         return customerId != null && customerId.equals(account.getCustomerId());
     }
+
 
 }

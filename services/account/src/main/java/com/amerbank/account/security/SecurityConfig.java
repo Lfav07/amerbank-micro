@@ -25,7 +25,7 @@ public class SecurityConfig {
     @Order(1)
     public SecurityFilterChain serviceSecurityFilterChain(HttpSecurity http, JwtService serviceJwtService) throws Exception {
         http
-                .securityMatcher("/accounts/internal/**")
+                .securityMatcher("/account/internal/**")
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().hasAuthority("SCOPE_service")
                 )
@@ -38,26 +38,16 @@ public class SecurityConfig {
     @Order(2)
     SecurityFilterChain chain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
-                .securityMatcher("/accounts/**")
+                .securityMatcher("/account/**")
                 .authorizeHttpRequests(auth -> auth
                         // Endpoints for authenticated users
                         .requestMatchers(
-                                "/accounts/register",                        // register account
-                                "/accounts/me",                      // get my accounts
-                                "/accounts/me/owned",                // check ownership
-                                "/accounts/me/balances",             // get balances
-                                "/accounts/me/balance",              // get balance by type
-                                "/accounts/me/has-funds"          // check funds
+                                "/account/register",
+                                "/account/me/**"
                         ).authenticated()
                         // Admin-only endpoints
                         .requestMatchers(
-                                "/accounts/customers/**",            // get accounts by customer
-                                "/accounts/{accountNumber}",         // get account details
-                                "/accounts/{accountNumber}/type",    // update type
-                                "/accounts/{accountNumber}/status",  // update status
-                                "/accounts/{accountNumber}/suspend", // suspend account
-                                "/accounts/{accountNumber}/balance", // get balance
-                                "/accounts/{accountNumber}"          // delete account
+                                "/account/admin/**"    // delete account
                         ).hasRole("ADMIN")
                         .anyRequest().hasRole("ADMIN"))  // fallback: admin
                 .sessionManagement(sess -> sess

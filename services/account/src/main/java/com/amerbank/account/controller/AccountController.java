@@ -4,26 +4,32 @@ import com.amerbank.account.dto.*;
 import com.amerbank.account.model.AccountType;
 import com.amerbank.account.security.JwtUserPrincipal;
 import com.amerbank.account.service.AccountService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 /**
- * REST controller for managing account-related operations.
+ * REST controller for customer-facing account operations.
+ * Handles account registration, retrieval, and balance inquiries for authenticated users.
  */
 @RestController
-@RequestMapping("/accounts")
+@RequestMapping("/account")
 @RequiredArgsConstructor
+@Validated
 public class AccountController {
 
     private final AccountService accountService;
 
     // ============================================================
-    // =============== ACCOUNT REGISTRATION & RETRIEVAL ============
+    // =============== ACCOUNT REGISTRATION & RETRIEVAL ===========
     // ============================================================
 
     /**
@@ -31,11 +37,11 @@ public class AccountController {
      *
      * @param accountRequest   the account creation data
      * @param jwtUserPrincipal the authenticated customer's data
-     * @return a success message or an error response
+     * @return a success message
      */
     @PostMapping("/register")
-    public ResponseEntity<?> registerAccount(
-            @RequestBody AccountRequest accountRequest,
+    public ResponseEntity<String> registerAccount(
+            @Valid @RequestBody AccountRequest accountRequest,
             @AuthenticationPrincipal JwtUserPrincipal jwtUserPrincipal) {
 
         accountService.createAccount(accountRequest, jwtUserPrincipal.customerId());
@@ -43,10 +49,10 @@ public class AccountController {
     }
 
     /**
-     * Retrieves the authenticated user's accounts.
+     * Retrieves all accounts for the authenticated user.
      *
      * @param jwtUserPrincipal the authenticated customer's data
-     * @return list of account info
+     * @return list of account information
      */
     @GetMapping("/me")
     public ResponseEntity<List<AccountInfo>> getMyAccounts(
@@ -57,149 +63,38 @@ public class AccountController {
     }
 
     /**
-     * Retrieves all accounts for a specific customer.
+     * Retrieves a specific account by type for the authenticated user.
      *
-     * @param customerId the customer ID
-     * @return list of all accounts
-     */
-    @GetMapping("/customers/{customerId}")
-    public ResponseEntity<List<AccountResponse>> getAccountsByCustomerId(
-            @PathVariable Long customerId) {
-
-        return ResponseEntity.ok(accountService.getAccountsByCustomerId(customerId));
-    }
-
-    /**
-     * Retrieves account(s) by customer ID and optionally filters by type.
-     *
-     * @param customerId the customer ID
-     * @param type       the account type (optional)
-     * @return list of matching accounts
-     */
-    @GetMapping("/customers/{customerId}/filter")
-    public ResponseEntity<List<AccountResponse>> getAccountsByCustomerIdAndType(
-            @PathVariable Long customerId,
-            @RequestParam(required = false) AccountType type) {
-
-        List<AccountResponse> accounts = (type != null)
-                ? List.of(accountService.getAccountByCustomerIdAndType(customerId, type))
-                : accountService.getAccountsByCustomerId(customerId);
-
-        return ResponseEntity.ok(accounts);
-    }
-
-
-
-    /**
-     * Retrieves account details by account number.
-     *
-     * @param accountNumber the account number
-     * @return account response with account information
-     */
-    @GetMapping("/{accountNumber}")
-    public ResponseEntity<AccountResponse> getAccountByAccountNumber(@PathVariable String accountNumber) {
-        return ResponseEntity.ok(accountService.getAccountByAccountNumber(accountNumber));
-    }
-
-    // ============================================================
-    // ================= ACCOUNT MANAGEMENT =======================
-    // ============================================================
-
-    /**
-     * Updates the type of account.
-     *
-     * @param request the account update request
-     * @return the updated account information
-     */
-    @PutMapping("/{accountNumber}/type")
-    public ResponseEntity<AccountResponse> updateAccountType(
-            @PathVariable String accountNumber,
-            @RequestBody AccountUpdateTypeRequest request) {
-
-        return ResponseEntity.ok(accountService.updateAccountType(accountNumber, request));
-    }
-
-    /**
-     * Updates the status of an account.
-     *
-     * @param request the account update request
-     * @return the updated account information
-     */
-    @PutMapping("/{accountNumber}/status")
-    public ResponseEntity<AccountResponse> updateAccountStatus(
-            @PathVariable String accountNumber,
-            @RequestBody AccountUpdateStatusRequest request) {
-        return ResponseEntity.ok(accountService.updateAccountStatus(accountNumber, request));
-    }
-
-    /**
-     * Suspends a specific account.
-     *
-     * @param accountNumber the account number
-     * @return the updated account information after suspension
-     */
-    @PutMapping("/{accountNumber}/suspend")
-    public ResponseEntity<AccountResponse> suspendAccount(@PathVariable String accountNumber) {
-        return ResponseEntity.ok(accountService.suspendAccount(accountNumber));
-    }
-
-    /**
-     * Deletes an account by its account number.
-     *
-     * @param accountNumber the account number
-     * @return a 204 No Content response if deletion is successful
-     */
-    @DeleteMapping("/{accountNumber}")
-    public ResponseEntity<Void> deleteAccount(@PathVariable String accountNumber) {
-        accountService.deleteAccount(accountNumber);
-        return ResponseEntity.noContent().build();
-    }
-
-    // ============================================================
-    // ============= ACCOUNT STATUS & OWNERSHIP CHECKS ============
-    // ============================================================
-
-    /**
-     * Checks if an account is currently active.
-     *
-     * @param accountNumber the account number
-     * @return true if the account is active, false otherwise
-     */
-    @GetMapping("/{accountNumber}/active")
-    public ResponseEntity<Boolean> isAccountActive(@PathVariable String accountNumber) {
-        return ResponseEntity.ok(accountService.isAccountActive(accountNumber));
-    }
-
-    /**
-     * Checks if the specified account number belongs to the currently authenticated customer.
-     *
-     * @param request          dto containing the account number to verify ownership of
+     * @param type             the account type to retrieve
      * @param jwtUserPrincipal the authenticated customer's data
-     * @return true if the account belongs to the current customer, false otherwise
+     * @return the account information
+     */
+    @GetMapping("/me/type")
+    public ResponseEntity<AccountInfo> getMyAccountByType(
+            @RequestParam @NotNull AccountType type,
+            @AuthenticationPrincipal JwtUserPrincipal jwtUserPrincipal) {
+
+        AccountInfo account = accountService.getMyAccountByType(jwtUserPrincipal.customerId(), type);
+        return ResponseEntity.ok(account);
+    }
+
+    /**
+     * Checks if the specified account number belongs to the authenticated customer.
+     *
+     * @param request          DTO containing the account number to verify
+     * @param jwtUserPrincipal the authenticated customer's data
+     * @return true if the account belongs to the authenticated customer, false otherwise
      */
     @PostMapping("/me/owned")
     public ResponseEntity<Boolean> isAccountOwnedByCurrentCustomer(
-            @RequestBody MyAccountOwnedRequest request,
+            @Valid @RequestBody MyAccountOwnedRequest request,
             @AuthenticationPrincipal JwtUserPrincipal jwtUserPrincipal) {
 
-        return ResponseEntity.ok(
-                accountService.isAccountOwnedByCustomer(jwtUserPrincipal.customerId(), request.accountNumber())
+        boolean isOwned = accountService.isAccountOwnedByCustomer(
+                jwtUserPrincipal.customerId(),
+                request.accountNumber()
         );
-    }
-
-
-    /**
-     * Checks if the specified account number belongs to the currently authenticated customer.
-     *
-     * @param request the verification request containg the customer id and account number
-     * @return true if the account belongs to the current customer, false otherwise
-     */
-    @PostMapping("/internal/owned")
-    public ResponseEntity<Boolean> isAccountOwnedByCustomer(
-            @RequestBody ServiceAccountOwnedRequest request) {
-
-        return ResponseEntity.ok(accountService.isAccountOwnedByCustomer(
-                request.customerId(), request.accountNumber()));
+        return ResponseEntity.ok(isOwned);
     }
 
     // ============================================================
@@ -207,18 +102,7 @@ public class AccountController {
     // ============================================================
 
     /**
-     * Retrieves the balance of a specific account.
-     *
-     * @param accountNumber the account number
-     * @return the account balance
-     */
-    @GetMapping("/{accountNumber}/balance")
-    public ResponseEntity<BigDecimal> getAccountBalanceByAccountNumber(@PathVariable String accountNumber) {
-        return ResponseEntity.ok(accountService.getAccountBalanceByAccountNumber(accountNumber));
-    }
-
-    /**
-     * Retrieves the balances of all accounts of the authenticated user.
+     * Retrieves the balances of all accounts for the authenticated user.
      *
      * @param jwtUserPrincipal the authenticated customer's data
      * @return list of account balances
@@ -227,11 +111,14 @@ public class AccountController {
     public ResponseEntity<List<AccountBalanceInfo>> getAllAccountsBalances(
             @AuthenticationPrincipal JwtUserPrincipal jwtUserPrincipal) {
 
-        return ResponseEntity.ok(accountService.getAllAccountsBalances(jwtUserPrincipal.customerId()));
+        List<AccountBalanceInfo> balances = accountService.getAllAccountsBalances(
+                jwtUserPrincipal.customerId()
+        );
+        return ResponseEntity.ok(balances);
     }
 
     /**
-     * Retrieves the balance of the authenticated user's account by type.
+     * Retrieves the balance of a specific account type for the authenticated user.
      *
      * @param type             the account type
      * @param jwtUserPrincipal the authenticated customer's data
@@ -239,10 +126,14 @@ public class AccountController {
      */
     @GetMapping("/me/balance")
     public ResponseEntity<BigDecimal> getMyAccountBalanceByType(
-            @RequestParam AccountType type,
+            @RequestParam @NotNull AccountType type,
             @AuthenticationPrincipal JwtUserPrincipal jwtUserPrincipal) {
 
-        return ResponseEntity.ok(accountService.getAccountBalance(jwtUserPrincipal.customerId(), type));
+        BigDecimal balance = accountService.getAccountBalance(
+                jwtUserPrincipal.customerId(),
+                type
+        );
+        return ResponseEntity.ok(balance);
     }
 
     /**
@@ -255,75 +146,15 @@ public class AccountController {
      */
     @GetMapping("/me/has-funds")
     public ResponseEntity<Boolean> hasSufficientFundsByType(
-            @RequestParam AccountType type,
-            @RequestParam BigDecimal amount,
+            @RequestParam @NotNull AccountType type,
+            @RequestParam @NotNull @DecimalMin(value = "0.01", message = "Amount must be greater than zero") BigDecimal amount,
             @AuthenticationPrincipal JwtUserPrincipal jwtUserPrincipal) {
 
-        return ResponseEntity.ok(accountService.hasSufficientFundsByType(
-                jwtUserPrincipal.customerId(), type, amount));
-    }
-
-    // ============================================================
-    // ==================== INTERNAL OPERATIONS ===================
-    // ============================================================
-
-    /**
-     * Endpoint to deposit funds into an account.
-     *
-     * @param depositBalanceRequest the deposit request containing account number and amount
-     * @return 200 OK if deposit is successful
-     */
-    @PostMapping("/internal/deposit")
-    public ResponseEntity<Void> performDeposit(
-            @RequestBody ServiceDepositBalanceRequest depositBalanceRequest) {
-
-        accountService.performDeposit(
-                depositBalanceRequest.customerId(),
-                new DepositBalanceRequest(
-                        depositBalanceRequest.accountNumber(),
-                        depositBalanceRequest.amount()));
-        return ResponseEntity.ok().build();
-    }
-
-    /**
-     * Endpoint to perform payments between accounts (used internally by services).
-     *
-     * @param servicePaymentRequest the payment request containing source, destination, and amount
-     * @return 200 OK if payment is successful
-     */
-    @PostMapping("/internal/payment")
-    public ResponseEntity<Void> performPayment(
-            @RequestBody ServicePaymentRequest servicePaymentRequest) {
-
-        accountService.performPayment(
-                servicePaymentRequest.customerId(),
-                new PaymentBalanceRequest(
-                        servicePaymentRequest.fromAccountNumber(),
-                        servicePaymentRequest.toAccountNumber(),
-                        servicePaymentRequest.amount()
-                )
+        boolean hasFunds = accountService.hasSufficientFundsByType(
+                jwtUserPrincipal.customerId(),
+                type,
+                amount
         );
-        return ResponseEntity.ok().build();
-    }
-
-    /**
-     * Endpoint to perform refunds between accounts (used internally by services).
-     *
-     * @param serviceRefundBalanceRequest the refund request containing accounts and amount
-     * @return 200 OK if refund is successful
-     */
-    @PostMapping("/internal/refund")
-    public ResponseEntity<Void> performRefund(
-            @RequestBody ServiceRefundBalanceRequest serviceRefundBalanceRequest) {
-
-        accountService.performRefund(
-                serviceRefundBalanceRequest.customerId(),
-                new RefundBalanceRequest(
-                        serviceRefundBalanceRequest.fromAccountNumber(),
-                        serviceRefundBalanceRequest.toAccountNumber(),
-                        serviceRefundBalanceRequest.amount()
-                )
-        );
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(hasFunds);
     }
 }
