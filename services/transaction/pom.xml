@@ -11,7 +11,7 @@
 	<groupId>com.amerbank</groupId>
 	<artifactId>transaction</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>transaction</name>
+	<name>Amerbank transaction service</name>
 	<description>transaction</description>
 	<url/>
 	<licenses>
