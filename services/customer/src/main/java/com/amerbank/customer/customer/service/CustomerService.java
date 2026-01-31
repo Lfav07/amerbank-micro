@@ -7,9 +7,7 @@ import com.amerbank.customer.customer.model.Customer;
 import com.amerbank.customer.customer.repository.CustomerRepository;
 import com.amerbank.customer.customer.security.JwtService;
 import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.*;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -26,7 +24,7 @@ import java.util.List;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
+
 public class CustomerService {
 
     private final CustomerRepository customerRepository;
@@ -35,6 +33,15 @@ public class CustomerService {
     private final JwtService jwtService;
     private final KafkaTemplate<String, CustomerDeletedEvent> kafkaTemplate;
     private  final CustomerProperties customerProperties;
+
+    public CustomerService(CustomerRepository customerRepository, CustomerMapper customerMapper, RestClient.Builder restClientBuilder, JwtService jwtService, KafkaTemplate<String, CustomerDeletedEvent> kafkaTemplate, CustomerProperties customerProperties) {
+        this.customerRepository = customerRepository;
+        this.customerMapper = customerMapper;
+        this.restClient = restClientBuilder.build();
+        this.jwtService = jwtService;
+        this.kafkaTemplate = kafkaTemplate;
+        this.customerProperties = customerProperties;
+    }
 
 
     // -------------------------------------------------------------------------
