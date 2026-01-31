@@ -1,5 +1,6 @@
 package com.amerbank.customer.customer.service;
 
+import com.amerbank.customer.customer.config.CustomerProperties;
 import com.amerbank.customer.customer.dto.*;
 import com.amerbank.customer.customer.exception.*;
 import com.amerbank.customer.customer.model.Customer;
@@ -33,15 +34,8 @@ public class CustomerService {
     private final RestClient restClient;
     private final JwtService jwtService;
     private final KafkaTemplate<String, CustomerDeletedEvent> kafkaTemplate;
+    private  final CustomerProperties customerProperties;
 
-    @Value("${auth.service.url:http://auth-server}")
-    private String authServiceUrl;
-
-    @Value("${auth.service.register.path:/auth/internal/register}")
-    private String authRegisterPath;
-
-    @Value("${auth.service.user-by-email.path:/admin/auth/users/by-email}")
-    private String authUserByEmailPath;
 
     // -------------------------------------------------------------------------
     // Utilities
@@ -106,7 +100,7 @@ public class CustomerService {
 
         try {
             String serviceToken = jwtService.generateServiceToken();
-            String registerUrl = authServiceUrl + authRegisterPath;
+            String registerUrl = customerProperties.getAuthServiceUrl() + customerProperties.getAuthRegisterPath();
 
             log.debug("Calling auth service at: {}", registerUrl);
 
@@ -256,7 +250,7 @@ public class CustomerService {
 
         String normalizedEmail = normalizeEmail(email);
 
-        String url = authServiceUrl + authUserByEmailPath + "/" + normalizedEmail;
+        String url = customerProperties.getAuthServiceUrl() + customerProperties.getAuthUserByEmailPath() + "/" + normalizedEmail;
 
         String serviceToken = jwtService.generateServiceToken();
 

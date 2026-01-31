@@ -1,23 +1,25 @@
 package com.amerbank.customer.customer.util;
 
+import com.amerbank.customer.customer.config.CustomerProperties;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
 @Component
+@RequiredArgsConstructor
 public class TraceIdUtil {
+    private  final CustomerProperties customerProperties;
     
-    private static final String TRACE_ID_HEADER = "X-Trace-Id";
-    private static final String REQUEST_ID_HEADER = "X-Request-Id";
-    
+
     public String extractOrGenerateTraceId(HttpServletRequest request) {
-        String traceId = extractHeader(request, TRACE_ID_HEADER);
+        String traceId = extractHeader(request, customerProperties.getTRACE_ID_HEADER());
         if (traceId != null && !traceId.isBlank()) {
             return traceId;
         }
         
-        traceId = extractHeader(request, REQUEST_ID_HEADER);
+        traceId = extractHeader(request, customerProperties.getREQUEST_ID_HEADER());
         if (traceId != null && !traceId.isBlank()) {
             return traceId;
         }
