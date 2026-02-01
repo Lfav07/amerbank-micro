@@ -1,5 +1,6 @@
 package com.amerbank.transaction.service;
 
+import com.amerbank.transaction.config.TransactionProperties;
 import com.amerbank.transaction.dto.*;
 import com.amerbank.transaction.exception.*;
 import com.amerbank.transaction.model.Transaction;
@@ -7,13 +8,12 @@ import com.amerbank.transaction.model.TransactionStatus;
 import com.amerbank.transaction.model.TransactionType;
 import com.amerbank.transaction.security.JwtService;
 import com.amerbank.transaction.repository.TransactionRepository;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -21,15 +21,32 @@ import java.util.UUID;
 import java.util.function.Function;
 
 @Service
-@AllArgsConstructor
 @Slf4j
 public class TransactionService {
 
+
+
     private final TransactionRepository transactionRepository;
+    private final TransactionProperties transactionProperties;
     private final TransactionMapper transactionMapper;
-    private final RestTemplate restTemplate;
+    private final RestClient restClient;
     private final JwtService jwtService;
     private final IdempotencyService idempotencyService;
+
+    public TransactionService(
+            TransactionRepository transactionRepository, TransactionProperties transactionProperties,
+            TransactionMapper transactionMapper,
+            RestClient.Builder restClientBuilder,
+            JwtService jwtService,
+            IdempotencyService idempotencyService
+    ) {
+        this.transactionRepository = transactionRepository;
+        this.transactionProperties = transactionProperties;
+        this.transactionMapper = transactionMapper;
+        this.restClient = restClientBuilder.build();
+        this.jwtService = jwtService;
+        this.idempotencyService = idempotencyService;
+    }
 
     public Transaction findTransactionById(UUID id) {
         return transactionRepository.findById(id)
@@ -68,8 +85,8 @@ public class TransactionService {
         return transactionRepository.findByFromAccountNumberAndType(fromAccount, type);
     }
 
-    public List<Transaction> getMyTransactions(String jwtToken, String accountNumber) {
-        Long customerId = jwtService.extractCustomerId(jwtToken);
+    public List<Transaction> getMyTransactions(Long customerId, String accountNumber) {
+
         if (!isAccountOwnedByCurrentCustomer(accountNumber, customerId)) {
             throw new UnauthorizedAccountAccessException("Account does not belong to current User");
         }
@@ -77,12 +94,12 @@ public class TransactionService {
     }
 
     public TransactionResponse createDepositTransaction(
-            String jwtToken,
+            Long customerId,
             String idempotencyKey,
             DepositTransactionRequest request
     ) {
-
-        Long customerId = jwtService.extractCustomerId(jwtToken);
+        log.info("Creating deposit transaction - customerId: {}, toAccount: {}, amount: {}, idempotencyKey: {}",
+                customerId, request.toAccountNumber(), request.amount(), idempotencyKey);
 
         return idempotencyService.execute(
                 idempotencyKey,
@@ -93,12 +110,12 @@ public class TransactionService {
     }
 
     public TransactionResponse createPaymentTransaction(
-            String jwtToken,
+            Long customerId,
             String idempotencyKey,
             PaymentTransactionRequest request
     ) {
-
-        Long customerId = jwtService.extractCustomerId(jwtToken);
+        log.info("Creating payment transaction - customerId: {}, fromAccount: {}, toAccount: {}, amount: {}, idempotencyKey: {}",
+                customerId, request.fromAccountNumber(), request.toAccountNumber(), request.amount(), idempotencyKey);
 
         return idempotencyService.execute(
                 idempotencyKey,
@@ -114,18 +131,18 @@ public class TransactionService {
     }
 
     public TransactionResponse createRefundTransaction(
-            String jwtToken,
+            Long customerId,
             String idempotencyKey,
             RefundTransactionRequest request
     ) {
+        log.info("Creating refund transaction - customerId: {}, transactionId: {}, idempotencyKey: {}",
+                customerId, request.transactionId(), idempotencyKey);
 
         Transaction original = findTransactionById(request.transactionId());
 
         if (original.getStatus() == TransactionStatus.REVERSED) {
             throw new TransactionAlreadyRefundedException("Transaction already refunded");
         }
-
-        Long customerId = jwtService.extractCustomerId(jwtToken);
 
         return idempotencyService.execute(
                 idempotencyKey,
@@ -153,29 +170,42 @@ public class TransactionService {
     }
 
     private boolean isAccountOwnedByCurrentCustomer(String accountNumber, Long customerId) {
-        String url = "http://account/accounts/internal/owned";
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(jwtService.generateServiceToken());
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        HttpEntity<ServiceAccountOwnedRequest> entity =
-                new HttpEntity<>(new ServiceAccountOwnedRequest(customerId, accountNumber), headers);
+        String url = transactionProperties.getAccountServiceBase() + transactionProperties.getEndpointOwned();
+        String serviceToken = jwtService.generateServiceToken();
+        ServiceAccountOwnedRequest requestBody =
+                new ServiceAccountOwnedRequest(customerId, accountNumber);
 
         try {
-            return Boolean.TRUE.equals(
-                    restTemplate.exchange(url, HttpMethod.POST, entity, Boolean.class).getBody()
-            );
+            Boolean result = restClient
+                    .post()
+                    .uri(url)
+                    .headers(h -> h.setBearerAuth(serviceToken))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(requestBody)
+                    .retrieve()
+                    .body(Boolean.class);
+            log.debug("Successfully verified account ownership - accountNumber: {}, customerId: {}, owned: {}",
+                    accountNumber, customerId, result);
+            return Boolean.TRUE.equals(result);
         } catch (HttpClientErrorException e) {
-            throw new AccountServiceUnavailableException("An error occurred." + e.getStatusCode());
+            String responseBody = e.getResponseBodyAsString();
+            log.error("Account ownership check failed - url: {}, status: {}, accountNumber: {}, customerId: {}, responseBody: {}",
+                    url, e.getStatusCode(), accountNumber, customerId, responseBody);
+            throw new AccountServiceUnavailableException(
+                    String.format("Account ownership check failed. Status: %s, URL: %s", e.getStatusCode(), url)
+            );
         } catch (RestClientException e) {
-            throw new AccountServiceUnavailableException("Could not reach account service");
+            log.error("Could not reach account service - url: {}, accountNumber: {}, customerId: {}, error: {}",
+                    url, accountNumber, customerId, e.getMessage());
+            throw new AccountServiceUnavailableException(
+                    String.format("Could not reach account service. URL: %s", url)
+            );
         }
     }
 
     private void performDeposit(Long customerId, String accountNumber, BigDecimal amount) {
         executeAccountCall(
-                "http://account/accounts/internal/deposit",
+                transactionProperties.getEndpointDeposit(),
                 new ServiceDepositBalanceRequest(customerId, accountNumber, amount),
                 DepositFailedException::new
         );
@@ -183,7 +213,7 @@ public class TransactionService {
 
     private void performPayment(Long customerId, String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
         executeAccountCall(
-                "http://account/accounts/internal/payment",
+                transactionProperties.getEndpointPayment(),
                 new ServicePaymentRequest(customerId, fromAccountNumber, toAccountNumber, amount),
                 PaymentFailedException::new
         );
@@ -191,28 +221,46 @@ public class TransactionService {
 
     private void performRefund(Long customerId, String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
         executeAccountCall(
-                "http://account/accounts/internal/refund",
+                transactionProperties.getEndpointRefund(),
                 new ServiceRefundBalanceRequest(customerId, toAccountNumber, fromAccountNumber, amount),
                 RefundFailedException::new
         );
     }
 
     private void executeAccountCall(
-            String url,
+            String endpoint,
             Object body,
             Function<String, RuntimeException> exceptionFactory
     ) {
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(jwtService.generateServiceToken());
-        headers.setContentType(MediaType.APPLICATION_JSON);
+        String url = transactionProperties.getAccountServiceBase() + endpoint;
+        String serviceToken = jwtService.generateServiceToken();
 
         try {
-            restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(body, headers), Void.class);
+            restClient
+                    .post()
+                    .uri(url)
+                    .headers(h -> h.setBearerAuth(serviceToken))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(body)
+                    .retrieve()
+                    .toBodilessEntity();
+            log.debug("Successfully executed account call - endpoint: {}, url: {}", endpoint, url);
         } catch (HttpClientErrorException e) {
-            throw exceptionFactory.apply("Rejected: " + e.getStatusCode());
+            String responseBody = e.getResponseBodyAsString();
+
+            log.error("Account service call rejected - endpoint: {}, url: {}, status: {}, responseBody: {}",
+                    endpoint, url, e.getStatusCode(), responseBody);
+
+            throw exceptionFactory.apply(
+                    String.format("Account service rejected request. Status: %s, URL: %s", e.getStatusCode(), url)
+            );
         } catch (RestClientException e) {
-            throw exceptionFactory.apply("Account service unavailable");
+
+            log.error("Account service unavailable - endpoint: {}, url: {}, error: {}", endpoint, url, e.getMessage());
+
+            throw exceptionFactory.apply(
+                    String.format("Account service unavailable. URL: %s", url)
+            );
         }
     }
 }
