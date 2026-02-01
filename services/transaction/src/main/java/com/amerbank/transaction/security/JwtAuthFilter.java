@@ -1,6 +1,5 @@
 package com.amerbank.transaction.security;
 
-
 import com.amerbank.transaction.dto.Role;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -17,7 +16,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
-public class  JwtAuthFilter extends OncePerRequestFilter {
+public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
 
@@ -44,11 +43,10 @@ public class  JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
+
         String username = jwtService.extractUsername(token);
-
-
+        Long customerId = jwtService.extractCustomerId(token);
         var roles = jwtService.extractRoles(token);
-
 
         List<SimpleGrantedAuthority> authorities = roles.stream()
                 .map(Role::name)
@@ -56,9 +54,10 @@ public class  JwtAuthFilter extends OncePerRequestFilter {
                 .collect(Collectors.toList());
 
 
-        UsernamePasswordAuthenticationToken authenticationToken =
-                new UsernamePasswordAuthenticationToken(username, null, authorities);
+        JwtUserPrincipal principal = new JwtUserPrincipal(username, customerId, authorities);
 
+        UsernamePasswordAuthenticationToken authenticationToken =
+                new UsernamePasswordAuthenticationToken(principal, null, authorities);
 
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
