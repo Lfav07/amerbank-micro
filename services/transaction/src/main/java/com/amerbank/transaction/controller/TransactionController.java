@@ -4,12 +4,15 @@ import com.amerbank.transaction.dto.*;
 import com.amerbank.transaction.model.Transaction;
 import com.amerbank.transaction.model.TransactionStatus;
 import com.amerbank.transaction.model.TransactionType;
+import com.amerbank.transaction.security.JwtUserPrincipal;
 import com.amerbank.transaction.service.TransactionMapper;
 import com.amerbank.transaction.service.TransactionService;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -98,12 +101,12 @@ public class TransactionController {
 
     @GetMapping("/account/{accountNumber}/me")
     public ResponseEntity<List<TransactionResponse>> getMyTransactions(
-            @RequestHeader("Authorization") String authorization,
+            @AuthenticationPrincipal JwtUserPrincipal jwtUserPrincipal,
             @PathVariable String accountNumber
     ) {
-        String jwt = extractJwt(authorization);
+       Long customerId = jwtUserPrincipal.customerId();
         return ResponseEntity.ok(
-                transactionService.getMyTransactions(jwt, accountNumber)
+                transactionService.getMyTransactions(customerId, accountNumber)
                         .stream().map(transactionMapper::toResponse).toList()
         );
     }
@@ -111,34 +114,34 @@ public class TransactionController {
 
     @PostMapping("/user/deposit")
     public ResponseEntity<TransactionResponse> createDeposit(
-            @RequestHeader("Authorization") String authorization,
+            @AuthenticationPrincipal JwtUserPrincipal jwtUserPrincipal,
             @RequestHeader("idempotency-key") @NotBlank String idempotencyKey,
-            @RequestBody DepositTransactionRequest request
+            @Valid @RequestBody DepositTransactionRequest request
     ) {
-        String jwtToken = extractJwt(authorization);
-        TransactionResponse response = transactionService.createDepositTransaction(jwtToken, idempotencyKey, request);
+        Long customerId = jwtUserPrincipal.customerId();
+        TransactionResponse response = transactionService.createDepositTransaction(customerId, idempotencyKey, request);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/user/payment")
     public ResponseEntity<TransactionResponse> createPayment(
-            @RequestHeader("Authorization") String authorization,
+            @AuthenticationPrincipal JwtUserPrincipal jwtUserPrincipal,
             @RequestHeader("idempotency-key") @NotBlank String idempotencyKey,
-            @RequestBody PaymentTransactionRequest request
+            @Valid @RequestBody PaymentTransactionRequest request
     ) {
-        String jwtToken = extractJwt(authorization);
-        TransactionResponse response = transactionService.createPaymentTransaction(jwtToken, idempotencyKey, request);
+        Long customerId = jwtUserPrincipal.customerId();
+        TransactionResponse response = transactionService.createPaymentTransaction(customerId, idempotencyKey, request);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/user/refund")
     public ResponseEntity<TransactionResponse> createRefund(
-            @RequestHeader("Authorization") String authorization,
+            @AuthenticationPrincipal JwtUserPrincipal jwtUserPrincipal,
             @RequestHeader("idempotency-key") @NotBlank String idempotencyKey,
-            @RequestBody RefundTransactionRequest request
+           @Valid @RequestBody RefundTransactionRequest request
     ) {
-        String jwtToken = extractJwt(authorization);
-        TransactionResponse response = transactionService.createRefundTransaction(jwtToken, idempotencyKey, request);
+        Long customerId = jwtUserPrincipal.customerId();
+        TransactionResponse response = transactionService.createRefundTransaction(customerId, idempotencyKey, request);
         return ResponseEntity.ok(response);
     }
 }
