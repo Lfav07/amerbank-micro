@@ -4,26 +4,6 @@ server:
 spring:
   application:
     name: transaction
-  datasource:
-    url: jdbc:postgresql://localhost:5432/amerbank?currentSchema=transaction
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-    driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-  flyway:
-    outOfOrder: true
-    schemas: transaction
-    enabled: true
-    locations: classpath:db/migration/transaction
 
-cloud:
   config:
-    enabled: false
-    fail-fast: true
-    label: main
-
-jwt:
-  secret: ${JWT_SECRET}
+    import: "configserver:"
