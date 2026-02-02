@@ -1,0 +1,50 @@
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'services/auth-server/**'
+      - '.github/workflows/service-auth.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'services/auth-server/**'
+
+env:
+  SERVICE_NAME: auth-server
+  SERVICE_PATH: services/auth-server
+  JAVA_VERSION: '21'
+  JAVA_DISTRIBUTION: 'corretto'
+jobs:
+  commit-stage:
+    name: Build, Test & Package
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Starting commit stage
+        run: |
+          echo "=========================================="
+                echo "  COMMIT STAGE - ${{ env.SERVICE_NAME }}"
+                echo "=========================================="
+                echo "Branch: ${{ github.ref_name }}"
+                echo "Commit: ${{ github.sha }}"
+                echo "Author: ${{ github.actor }}"
+                echo "=========================================="
+      # Code checkout
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify structure
+        run: |
+          echo "Listing service files"
+          ls -la ${{ env.SERVICE_PATH }}
+          echo ""
+          echo "Verifying pom.xml..."
+          if [ -f "${{ env.SERVICE_PATH }}/pom.xml" ]; then
+            echo "pom.xml found"
+          else
+            echo "pom.xml not found"
+            exit 1
+          fi
