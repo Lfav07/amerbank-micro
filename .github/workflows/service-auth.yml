@@ -53,8 +53,8 @@ jobs:
       - name: Setup java ${{ env.JAVA_VERSION }} (${{ env.JAVA_DISTRIBUTION }})
         uses: actions/setup-java@v5
         with:
-          distribution: '$JAVA_DISTRIBUTION'
-          java-version: '$JAVA_VERSION'
+          distribution: ${{ env.JAVA_VERSION }}
+          java-version: ${{ env.JAVA_DISTRIBUTION }}
           cache: 'maven'
 
       - name: Verify Java installation
