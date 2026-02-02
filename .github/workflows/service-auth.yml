@@ -48,3 +48,19 @@ jobs:
             echo "pom.xml not found"
             exit 1
           fi
+
+
+      - name: Setup java ${{ env.JAVA_VERSION }} (${{ env.JAVA_DISTRIBUTION }})
+        uses: actions/setup-java@v5
+        with:
+          distribution: '$JAVA_DISTRIBUTION'
+          java-version: '$JAVA_VERSION'
+          cache: 'maven'
+
+      - name: Verify Java installation
+        run: |
+            echo "Java version installed:"
+            java -version
+            echo ""
+            echo "Maven version:"
+            mvn -version
