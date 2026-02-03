@@ -6,7 +6,9 @@ import com.amerbank.customer.customer.exception.AuthServiceUnavailableException;
 import com.amerbank.customer.customer.exception.CustomerAlreadyExistsException;
 import com.amerbank.customer.customer.exception.CustomerNotFoundException;
 import com.amerbank.customer.customer.exception.CustomerRegistrationFailedException;
+import com.amerbank.customer.customer.exception.EmailAlreadyTakenException;
 import com.amerbank.customer.customer.exception.InvalidCredentialsException;
+import com.amerbank.customer.customer.exception.InvalidUserDataException;
 import com.amerbank.customer.customer.exception.UserRegistrationFailedException;
 import com.amerbank.customer.customer.util.TraceIdUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -77,6 +79,26 @@ public class ApiExceptionHandler {
                 .status(HttpStatus.CONFLICT.value())
                 .error("Conflict")
                 .message("Customer already exists")
+                .path(path)
+                .traceId(traceId)
+                .build();
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
+    @ExceptionHandler(EmailAlreadyTakenException.class)
+    public ResponseEntity<ErrorResponse> handleEmailAlreadyTaken(
+            EmailAlreadyTakenException ex,
+            WebRequest request) {
+        String traceId = getTraceId(request);
+        String path = extractPath(request);
+
+        log.warn("Email already taken - TraceId: {}, Message: {}", traceId, ex.getMessage());
+
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.CONFLICT.value())
+                .error("Conflict")
+                .message("Email already taken")
                 .path(path)
                 .traceId(traceId)
                 .build();
@@ -159,6 +181,26 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
+    @ExceptionHandler(InvalidUserDataException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidUserData(
+            InvalidUserDataException ex,
+            WebRequest request) {
+        String traceId = getTraceId(request);
+        String path = extractPath(request);
+
+        log.warn("Invalid user data - TraceId: {}, Message: {}", traceId, ex.getMessage());
+
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Bad Request")
+                .message("Invalid user data")
+                .path(path)
+                .traceId(traceId)
+                .build();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ValidationErrorResponse> handleValidationException(
             MethodArgumentNotValidException ex,
@@ -200,13 +242,13 @@ public class ApiExceptionHandler {
         String traceId = getTraceId(request);
         String path = extractPath(request);
 
-        log.error("Authentication service unavailable - TraceId: {}, Error: {}", traceId, ex.getMessage(), ex);
+        log.error("Authentication service is temporarily unavailable - TraceId: {}, Error: {}", traceId, ex.getMessage(), ex);
 
         ErrorResponse response = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.SERVICE_UNAVAILABLE.value())
                 .error("Service Unavailable")
-                .message("Authentication service unavailable")
+                .message("Authentication service is temporarily unavailable")
                 .path(path)
                 .traceId(traceId)
                 .build();

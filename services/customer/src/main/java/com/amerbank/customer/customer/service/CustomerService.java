@@ -105,12 +105,12 @@ public class CustomerService {
                 request.password()
         );
 
+        String serviceToken = jwtService.generateServiceToken();
+        String registerUrl = customerProperties.getAuthServiceUrl() + customerProperties.getAuthRegisterPath();
+
+        log.debug("Calling auth service at: {}", registerUrl);
+
         try {
-            String serviceToken = jwtService.generateServiceToken();
-            String registerUrl = customerProperties.getAuthServiceUrl() + customerProperties.getAuthRegisterPath();
-
-            log.debug("Calling auth service at: {}", registerUrl);
-
             UserResponse response = restClient.post()
                     .uri(registerUrl)
                     .contentType(MediaType.APPLICATION_JSON)
@@ -118,6 +118,42 @@ public class CustomerService {
                     .headers(h -> h.setBearerAuth(serviceToken))
                     .body(userRegisterRequest)
                     .retrieve()
+                    .onStatus(
+                            status -> status.value() == 409,
+                            (req, res) -> {
+                                throw new EmailAlreadyTakenException("Email already taken");
+                            }
+                    )
+                    .onStatus(
+                            status -> status.value() == 400,
+                            (req, res) -> {
+                                throw new InvalidUserDataException("Invalid user data");
+                            }
+                    )
+                    .onStatus(
+                            status -> status.value() == 401,
+                            (req, res) -> {
+                                throw new ServiceAuthenticationException("Service authentication failed");
+                            }
+                    )
+                    .onStatus(
+                            status -> status.value() == 403,
+                            (req, res) -> {
+                                throw new ServiceAuthorizationException("Service authorization failed");
+                            }
+                    )
+                    .onStatus(
+                            status -> status.is4xxClientError(),
+                            (req, res) -> {
+                                throw new UserRegistrationFailedException("User registration failed");
+                            }
+                    )
+                    .onStatus(
+                            status -> status.is5xxServerError(),
+                            (req, res) -> {
+                                throw new AuthServiceUnavailableException("Auth service unavailable");
+                            }
+                    )
                     .body(UserResponse.class);
 
             if (response == null || response.id() == null) {
@@ -126,10 +162,19 @@ public class CustomerService {
 
             return response;
 
-        } catch (HttpClientErrorException e) {
-            log.error("User registration failed for email {}", maskedEmail, e);
+        } catch (EmailAlreadyTakenException e) {
+            log.warn("Email already taken - TraceId: {}, Message: {}", maskedEmail, e.getMessage());
+            throw e;
+        } catch (InvalidUserDataException e) {
+            log.error("Invalid user data - TraceId: {}, Message: {}", maskedEmail, e.getMessage());
+            throw e;
+        } catch (ServiceAuthenticationException | ServiceAuthorizationException e) {
+            log.error("Service authentication/authorization failed for email {}", maskedEmail, e);
             throw new UserRegistrationFailedException("User registration failed");
-        } catch (HttpServerErrorException | ResourceAccessException e) {
+        } catch (AuthServiceUnavailableException e) {
+            log.error("Auth service unavailable for email {}", maskedEmail, e);
+            throw e;
+        } catch (ResourceAccessException e) {
             log.error("Auth service unavailable for email {}", maskedEmail, e);
             throw new AuthServiceUnavailableException("Auth service unavailable");
         } catch (RestClientException e) {
