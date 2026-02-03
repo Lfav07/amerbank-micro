@@ -116,7 +116,7 @@ public class AdminController {
             @AuthenticationPrincipal JwtUserPrincipal admin) {
 
 
-        userService.updateEmailById(admin.userId(), id, request.email());
+        userService.updateEmailById(admin.userId(), id, request.newEmail());
         return ResponseEntity.ok(message("Email successfully updated for user " + id));
     }
 }
