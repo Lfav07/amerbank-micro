@@ -106,7 +106,6 @@ jobs:
              echo "Verifying code coverage..."
              mvn jacoco:check -B
              cho "Minimum coverage hit"
-
       - name: Upload coverage statistics
         if: always()
         uses: actions/upload-artifact@v4
