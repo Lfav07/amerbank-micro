@@ -14,11 +14,33 @@ env:
   SERVICE_PATH: services/auth-server
   JAVA_VERSION: '21'
   JAVA_DISTRIBUTION: 'corretto'
+
+  # 🔹 Spring / DB (CI)
+  SPRING_PROFILES_ACTIVE: ci
+  DB_USERNAME: auth_user
+  DB_PASSWORD: auth_pass
+
 jobs:
   commit-stage:
     name: Build, Test & Package
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
+    # 🐘 Postgres service
+    services:
+      postgres:
+        image: postgres:16
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_DB: amerbank
+          POSTGRES_USER: auth_user
+          POSTGRES_PASSWORD: auth_pass
+        options: >-
+          --health-cmd="pg_isready -U auth_user -d amerbank"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
       - name: Starting commit stage
@@ -31,7 +53,7 @@ jobs:
           echo "Author: ${{ github.actor }}"
           echo "=========================================="
 
-        # Code checkout
+      # Code checkout
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -50,7 +72,6 @@ jobs:
             exit 1
           fi
 
-
       - name: Setup java ${{ env.JAVA_VERSION }} (${{ env.JAVA_DISTRIBUTION }})
         uses: actions/setup-java@v5
         with:
@@ -60,12 +81,13 @@ jobs:
 
       - name: Verify Java installation
         run: |
-            echo "Java version installed:"
-            java -version
-            echo ""
-            echo "Maven version:"
-            mvn -version
-        #Compile
+          echo "Java version installed:"
+          java -version
+          echo ""
+          echo "Maven version:"
+          mvn -version
+
+      # Compile
       - name: Compile application
         working-directory: ${{ env.SERVICE_PATH }}
         run: |
@@ -76,37 +98,41 @@ jobs:
       - name: Show compilation statistics
         working-directory: ${{ env.SERVICE_PATH }}
         run: |
-            echo "Compilated classes:"
-            find target/classes -name "*.class" | wc -l
+          echo "Compiled classes:"
+          find target/classes -name "*.class" | wc -l
+
       - name: Run unit tests
         working-directory: ${{ env.SERVICE_PATH }}
         run: |
-            echo "Running unit tests"
-            mvn test -B
-            echo "Unit tests successfully passed"
+          echo "Running unit tests"
+          mvn test -B
+          echo "Unit tests successfully passed"
+
       - name: Tests report
         if: always()
         working-directory: ${{ env.SERVICE_PATH }}
         run: |
           echo "Tests summary:"
           if ls target/surefire-reports/TEST-*.xml 1> /dev/null 2>&1; then
-          find target/surefire-reports -name "TEST-*.xml" -exec grep -h "testsuite" {} \; | head -5
+            find target/surefire-reports -name "TEST-*.xml" -exec grep -h "testsuite" {} \; | head -5
           else
-          echo "No tests summary found"
+            echo "No tests summary found"
           fi
+
       - name: Generate coverage report
         working-directory: ${{ env.SERVICE_PATH }}
         run: |
-            echo "Generating coverage report..."
-            mvn jacoco:report -B
-            echo "Report Generated"
+          echo "Generating coverage report..."
+          mvn jacoco:report -B
+          echo "Report Generated"
 
       - name: Verify minimum coverage (70%)
         working-directory: ${{ env.SERVICE_PATH }}
         run: |
-             echo "Verifying code coverage..."
-             mvn jacoco:check -B
-             echo "Minimum coverage hit"
+          echo "Verifying code coverage..."
+          mvn jacoco:check -B
+          echo "Minimum coverage hit"
+
       - name: Upload coverage statistics
         if: always()
         uses: actions/upload-artifact@v4
