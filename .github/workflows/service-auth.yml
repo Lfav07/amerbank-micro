@@ -83,7 +83,6 @@ jobs:
             echo "Running unit tests"
             mvn test -B
             echo "Unit tests successfully passed"
-
       - name: Tests report
         if: always()
         working-directory: ${{ env.SERVICE_PATH }}
