@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.client.*;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
 
@@ -302,7 +303,11 @@ public class CustomerService {
 
         String normalizedEmail = normalizeEmail(email);
 
-        String url = customerProperties.getAuthServiceUrl() + customerProperties.getAuthUserByEmailPath() + "/" + normalizedEmail;
+        String url = UriComponentsBuilder.fromUriString(customerProperties.getAuthServiceUrl())
+                .path(customerProperties.getAuthUserByEmailPath())
+                .queryParam("email", normalizedEmail)
+                .build()
+                .toUriString();
 
         String serviceToken = jwtService.generateServiceToken();
 

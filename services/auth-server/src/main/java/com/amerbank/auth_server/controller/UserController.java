@@ -27,12 +27,6 @@ public class UserController {
     }
 
     // -------------------- Public Endpoints --------------------
-    @PostMapping("/internal/register")
-    public ResponseEntity<UserResponse> register(@Valid @RequestBody UserRegisterRequest request) {
-        UserResponse response = userService.registerUser(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> login(@Valid @RequestBody UserLoginRequest request) {
