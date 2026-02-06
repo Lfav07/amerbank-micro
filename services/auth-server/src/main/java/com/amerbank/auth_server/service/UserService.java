@@ -251,7 +251,7 @@ public class UserService {
             throw new EmailAlreadyTakenException("Email already taken");
         }
         log.debug("Admin with id {} updated user {} email to {}", adminId, id, maskEmail(normalizedEmail));
-        log.info("User account email updated successfully");
+        log.info("User account email updated successfully by admin");
     }
 
     /**
