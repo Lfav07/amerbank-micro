@@ -1,8 +1,10 @@
 package com.amerbank.auth_server.security;
 
+import com.amerbank.auth_server.config.JwtProperties;
 import com.amerbank.auth_server.model.User;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -14,19 +16,15 @@ import java.util.UUID;
 import java.util.function.Function;
 
 @Service
+@RequiredArgsConstructor
 public class JwtService {
 
-    @Value("${jwt.secret}")
-    private String secret;
+    private  final JwtProperties jwtProperties;
 
-    @Value("${jwt.expiration-ms:3600000}") // 1 hour default
-    private long expirationMs;
 
-    @Value("${jwt.service-token-expiration-ms:120000}") // 2 minutes for service tokens
-    private long serviceTokenExpirationMs;
 
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes());
+        return Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes());
     }
 
     public String extractUsername(String token) {
@@ -81,7 +79,7 @@ public class JwtService {
                 .claim("customerId", customerId)
                 .claim("roles", user.getRoles().stream().map(Enum::name).toList())
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expirationMs))
+                .expiration(new Date(System.currentTimeMillis() + jwtProperties.getExpirationMs()))
                 .signWith(getSigningKey())
                 .compact();
     }
@@ -93,7 +91,7 @@ public class JwtService {
                 .audience().add("customer-service").and()
                 .claim("serviceName", "auth-server")
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + serviceTokenExpirationMs))
+                .expiration(new Date(System.currentTimeMillis() + jwtProperties.getServiceTokenExpirationMs()))
                 .signWith(getSigningKey())
                 .id(UUID.randomUUID().toString())
                 .compact();
@@ -107,7 +105,7 @@ public class JwtService {
                 .claim("userId", user.getId())
                 .claim("roles", user.getRoles().stream().map(Enum::name).toList())
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expirationMs))
+                .expiration(new Date(System.currentTimeMillis() + jwtProperties.getExpirationMs()))
                 .signWith(getSigningKey())
                 .compact();
     }
