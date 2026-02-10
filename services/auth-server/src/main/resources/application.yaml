@@ -8,4 +8,4 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE}
 
   config:
-    import: "optional:configserver:"
+    import: "optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888}"
