@@ -17,6 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -73,7 +74,7 @@ public class UserService {
         User user = User.builder()
                 .email(normalizeEmail(request.email()))
                 .password(passwordEncoder.encode(request.password()))
-                .roles(Set.of(Role.ROLE_USER))
+                .roles(new HashSet<>(Set.of(Role.ROLE_USER)))
                 .active(true)
                 .build();
 
@@ -95,7 +96,7 @@ public class UserService {
      * @param request the registration request containing email and password
      * @throws EmailAlreadyTakenException if the email is already in use
      */
-    public void registerAdmin(UserRegisterRequest request) {
+    public UserResponse registerAdmin(UserRegisterRequest request) {
         log.debug("Processing new admin registration");
 
         if (isEmailTaken(request.email())) {
@@ -106,7 +107,7 @@ public class UserService {
         User user = User.builder()
                 .email(normalizeEmail(request.email()))
                 .password(passwordEncoder.encode(request.password()))
-                .roles(Set.of(Role.ROLE_ADMIN))
+                .roles(new HashSet<>(Set.of(Role.ROLE_USER)))
                 .active(true)
                 .build();
         log.debug("Admin entity prepared for registration");
@@ -118,6 +119,7 @@ public class UserService {
         }
 
         log.info("New admin account registered successfully");
+        return mapper.toResponse(user);
     }
 
 
