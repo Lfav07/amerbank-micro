@@ -1,6 +1,11 @@
 package com.amerbank.auth_server.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
 public record UserResponse(
-        Long id,
-        String email
+
+       @NotNull Long id,
+
+       @NotBlank String email
 ) {}
