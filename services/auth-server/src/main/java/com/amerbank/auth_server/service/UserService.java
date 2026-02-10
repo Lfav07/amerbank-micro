@@ -107,7 +107,7 @@ public class UserService {
         User user = User.builder()
                 .email(normalizeEmail(request.email()))
                 .password(passwordEncoder.encode(request.password()))
-                .roles(new HashSet<>(Set.of(Role.ROLE_USER)))
+                .roles(new HashSet<>(Set.of(Role.ROLE_ADMIN)))
                 .active(true)
                 .build();
         log.debug("Admin entity prepared for registration");
