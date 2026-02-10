@@ -24,7 +24,7 @@ eureka:
   client:
     enabled: false
 jwt:
-  secret: "testsecret123456789test"
+  secret: "testsecret123456789test123456789secret"
   expirationMs: 3600000
   serviceTokenExpirationMs: 120000
 logging:
