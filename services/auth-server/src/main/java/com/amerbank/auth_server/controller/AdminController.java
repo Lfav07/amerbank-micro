@@ -29,14 +29,14 @@ public class AdminController {
     // -------------------- Admin Authentication --------------------
 
     @PostMapping("/register")
-    public ResponseEntity<Map<String, String>> registerAdmin(
+    public ResponseEntity<UserResponse> registerAdmin(
             @Valid @RequestBody UserRegisterRequest request) {
 
-        userService.registerAdmin(request);
+      UserResponse response=  userService.registerAdmin(request);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(message("Admin successfully registered."));
+                .body(response);
     }
 
     @PostMapping("/login")
