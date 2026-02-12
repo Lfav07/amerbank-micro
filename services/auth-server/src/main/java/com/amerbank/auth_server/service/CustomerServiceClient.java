@@ -2,6 +2,7 @@ package com.amerbank.auth_server.service;
 
 import com.amerbank.auth_server.dto.CustomerRegistrationResponse;
 import com.amerbank.auth_server.dto.CustomerRegistrationRequest;
+import com.amerbank.auth_server.exception.RegistrationFailedException;
 import com.amerbank.auth_server.security.JwtService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -48,6 +49,6 @@ public class CustomerServiceClient {
         if (response.getStatusCode().is2xxSuccessful()) {
             return response.getBody();
         }
-        throw new IllegalStateException("Failed to fetch customer registration response");
+        throw new RegistrationFailedException("Failed to fetch customer registration response");
     }
 }

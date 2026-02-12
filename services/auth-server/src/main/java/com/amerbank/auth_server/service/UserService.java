@@ -77,7 +77,9 @@ public class UserService {
         try {
             Long customerId = registerCustomerExternal(request, user.getId());
             updateUserCustomerIdTransactional(user.getId(), customerId);
-            userRepository.save(user);
+
+            User updatedUser = userRepository.findById(user.getId())
+                    .orElseThrow();
 
         } catch (Exception e) {
             deleteUserTransactional(user.getId());

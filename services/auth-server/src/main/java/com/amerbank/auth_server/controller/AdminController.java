@@ -53,7 +53,7 @@ public class AdminController {
 // -------------------- User Management --------------------
 
     @GetMapping("/users")
-    public ResponseEntity<List<UserResponseCustom>> getAllUsers() {
+    public ResponseEntity<List<UserResponse>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
 
