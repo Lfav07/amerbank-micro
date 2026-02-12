@@ -2,6 +2,7 @@ package com.amerbank.auth_server.service;
 
 import com.amerbank.auth_server.dto.*;
 import com.amerbank.auth_server.exception.EmailAlreadyTakenException;
+import com.amerbank.auth_server.exception.RegistrationFailedException;
 import com.amerbank.auth_server.exception.UserNotFoundException;
 import com.amerbank.auth_server.model.User;
 import com.amerbank.auth_server.repository.UserRepository;
@@ -9,7 +10,6 @@ import com.amerbank.auth_server.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -64,30 +64,78 @@ public class UserService {
      * @throws EmailAlreadyTakenException if the email is already in use
      */
     public UserResponse registerUser(UserRegisterRequest request) {
+
         log.debug("Processing new user registration");
 
         if (isEmailTaken(request.email())) {
-            log.warn("User registration failed: email already taken");
             throw new EmailAlreadyTakenException("Email already taken");
         }
+
+
+        User user = createUserTransactional(request);
+
+        try {
+            Long customerId = registerCustomerExternal(request, user.getId());
+            updateUserCustomerIdTransactional(user.getId(), customerId);
+            userRepository.save(user);
+
+        } catch (Exception e) {
+            deleteUserTransactional(user.getId());
+            throw new RegistrationFailedException("Customer creation failed");
+        }
+
+        return mapper.toResponse(user);
+    }
+
+    @Transactional
+    public User createUserTransactional(UserRegisterRequest request) {
 
         User user = User.builder()
                 .email(normalizeEmail(request.email()))
                 .password(passwordEncoder.encode(request.password()))
-                .roles(new HashSet<>(Set.of(Role.ROLE_USER)))
+                .roles(Set.of(Role.ROLE_USER))
                 .active(true)
                 .build();
 
-        log.debug("User entity prepared for registration");
-
         try {
-            userRepository.save(user);
+            return userRepository.saveAndFlush(user);
         } catch (DataIntegrityViolationException ex) {
             throw new EmailAlreadyTakenException("Email already taken");
         }
-        log.info("New user account registered successfully");
-        return mapper.toResponse(user);
     }
+
+    @Transactional
+    public void updateUserCustomerIdTransactional(Long userId, Long customerId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        user.setCustomerId(customerId);
+    }
+
+
+
+    private Long registerCustomerExternal(UserRegisterRequest request, Long userId) {
+
+        CustomerRegistrationRequest customerRequest =
+                new CustomerRegistrationRequest(
+                        request.firstName(),
+                        request.lastName(),
+                        userId,
+                        request.dateOfBirth()
+                );
+
+        CustomerRegistrationResponse response =
+                customerServiceClient.registerCustomer(customerRequest);
+
+        if (response == null || response.id() == null) {
+            throw new RegistrationFailedException("Customer service returned invalid response");
+        }
+
+        return response.id();
+    }
+
+
 
     /**
      * Registers a new admin user with the ROLE_ADMIN role.
@@ -160,7 +208,7 @@ public class UserService {
         }
         User user = findByEmail(email);
 
-        Long customerId = customerServiceClient.getCustomerIdByUserId(user.getId());
+        Long customerId = user.getCustomerId();
         String token = jwtService.generateToken(user, customerId);
         log.info("User account logged in successfully");
         return new AuthenticationResponse(token);
@@ -392,6 +440,10 @@ public class UserService {
         log.info("User account deleted successfully");
     }
 
+    @Transactional
+    public void deleteUserTransactional(Long userId) {
+        userRepository.deleteById(userId);
+    }
 
     //  Demonstrative use only
 
@@ -427,29 +479,5 @@ public class UserService {
      */
     private String normalizeEmail(String email) {
         return email.trim().toLowerCase();
-    }
-
-    // -------------------------------------------------------------------------
-    // Kafka Listener
-    // -------------------------------------------------------------------------
-
-    // When a customer is deleted from the database, the associated user must be deleted too.
-
-    /**
-     * Handles a customer deletion event.
-     * Uses Kafka to receive customer deletion events.
-     * Deletes the user associated with the customer.
-     *
-     * @param event the customer deletion event received from Kafka.
-     */
-    @KafkaListener(topics = "customer.deleted", groupId = "auth-service")
-    @Transactional
-    public void handleCustomerDeleted(CustomerDeletedEvent event) {
-        if (!userRepository.existsById(event.getUserId())) {
-            log.warn("Received customer.deleted event for non-existing user {}", event.getUserId());
-            return;
-        }
-        userRepository.deleteById(event.getUserId());
-        log.info("User account deleted due to customer deletion event");
     }
 }

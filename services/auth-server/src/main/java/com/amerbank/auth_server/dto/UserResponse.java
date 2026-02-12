@@ -7,5 +7,7 @@ public record UserResponse(
 
        @NotNull Long id,
 
+       @NotNull Long customerId,
+
        @NotBlank String email
 ) {}

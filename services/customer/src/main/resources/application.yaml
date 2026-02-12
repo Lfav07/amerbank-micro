@@ -7,5 +7,6 @@ spring:
 
   config:
     import: "optional:configserver:"
+    label: AlternativeLoginFlow
 
 

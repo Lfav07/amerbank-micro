@@ -70,7 +70,7 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable())
                 .securityMatcher("/auth/**")
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers( "/auth/login").permitAll()
+                        .requestMatchers( "/auth/login", "/auth/register").permitAll()
                         /* demo only */ .requestMatchers("/auth/admin/register", "/auth/admin/login").permitAll()
                         .requestMatchers("/auth/me", "/auth/me/password", "/auth/me/email").authenticated()
                         .requestMatchers("/auth/admin/**").hasRole("ADMIN")

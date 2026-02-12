@@ -10,7 +10,6 @@ import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.*;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -32,15 +31,13 @@ public class CustomerService {
     private final CustomerMapper customerMapper;
     private final RestClient restClient;
     private final JwtService jwtService;
-    private final KafkaTemplate<String, CustomerDeletedEvent> kafkaTemplate;
     private  final CustomerProperties customerProperties;
 
-    public CustomerService(CustomerRepository customerRepository, CustomerMapper customerMapper, RestClient.Builder restClientBuilder, JwtService jwtService, KafkaTemplate<String, CustomerDeletedEvent> kafkaTemplate, CustomerProperties customerProperties) {
+    public CustomerService(CustomerRepository customerRepository, CustomerMapper customerMapper, RestClient.Builder restClientBuilder, JwtService jwtService, CustomerProperties customerProperties) {
         this.customerRepository = customerRepository;
         this.customerMapper = customerMapper;
         this.restClient = restClientBuilder.build();
         this.jwtService = jwtService;
-        this.kafkaTemplate = kafkaTemplate;
         this.customerProperties = customerProperties;
     }
 
@@ -80,132 +77,26 @@ public class CustomerService {
      * @throws CustomerRegistrationFailedException if an unexpected error occurs during REST call or saving the customer (e.g., data integrity violation)
      */
 
-    public void registerCustomer(CustomerRequest request) {
-        String maskedEmail = maskEmail(request.email());
-        log.info("Attempting to register new customer with email {} ...", maskedEmail);
-
-        UserResponse userResponse = registerUserInAuthService(request, maskedEmail);
-
-        Long userId = userResponse.id();
-        log.debug("User registered successfully with userId {}", userId);
-
-        try {
-            saveCustomerTransactional(request, userId);
-            log.info("Customer successfully registered with email {}", maskedEmail);
-        } catch (CustomerRegistrationFailedException e) {
-            // Compensation: user was created, customer failed
-            sendCustomerDeletedEvent(userId);
-            throw e;
-        }
-    }
-
-
-    private UserResponse registerUserInAuthService(CustomerRequest request, String maskedEmail) {
-        UserRegisterRequest userRegisterRequest = new UserRegisterRequest(
-                normalizeEmail(request.email()),
-                request.password()
-        );
-
-        String serviceToken = jwtService.generateServiceToken();
-        String registerUrl = customerProperties.getAuthServiceUrl() + customerProperties.getAuthRegisterPath();
-
-        log.debug("Calling auth service at: {}", registerUrl);
-
-        try {
-            UserResponse response = restClient.post()
-                    .uri(registerUrl)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .accept(MediaType.APPLICATION_JSON)
-                    .headers(h -> h.setBearerAuth(serviceToken))
-                    .body(userRegisterRequest)
-                    .retrieve()
-                    .onStatus(
-                            status -> status.value() == 409,
-                            (req, res) -> {
-                                throw new EmailAlreadyTakenException("Email already taken");
-                            }
-                    )
-                    .onStatus(
-                            status -> status.value() == 400,
-                            (req, res) -> {
-                                throw new InvalidUserDataException("Invalid user data");
-                            }
-                    )
-                    .onStatus(
-                            status -> status.value() == 401,
-                            (req, res) -> {
-                                throw new ServiceAuthenticationException("Service authentication failed");
-                            }
-                    )
-                    .onStatus(
-                            status -> status.value() == 403,
-                            (req, res) -> {
-                                throw new ServiceAuthorizationException("Service authorization failed");
-                            }
-                    )
-                    .onStatus(
-                            status -> status.is4xxClientError(),
-                            (req, res) -> {
-                                throw new UserRegistrationFailedException("User registration failed");
-                            }
-                    )
-                    .onStatus(
-                            status -> status.is5xxServerError(),
-                            (req, res) -> {
-                                throw new AuthServiceUnavailableException("Auth service unavailable");
-                            }
-                    )
-                    .body(UserResponse.class);
-
-            if (response == null || response.id() == null) {
-                throw new UserRegistrationFailedException("Auth server returned null response");
-            }
-
-            return response;
-
-        } catch (EmailAlreadyTakenException e) {
-            log.warn("Email already taken - TraceId: {}, Message: {}", maskedEmail, e.getMessage());
-            throw e;
-        } catch (InvalidUserDataException e) {
-            log.error("Invalid user data - TraceId: {}, Message: {}", maskedEmail, e.getMessage());
-            throw e;
-        } catch (ServiceAuthenticationException | ServiceAuthorizationException e) {
-            log.error("Service authentication/authorization failed for email {}", maskedEmail, e);
-            throw new UserRegistrationFailedException("User registration failed");
-        } catch (AuthServiceUnavailableException e) {
-            log.error("Auth service unavailable for email {}", maskedEmail, e);
-            throw e;
-        } catch (ResourceAccessException e) {
-            log.error("Auth service unavailable for email {}", maskedEmail, e);
-            throw new AuthServiceUnavailableException("Auth service unavailable");
-        } catch (RestClientException e) {
-            log.error("Unexpected error during user registration for email {}", maskedEmail, e);
-            throw new UserRegistrationFailedException("Unexpected error during user registration");
-        }
-    }
-
     @Transactional
-    public void saveCustomerTransactional(CustomerRequest request, Long userId) {
-        if (customerRepository.existsByUserId(userId)) {
-            throw new CustomerAlreadyExistsException(
-                    "Customer already exists for userId: " + userId
-            );
-        }
-
-        Customer customer = customerMapper.toCustomer(request, userId);
-        customer.setKycVerified(true);
-
+    public CustomerRegistrationResponse registerCustomer(CustomerRegistrationRequest request) {
+        log.info("Attempting to register new customer");
+        Customer customer = Customer.builder().
+                userId(request.userId()).
+                firstName(request.firstName()).
+                lastName(request.lastName()).
+                dateOfBirth(request.dateOfBirth()).
+                kycVerified(true).
+                build();
         try {
-            customerRepository.save(customer);
+            customerRepository.saveAndFlush(customer);
+            log.info("Customer successfully registered");
         } catch (DataIntegrityViolationException e) {
-            log.error("Data integrity violation while saving customer for userId {}", userId, e);
-            throw new CustomerRegistrationFailedException(
-                    "Failed to save customer due to data integrity violation"
-            );
+            log.warn("Failed to register customer");
+            throw  new CustomerRegistrationFailedException("Failed to register customer");
         }
+        Long customerId = customer.getId();
+        return new CustomerRegistrationResponse(customerId);
     }
-
-
 
 
     // -------------------- Retrieval --------------------
@@ -386,42 +277,9 @@ public class CustomerService {
     }
 
     // -------------------- Deletion --------------------
-
-    // NOTE: In production, this would be handled via Saga or Outbox pattern.
-    // This Kafka event is used here to demonstrate eventual consistency handling.
-
-    /**
-     * Deletes a customer by ID.
-     *
-     * @param id the customer's ID
-     * @throws CustomerNotFoundException if no customer is found
-     */
-
-    @Transactional
     public void deleteCustomerById(Long id) {
-        Customer customer = findCustomerById(id);
-        customerRepository.delete(customer);
-
-        TransactionSynchronizationManager.registerSynchronization(
-                new TransactionSynchronization() {
-                    @Override
-                    public void afterCommit() {
-                        kafkaTemplate.send("customer.deleted",
-                                new CustomerDeletedEvent(customer.getUserId()));
-                    }
-                }
-        );
-        log.info("Customer with id {} successfully deleted", id);
-    }
-
-    private void sendCustomerDeletedEvent(Long userId) {
-        try {
-            CustomerDeletedEvent event = new CustomerDeletedEvent(userId);
-            kafkaTemplate.send("customer.deleted", event);
-            log.warn("Compensation event customer.deleted sent for userId {}", userId);
-        } catch (Exception e) {
-            log.error("Failed to send compensation event for userId {}", userId, e);
-        }
+        customerRepository.deleteById(id);
+        log.info("Customer successfully deleted");
     }
 
 }

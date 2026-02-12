@@ -1,8 +1,8 @@
 package com.amerbank.auth_server.service;
 
+import com.amerbank.auth_server.dto.CustomerRegistrationResponse;
+import com.amerbank.auth_server.dto.CustomerRegistrationRequest;
 import com.amerbank.auth_server.security.JwtService;
-import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -34,5 +34,20 @@ public class CustomerServiceClient {
             return response.getBody();
         }
         throw new IllegalStateException("Failed to fetch customerId");
+    }
+    public CustomerRegistrationResponse registerCustomer(CustomerRegistrationRequest request) {
+        String customerServiceUrl = "http://customer";
+        String url = customerServiceUrl + "/customer/internal/register";
+        ResponseEntity<CustomerRegistrationResponse> response = restClient.post()
+                .uri(url).
+                accept(MediaType.APPLICATION_JSON)
+                .headers(h -> h.setBearerAuth(service.generateServiceToken()))
+                .body(request)
+                .retrieve()
+                .toEntity(CustomerRegistrationResponse.class);
+        if (response.getStatusCode().is2xxSuccessful()) {
+            return response.getBody();
+        }
+        throw new IllegalStateException("Failed to fetch customer registration response");
     }
 }

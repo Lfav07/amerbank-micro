@@ -41,7 +41,7 @@ public class User {
     private Set<Role> roles = new HashSet<>();
 
     @Builder
-    public User(Long id, String email, String password, boolean active, Set<Role> roles) {
+    public User(Long id, Long customerId, String email, String password, boolean active, Set<Role> roles) {
         this.id = id;
         this.email = email;
         this.password = password;

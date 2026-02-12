@@ -16,11 +16,6 @@ import org.springframework.web.bind.annotation.*;
 public class InternalUserController {
     private  final UserService userService;
 
-    @PostMapping("/register")
-    public ResponseEntity<UserResponse> register(@Valid @RequestBody UserRegisterRequest request) {
-        UserResponse response = userService.registerUser(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
 
     @GetMapping("/users/by-email")
     public ResponseEntity<UserResponse> InternalGetUserByEmail(
