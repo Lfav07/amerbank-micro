@@ -96,7 +96,7 @@ public class UserService {
      * @param request the registration request containing email and password
      * @throws EmailAlreadyTakenException if the email is already in use
      */
-    public UserResponse registerAdmin(UserRegisterRequest request) {
+    public UserResponse registerAdmin(AdminRegisterRequest request) {
         log.debug("Processing new admin registration");
 
         if (isEmailTaken(request.email())) {
