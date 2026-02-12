@@ -24,6 +24,9 @@ public class User {
     )
     private Long id;
 
+    @Column(unique = true, name = "customer_id")
+    private Long customerId;
+
     @Column(nullable = false, unique = true)
     private String email;
 
