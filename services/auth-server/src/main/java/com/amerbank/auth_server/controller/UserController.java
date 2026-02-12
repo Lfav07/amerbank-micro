@@ -34,6 +34,12 @@ public class UserController {
         return ResponseEntity.ok(Map.of("token", response.token()));
     }
 
+    @PostMapping("/register")
+    public ResponseEntity<UserResponse> register(@Valid @RequestBody UserRegisterRequest request) {
+        UserResponse response = userService.registerUser(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
     @PatchMapping("/me/email")
     public ResponseEntity<Map<String, String>> updateEmail(
             @AuthenticationPrincipal JwtUserPrincipal principal,
