@@ -1,9 +1,7 @@
 package com.amerbank.auth_server.service;
 
 import com.amerbank.auth_server.dto.*;
-import com.amerbank.auth_server.exception.EmailAlreadyTakenException;
-import com.amerbank.auth_server.exception.RegistrationFailedException;
-import com.amerbank.auth_server.exception.UserNotFoundException;
+import com.amerbank.auth_server.exception.*;
 import com.amerbank.auth_server.model.User;
 import com.amerbank.auth_server.repository.UserRepository;
 import com.amerbank.auth_server.security.JwtService;
@@ -57,12 +55,6 @@ public class UserService {
     // Registration
     // -------------------------------------------------------------------------
 
-    /**
-     * Registers a new user with the ROLE_USER role.
-     *
-     * @param request the registration request containing email and password
-     * @throws EmailAlreadyTakenException if the email is already in use
-     */
     public UserResponse registerUser(UserRegisterRequest request) {
 
         log.debug("Processing new user registration");
@@ -71,23 +63,43 @@ public class UserService {
             throw new EmailAlreadyTakenException("Email already taken");
         }
 
-
         User user = createUserTransactional(request);
 
         try {
+
             Long customerId = registerCustomerExternal(request, user.getId());
+
             updateUserCustomerIdTransactional(user.getId(), customerId);
 
             User updatedUser = userRepository.findById(user.getId())
-                    .orElseThrow();
+                    .orElseThrow(() -> new IllegalStateException(
+                            "User disappeared after registration: " + user.getId()));
 
-        } catch (Exception e) {
+            log.info("User successfully registered with id={} and customerId={}",
+                    updatedUser.getId(), customerId);
+
+            return mapper.toResponse(updatedUser);
+
+        } catch (CustomerServiceUnavailableException ex) {
+
+            log.error("Customer service unavailable for userId={}", user.getId(), ex);
             deleteUserTransactional(user.getId());
-            throw new RegistrationFailedException("Customer creation failed");
-        }
+            throw ex;
 
-        return mapper.toResponse(user);
+        } catch (CustomerRegistrationFailedException ex) {
+
+            log.warn("Customer registration failed for userId={}", user.getId(), ex);
+            deleteUserTransactional(user.getId());
+            throw ex;
+
+        } catch (RuntimeException ex) {
+
+            log.error("Unexpected error during registration for userId={}", user.getId(), ex);
+            deleteUserTransactional(user.getId());
+            throw new RegistrationFailedException("Unexpected error during registration", ex);
+        }
     }
+
 
     @Transactional
     public User createUserTransactional(UserRegisterRequest request) {
@@ -131,7 +143,7 @@ public class UserService {
                 customerServiceClient.registerCustomer(customerRequest);
 
         if (response == null || response.id() == null) {
-            throw new RegistrationFailedException("Customer service returned invalid response");
+            throw new CustomerRegistrationFailedException("Customer service returned invalid response");
         }
 
         return response.id();
