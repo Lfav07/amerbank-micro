@@ -11,6 +11,8 @@
 .idea/*
 .
 
+AGENTS.md
+
 # AWS User-specific
 .idea/**/aws.xml
 
