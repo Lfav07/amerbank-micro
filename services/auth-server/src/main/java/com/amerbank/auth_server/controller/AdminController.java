@@ -30,7 +30,7 @@ public class AdminController {
 
     @PostMapping("/register")
     public ResponseEntity<UserResponse> registerAdmin(
-            @Valid @RequestBody UserRegisterRequest request) {
+            @Valid @RequestBody AdminRegisterRequest request) {
 
       UserResponse response=  userService.registerAdmin(request);
 
