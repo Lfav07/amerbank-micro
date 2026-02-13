@@ -450,6 +450,10 @@ public class UserService {
      */
     @Transactional
     public void deleteUser(Long adminId, Long id) throws UserNotFoundException {
+        if (!userRepository.existsById(id)) {
+            log.warn("User not found for id {}", id);
+            throw new UserNotFoundException("User not found");
+        }
         userRepository.deleteById(id);
         log.debug("Admin with id {} deleted user with id {}", adminId, id);
         log.info("User account deleted successfully");
