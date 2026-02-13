@@ -663,7 +663,7 @@ public class UserServiceIntegrationTests {
         @Test
         @DisplayName("Should handle delete non-existent user gracefully")
         void shouldHandleDeleteNonExistentUser() {
-            assertDoesNotThrow(() -> userService.deleteUser(1L, 999L));
+            assertThrows(UserNotFoundException.class, () -> userService.deleteUser(1L, 999L));
         }
     }
 }

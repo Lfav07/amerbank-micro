@@ -970,6 +970,7 @@ class UserServiceTest {
     void shouldDeleteUserByAdmin() {
         Long adminId = 1L;
         Long userId = 2L;
+        when(userRepository.existsById(userId)).thenReturn(true);
 
         userService.deleteUser(adminId, userId);
 
