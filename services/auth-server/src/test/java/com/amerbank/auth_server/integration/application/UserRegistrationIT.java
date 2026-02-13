@@ -27,6 +27,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.*;
@@ -71,7 +72,7 @@ public class UserRegistrationIT {
     class UserRegistration {
 
         @AfterEach
-        void clearDatabase(){
+        void clearDatabase() {
             userRepository.deleteAllInBatch();
 
         }
@@ -82,7 +83,11 @@ public class UserRegistrationIT {
             String email = "test@email.com";
             String password = "testPassword";
             String endpoint = "/auth/internal/register";
-            UserRegisterRequest request = new UserRegisterRequest(email, password);
+            String firstName = "Tester";
+            String lastName = "Test";
+            LocalDate dateOfBirth = LocalDate.now();
+            UserRegisterRequest request = new UserRegisterRequest(email, password, firstName, lastName, dateOfBirth);
+
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(testJwtFactory.generateServiceToken());
             HttpEntity<UserRegisterRequest> entity = new HttpEntity<>(request, headers);
@@ -104,12 +109,13 @@ public class UserRegistrationIT {
         @Test
         @DisplayName("Should throw EmailAlreadyTaken when two concurrent registrations happen")
         void shouldThrowEmailAlreadyTakenOnConcurrentRequests() throws Exception {
-
+            String endpoint = "/auth/internal/register";
             String email = "race@email.com";
             String password = "testPassword";
-            String endpoint = "/auth/internal/register";
-
-            UserRegisterRequest request = new UserRegisterRequest(email, password);
+            String firstName = "Tester";
+            String lastName = "Test";
+            LocalDate dateOfBirth = LocalDate.now();
+            UserRegisterRequest request = new UserRegisterRequest(email, password, firstName, lastName, dateOfBirth);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(testJwtFactory.generateServiceToken());
@@ -158,7 +164,10 @@ public class UserRegistrationIT {
             String email = "testTaken@email.com";
             String password = "testPassword";
             String endpoint = "/auth/internal/register";
-            UserRegisterRequest request = new UserRegisterRequest(email, password);
+            String firstName = "Tester";
+            String lastName = "Test";
+            LocalDate dateOfBirth = LocalDate.now();
+            UserRegisterRequest request = new UserRegisterRequest(email, password, firstName, lastName, dateOfBirth);
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(testJwtFactory.generateServiceToken());
             HttpEntity<UserRegisterRequest> entity = new HttpEntity<>(request, headers);
@@ -184,12 +193,15 @@ public class UserRegistrationIT {
 
         @Test
         @DisplayName("Should not register user when jwt provided is invalid")
-        void shouldNotRegisterUserWhenInvalidJwt(){
+        void shouldNotRegisterUserWhenInvalidJwt() {
             String email = "test@email.com";
             String password = "testPassword";
             String endpoint = "/auth/internal/register";
             String fakeToken = "FakeToken";
-            UserRegisterRequest request = new UserRegisterRequest(email, password);
+            String firstName = "Tester";
+            String lastName = "Test";
+            LocalDate dateOfBirth = LocalDate.now();
+            UserRegisterRequest request = new UserRegisterRequest(email, password, firstName, lastName, dateOfBirth);
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(fakeToken);
             HttpEntity<UserRegisterRequest> entity = new HttpEntity<>(request, headers);
@@ -204,13 +216,17 @@ public class UserRegistrationIT {
             assertNotNull(response);
             assertNull(response.getBody());
         }
+
         @Test
         @DisplayName("Should not register user when password has less than 4 characters")
-        void shouldNotRegisterUserWhenInvalidPassword(){
+        void shouldNotRegisterUserWhenInvalidPassword() {
             String email = "test@email.com";
             String password = "123";
             String endpoint = "/auth/internal/register";
-            UserRegisterRequest request = new UserRegisterRequest(email, password);
+            String firstName = "Tester";
+            String lastName = "Test";
+            LocalDate dateOfBirth = LocalDate.now();
+            UserRegisterRequest request = new UserRegisterRequest(email, password, firstName, lastName, dateOfBirth);
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(testJwtFactory.generateServiceToken());
             HttpEntity<UserRegisterRequest> entity = new HttpEntity<>(request, headers);
@@ -240,7 +256,10 @@ public class UserRegistrationIT {
             String email = "test@admin.com";
             String password = "testPassword";
             String endpoint = "/auth/admin/register";
-            UserRegisterRequest request = new UserRegisterRequest(email, password);
+            String firstName = "Tester";
+            String lastName = "Test";
+            LocalDate dateOfBirth = LocalDate.now();
+            UserRegisterRequest request = new UserRegisterRequest(email, password, firstName, lastName, dateOfBirth);
             HttpEntity<UserRegisterRequest> entity = new HttpEntity<>(request);
             ResponseEntity<UserResponse> response = restTemplate.exchange(
                     endpoint,
@@ -265,7 +284,10 @@ public class UserRegistrationIT {
             String email = "testAdminTaken@email.com";
             String password = "testPassword";
             String endpoint = "/auth/admin/register";
-            UserRegisterRequest request = new UserRegisterRequest(email, password);
+            String firstName = "Tester";
+            String lastName = "Test";
+            LocalDate dateOfBirth = LocalDate.now();
+            UserRegisterRequest request = new UserRegisterRequest(email, password, firstName, lastName, dateOfBirth);
             HttpEntity<UserRegisterRequest> entity = new HttpEntity<>(request);
 
             restTemplate.exchange(

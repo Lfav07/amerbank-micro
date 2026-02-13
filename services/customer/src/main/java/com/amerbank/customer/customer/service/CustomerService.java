@@ -88,7 +88,7 @@ public class CustomerService {
                 kycVerified(true).
                 build();
         try {
-            customerRepository.saveAndFlush(customer);
+         customer = customerRepository.saveAndFlush(customer);
             log.info("Customer successfully registered");
         } catch (DataIntegrityViolationException e) {
             log.warn("Failed to register customer");

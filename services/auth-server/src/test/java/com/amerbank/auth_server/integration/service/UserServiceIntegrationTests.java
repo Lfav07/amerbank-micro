@@ -13,23 +13,18 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
+import java.time.LocalDate;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -48,16 +43,11 @@ public class UserServiceIntegrationTests {
             .withUsername("test")
             .withPassword("test");
 
-    @Container
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
-
     @DynamicPropertySource
     static void overrideProps(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
-
-        registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);
     }
 
     @MockitoBean
@@ -68,26 +58,9 @@ public class UserServiceIntegrationTests {
 
     @Autowired
     private UserService userService;
+
     @Autowired
     private UserRepository userRepository;
-    @Autowired
-    private KafkaTemplate<String, CustomerDeletedEvent> kafkaTemplate;
-
-    private static final AtomicBoolean kafkaListenerReady = new AtomicBoolean(false);
-
-    @KafkaListener(topics = "customer.deleted", groupId = "auth-server-test")
-    public void listen(CustomerDeletedEvent event) {
-        kafkaListenerReady.set(true);
-    }
-
-    private void waitForKafkaListener() throws Exception {
-        for (int i = 0; i < 30; i++) {
-            if (kafkaListenerReady.get()) {
-                return;
-            }
-            Thread.sleep(100);
-        }
-    }
 
     // -------------------------------------------------------------------------
     // Registration
@@ -102,7 +75,11 @@ public class UserServiceIntegrationTests {
             String email = "myEmail@email.com";
             String normalized = "myemail@email.com";
             String password = "myPassword";
-            UserRegisterRequest request = new UserRegisterRequest(email, password);
+            UserRegisterRequest request = new UserRegisterRequest(
+                    email, password, "John", "Doe", LocalDate.of(1990, 1, 1));
+
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenReturn(new CustomerRegistrationResponse(9999L));
 
             UserResponse response = userService.registerUser(request);
 
@@ -117,7 +94,7 @@ public class UserServiceIntegrationTests {
             String email = "myEmail@email.com";
             String normalized = "myemail@email.com";
             String password = "myPassword";
-            UserRegisterRequest request = new UserRegisterRequest(email, password);
+            AdminRegisterRequest request = new AdminRegisterRequest(email, password);
 
             UserResponse response = userService.registerAdmin(request);
             assertNotNull(response);
@@ -130,10 +107,14 @@ public class UserServiceIntegrationTests {
         void shouldFailRegistrationWhenEmailTaken() {
             String email = "taken@email.com";
             String password = "myPassword";
-            UserRegisterRequest request1 = new UserRegisterRequest(email, password);
-            userService.registerUser(request1);
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenReturn(new CustomerRegistrationResponse(9999L));
+            UserRegisterRequest request = new UserRegisterRequest(
+                    email, password, "John", "Doe", LocalDate.of(1990, 1, 1));
+            userService.registerUser(request);
 
-            UserRegisterRequest request2 = new UserRegisterRequest(email, password);
+            UserRegisterRequest request2 = new UserRegisterRequest(
+                    email, password, "Jane", "Smith", LocalDate.of(1990, 1, 1));
 
             assertThrows(EmailAlreadyTakenException.class, () -> userService.registerUser(request2));
         }
@@ -143,10 +124,10 @@ public class UserServiceIntegrationTests {
         void shouldFailAdminRegistrationWhenEmailTaken() {
             String email = "taken@email.com";
             String password = "myPassword";
-            UserRegisterRequest request1 = new UserRegisterRequest(email, password);
-            userService.registerUser(request1);
+            AdminRegisterRequest request1 = new AdminRegisterRequest(email, password);
+            userService.registerAdmin(request1);
 
-            UserRegisterRequest request2 = new UserRegisterRequest(email, password);
+            AdminRegisterRequest request2 = new AdminRegisterRequest(email, password);
 
             assertThrows(EmailAlreadyTakenException.class, () -> userService.registerAdmin(request2));
         }
@@ -157,7 +138,11 @@ public class UserServiceIntegrationTests {
             String email = "MyEmail@EMAIL.COM";
             String normalized = "myemail@email.com";
             String password = "myPassword";
-            UserRegisterRequest request = new UserRegisterRequest(email, password);
+            UserRegisterRequest request = new UserRegisterRequest(
+                    email, password, "John", "Doe", LocalDate.of(1990, 1, 1));
+
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenReturn(new CustomerRegistrationResponse(9999L));
 
             UserResponse response = userService.registerUser(request);
 
@@ -173,7 +158,11 @@ public class UserServiceIntegrationTests {
             String email = "  myEmail@email.com  ";
             String normalized = "myemail@email.com";
             String password = "myPassword";
-            UserRegisterRequest request = new UserRegisterRequest(email, password);
+            UserRegisterRequest request = new UserRegisterRequest(
+                    email, password, "John", "Doe", LocalDate.of(1990, 1, 1));
+
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenReturn(new CustomerRegistrationResponse(9999L));
 
             UserResponse response = userService.registerUser(request);
 
@@ -195,11 +184,14 @@ public class UserServiceIntegrationTests {
         void shouldLoginUser() {
             String email = "myemail@email.com";
             String password = "myPassword";
-            UserRegisterRequest registerRequest = new UserRegisterRequest(email, password);
+            UserRegisterRequest registerRequest = new UserRegisterRequest(
+                    email, password, "John", "Doe", LocalDate.of(1990, 1, 1));
+
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenReturn(new CustomerRegistrationResponse(100L));
+
             userService.registerUser(registerRequest);
             UserLoginRequest request = new UserLoginRequest(email, password);
-
-            when(customerServiceClient.getCustomerIdByUserId(any())).thenReturn(1L);
 
             AuthenticationResponse response = userService.login(request);
             assertNotNull(response.token());
@@ -210,7 +202,7 @@ public class UserServiceIntegrationTests {
         void shouldLoginAdmin() {
             String email = "myemail@email.com";
             String password = "myPassword";
-            UserRegisterRequest registerRequest = new UserRegisterRequest(email, password);
+            AdminRegisterRequest registerRequest = new AdminRegisterRequest(email, password);
             userService.registerAdmin(registerRequest);
             UserLoginRequest request = new UserLoginRequest(email, password);
 
@@ -223,11 +215,14 @@ public class UserServiceIntegrationTests {
         void shouldFailLoginWithWrongPassword() {
             String email = "myemail@email.com";
             String password = "myPassword";
-            UserRegisterRequest registerRequest = new UserRegisterRequest(email, password);
+            UserRegisterRequest registerRequest = new UserRegisterRequest(
+                    email, password, "John", "Doe", LocalDate.of(1990, 1, 1));
+
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenReturn(new CustomerRegistrationResponse(100L));
+
             userService.registerUser(registerRequest);
             UserLoginRequest request = new UserLoginRequest(email, "wrongPassword");
-
-            when(customerServiceClient.getCustomerIdByUserId(any())).thenReturn(1L);
 
             assertThrows(Exception.class, () -> userService.login(request));
         }
@@ -247,7 +242,12 @@ public class UserServiceIntegrationTests {
         void shouldFailUserLoginViaAdminEndpoint() {
             String email = "myemail@email.com";
             String password = "myPassword";
-            UserRegisterRequest registerRequest = new UserRegisterRequest(email, password);
+            UserRegisterRequest registerRequest = new UserRegisterRequest(
+                    email, password, "John", "Doe", LocalDate.of(1990, 1, 1));
+
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenReturn(new CustomerRegistrationResponse(100L));
+
             userService.registerUser(registerRequest);
             UserLoginRequest request = new UserLoginRequest(email, password);
 
@@ -259,11 +259,14 @@ public class UserServiceIntegrationTests {
         void shouldLoginWithDifferentCaseEmail() {
             String email = "MyEmail@EMAIL.COM";
             String password = "myPassword";
-            UserRegisterRequest registerRequest = new UserRegisterRequest(email, password);
+            UserRegisterRequest registerRequest = new UserRegisterRequest(
+                    email, password, "John", "Doe", LocalDate.of(1990, 1, 1));
+
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenReturn(new CustomerRegistrationResponse(100L));
+
             userService.registerUser(registerRequest);
             UserLoginRequest request = new UserLoginRequest("MYEMAIL@EMAIL.COM", password);
-
-            when(customerServiceClient.getCustomerIdByUserId(any())).thenReturn(1L);
 
             AuthenticationResponse response = userService.login(request);
             assertNotNull(response.token());
@@ -283,7 +286,12 @@ public class UserServiceIntegrationTests {
         void shouldUpdateUserEmail() {
             String email = "old@email.com";
             String password = "myPassword";
-            UserRegisterRequest registerRequest = new UserRegisterRequest(email, password);
+            UserRegisterRequest registerRequest = new UserRegisterRequest(
+                    email, password, "John", "Doe", LocalDate.of(1990, 1, 1));
+
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenReturn(new CustomerRegistrationResponse(100L));
+
             UserResponse registered = userService.registerUser(registerRequest);
 
             String newEmail = "new@email.com";
@@ -298,7 +306,12 @@ public class UserServiceIntegrationTests {
         void shouldUpdateUserEmailByAdmin() {
             String email = "old@email.com";
             String password = "myPassword";
-            UserRegisterRequest registerRequest = new UserRegisterRequest(email, password);
+            UserRegisterRequest registerRequest = new UserRegisterRequest(
+                    email, password, "John", "Doe", LocalDate.of(1990, 1, 1));
+
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenReturn(new CustomerRegistrationResponse(100L));
+
             UserResponse registered = userService.registerUser(registerRequest);
 
             String newEmail = "new@email.com";
@@ -314,8 +327,15 @@ public class UserServiceIntegrationTests {
             String email1 = "user1@email.com";
             String email2 = "user2@email.com";
             String password = "myPassword";
-            UserRegisterRequest request1 = new UserRegisterRequest(email1, password);
-            UserRegisterRequest request2 = new UserRegisterRequest(email2, password);
+
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenReturn(new CustomerRegistrationResponse(100L))
+                    .thenReturn(new CustomerRegistrationResponse(101L));
+
+            UserRegisterRequest request1 = new UserRegisterRequest(
+                    email1, password, "John", "Doe", LocalDate.of(1990, 1, 1));
+            UserRegisterRequest request2 = new UserRegisterRequest(
+                    email2, password, "Jane", "Smith", LocalDate.of(1990, 1, 1));
             UserResponse registered1 = userService.registerUser(request1);
             userService.registerUser(request2);
 
@@ -335,7 +355,12 @@ public class UserServiceIntegrationTests {
         void shouldUpdateEmailWithWhitespace() {
             String email = "old@email.com";
             String password = "myPassword";
-            UserRegisterRequest registerRequest = new UserRegisterRequest(email, password);
+            UserRegisterRequest registerRequest = new UserRegisterRequest(
+                    email, password, "John", "Doe", LocalDate.of(1990, 1, 1));
+
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenReturn(new CustomerRegistrationResponse(100L));
+
             UserResponse registered = userService.registerUser(registerRequest);
 
             String newEmail = "  NEW@EMAIL.COM  ";
@@ -360,7 +385,12 @@ public class UserServiceIntegrationTests {
             String email = "myemail@email.com";
             String oldPassword = "oldPassword";
             String newPassword = "newPassword";
-            UserRegisterRequest registerRequest = new UserRegisterRequest(email, oldPassword);
+            UserRegisterRequest registerRequest = new UserRegisterRequest(
+                    email, oldPassword, "John", "Doe", LocalDate.of(1990, 1, 1));
+
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenReturn(new CustomerRegistrationResponse(100L));
+
             UserResponse registered = userService.registerUser(registerRequest);
 
             PasswordUpdateRequest updateRequest = new PasswordUpdateRequest(oldPassword, newPassword);
@@ -375,7 +405,12 @@ public class UserServiceIntegrationTests {
         void shouldUpdateUserPasswordByAdmin() {
             String email = "myemail@email.com";
             String password = "myPassword";
-            UserRegisterRequest registerRequest = new UserRegisterRequest(email, password);
+            UserRegisterRequest registerRequest = new UserRegisterRequest(
+                    email, password, "John", "Doe", LocalDate.of(1990, 1, 1));
+
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenReturn(new CustomerRegistrationResponse(100L));
+
             UserResponse registered = userService.registerUser(registerRequest);
 
             String newPassword = "newPassword";
@@ -391,7 +426,12 @@ public class UserServiceIntegrationTests {
             String email = "myemail@email.com";
             String oldPassword = "oldPassword";
             String newPassword = "newPassword";
-            UserRegisterRequest registerRequest = new UserRegisterRequest(email, oldPassword);
+            UserRegisterRequest registerRequest = new UserRegisterRequest(
+                    email, oldPassword, "John", "Doe", LocalDate.of(1990, 1, 1));
+
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenReturn(new CustomerRegistrationResponse(100L));
+
             UserResponse registered = userService.registerUser(registerRequest);
 
             PasswordUpdateRequest updateRequest = new PasswordUpdateRequest("wrongPassword", newPassword);
@@ -422,7 +462,12 @@ public class UserServiceIntegrationTests {
         void shouldFindUserByEmail() {
             String email = "myemail@email.com";
             String password = "myPassword";
-            UserRegisterRequest registerRequest = new UserRegisterRequest(email, password);
+            UserRegisterRequest registerRequest = new UserRegisterRequest(
+                    email, password, "John", "Doe", LocalDate.of(1990, 1, 1));
+
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenReturn(new CustomerRegistrationResponse(100L));
+
             userService.registerUser(registerRequest);
 
             User found = userService.findByEmail("MYEMAIL@EMAIL.COM");
@@ -436,7 +481,12 @@ public class UserServiceIntegrationTests {
         void shouldFindUserByEmailMapped() {
             String email = "myemail@email.com";
             String password = "myPassword";
-            UserRegisterRequest registerRequest = new UserRegisterRequest(email, password);
+            UserRegisterRequest registerRequest = new UserRegisterRequest(
+                    email, password, "John", "Doe", LocalDate.of(1990, 1, 1));
+
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenReturn(new CustomerRegistrationResponse(100L));
+
             userService.registerUser(registerRequest);
 
             UserResponse found = userService.findByEmailMapped("myemail@email.com");
@@ -450,7 +500,12 @@ public class UserServiceIntegrationTests {
         void shouldFindUserById() {
             String email = "myemail@email.com";
             String password = "myPassword";
-            UserRegisterRequest registerRequest = new UserRegisterRequest(email, password);
+            UserRegisterRequest registerRequest = new UserRegisterRequest(
+                    email, password, "John", "Doe", LocalDate.of(1990, 1, 1));
+
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenReturn(new CustomerRegistrationResponse(100L));
+
             UserResponse registered = userService.registerUser(registerRequest);
 
             User found = userService.findById(registered.id());
@@ -464,7 +519,12 @@ public class UserServiceIntegrationTests {
         void shouldFindUserByIdMapped() {
             String email = "myemail@email.com";
             String password = "myPassword";
-            UserRegisterRequest registerRequest = new UserRegisterRequest(email, password);
+            UserRegisterRequest registerRequest = new UserRegisterRequest(
+                    email, password, "John", "Doe", LocalDate.of(1990, 1, 1));
+
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenReturn(new CustomerRegistrationResponse(100L));
+
             UserResponse registered = userService.registerUser(registerRequest);
 
             UserResponse found = userService.findByIdMapped(registered.id());
@@ -478,7 +538,12 @@ public class UserServiceIntegrationTests {
         void shouldGetOwnUserInfo() {
             String email = "myemail@email.com";
             String password = "myPassword";
-            UserRegisterRequest registerRequest = new UserRegisterRequest(email, password);
+            UserRegisterRequest registerRequest = new UserRegisterRequest(
+                    email, password, "John", "Doe", LocalDate.of(1990, 1, 1));
+
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenReturn(new CustomerRegistrationResponse(100L));
+
             UserResponse registered = userService.registerUser(registerRequest);
 
             UserResponse found = userService.getOwnUserInfo(registered.id());
@@ -493,8 +558,15 @@ public class UserServiceIntegrationTests {
             String email1 = "user1@email.com";
             String email2 = "user2@email.com";
             String password = "myPassword";
-            userService.registerUser(new UserRegisterRequest(email1, password));
-            userService.registerUser(new UserRegisterRequest(email2, password));
+
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenReturn(new CustomerRegistrationResponse(100L))
+                    .thenReturn(new CustomerRegistrationResponse(101L));
+
+            userService.registerUser(new UserRegisterRequest(
+                    email1, password, "John", "Doe", LocalDate.of(1990, 1, 1)));
+            userService.registerUser(new UserRegisterRequest(
+                    email2, password, "Jane", "Smith", LocalDate.of(1990, 1, 1)));
 
             List<UserResponse> users = userService.getAllUsers();
 
@@ -528,7 +600,12 @@ public class UserServiceIntegrationTests {
         void shouldReturnTrueForEmailTaken() {
             String email = "myemail@email.com";
             String password = "myPassword";
-            userService.registerUser(new UserRegisterRequest(email, password));
+
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenReturn(new CustomerRegistrationResponse(100L));
+
+            userService.registerUser(new UserRegisterRequest(
+                    email, password, "John", "Doe", LocalDate.of(1990, 1, 1)));
 
             boolean taken = userService.isEmailTaken("MYEMAIL@EMAIL.COM");
 
@@ -549,7 +626,12 @@ public class UserServiceIntegrationTests {
         void shouldDeleteUserByAdmin() {
             String email = "myemail@email.com";
             String password = "myPassword";
-            UserRegisterRequest registerRequest = new UserRegisterRequest(email, password);
+            UserRegisterRequest registerRequest = new UserRegisterRequest(
+                    email, password, "John", "Doe", LocalDate.of(1990, 1, 1));
+
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenReturn(new CustomerRegistrationResponse(100L));
+
             UserResponse registered = userService.registerUser(registerRequest);
 
             userService.deleteUser(1L, registered.id());
@@ -563,8 +645,15 @@ public class UserServiceIntegrationTests {
             String email1 = "user1@email.com";
             String email2 = "user2@email.com";
             String password = "myPassword";
-            userService.registerUser(new UserRegisterRequest(email1, password));
-            userService.registerUser(new UserRegisterRequest(email2, password));
+
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenReturn(new CustomerRegistrationResponse(100L))
+                    .thenReturn(new CustomerRegistrationResponse(101L));
+
+            userService.registerUser(new UserRegisterRequest(
+                    email1, password, "John", "Doe", LocalDate.of(1990, 1, 1)));
+            userService.registerUser(new UserRegisterRequest(
+                    email2, password, "Jane", "Smith", LocalDate.of(1990, 1, 1)));
 
             userService.deleteAllUsers();
 
@@ -575,53 +664,6 @@ public class UserServiceIntegrationTests {
         @DisplayName("Should handle delete non-existent user gracefully")
         void shouldHandleDeleteNonExistentUser() {
             assertDoesNotThrow(() -> userService.deleteUser(1L, 999L));
-        }
-    }
-
-    // -------------------------------------------------------------------------
-    // Kafka Listener
-    // -------------------------------------------------------------------------
-
-    @Nested
-    @DisplayName("Kafka Listener")
-    class KafkaListenerTests {
-
-        @Test
-        @Transactional(propagation = Propagation.NOT_SUPPORTED)
-        @DisplayName("Should delete user when customer deleted event is received")
-        void shouldHandleCustomerDeletedEventWhenUserExists() throws Exception {
-            String email = "myemail@email.com";
-            String password = "myPassword";
-            UserRegisterRequest registerRequest = new UserRegisterRequest(email, password);
-            UserResponse registered = userService.registerUser(registerRequest);
-            userRepository.flush();
-
-
-            waitForKafkaListener();
-
-            CustomerDeletedEvent event = new CustomerDeletedEvent(registered.id());
-            kafkaTemplate.send("customer.deleted", event).get(5, TimeUnit.SECONDS);
-
-            boolean deleted = false;
-            for (int i = 0; i < 10; i++) {
-                if (!userRepository.existsById(registered.id())) {
-                    deleted = true;
-                    break;
-                }
-                Thread.sleep(500);
-            }
-
-            assertTrue(deleted, "User should be deleted after Kafka event");
-        }
-
-        @Test
-        @DisplayName("Should not throw when customer deleted event received for non-existent user")
-        void shouldHandleCustomerDeletedEventWhenUserDoesNotExist() throws Exception {
-            waitForKafkaListener();
-
-            CustomerDeletedEvent event = new CustomerDeletedEvent(999L);
-
-            assertDoesNotThrow(() -> kafkaTemplate.send("customer.deleted", event).get(5, TimeUnit.SECONDS));
         }
     }
 }

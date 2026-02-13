@@ -1,8 +1,6 @@
 package com.amerbank.auth_server.integration.application;
 
-import com.amerbank.auth_server.dto.UserLoginRequest;
-import com.amerbank.auth_server.dto.UserRegisterRequest;
-import com.amerbank.auth_server.dto.UserResponse;
+import com.amerbank.auth_server.dto.*;
 import com.amerbank.auth_server.repository.UserRepository;
 import com.amerbank.auth_server.security.JwtService;
 import com.amerbank.auth_server.service.CustomerServiceClient;
@@ -29,12 +27,13 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.time.LocalDate;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest(properties = "spring.cloud.config.enabled=false",
@@ -67,7 +66,6 @@ public class UserLoginIT {
     @MockitoBean
     private CustomerServiceClient customerServiceClient;
 
-
     @Autowired
     private TestRestTemplate restTemplate;
 
@@ -82,18 +80,18 @@ public class UserLoginIT {
         userRepository.deleteAllInBatch();
     }
 
-    private UserResponse registerUser(String email, String password) {
-        UserRegisterRequest request = new UserRegisterRequest(email, password);
+    private UserResponse registerUser(String email, String password, String firstName, String lastName, LocalDate dateOfBirth) {
+        UserRegisterRequest request = new UserRegisterRequest(email, password, firstName, lastName, dateOfBirth);
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(testJwtFactory.generateServiceToken());
         HttpEntity<UserRegisterRequest> entity = new HttpEntity<>(request, headers);
 
-        when(customerServiceClient.getCustomerIdByUserId(anyLong()))
-                .thenReturn(1L);
-
+        // Mock customer service to return a customer ID
+        when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                .thenReturn(new CustomerRegistrationResponse(100L));
 
         ResponseEntity<UserResponse> response = restTemplate.exchange(
-                "/auth/internal/register",
+                "/auth/register",
                 HttpMethod.POST,
                 entity,
                 UserResponse.class
@@ -102,9 +100,8 @@ public class UserLoginIT {
     }
 
     private UserResponse registerAdmin(String email, String password) {
-        UserRegisterRequest request = new UserRegisterRequest(email, password);
-        HttpEntity<UserRegisterRequest> entity = new HttpEntity<>(request);
-
+        AdminRegisterRequest request = new AdminRegisterRequest(email, password);
+        HttpEntity<AdminRegisterRequest> entity = new HttpEntity<>(request);
 
         ResponseEntity<UserResponse> response = restTemplate.exchange(
                 "/auth/admin/register",
@@ -135,7 +132,7 @@ public class UserLoginIT {
 
         @BeforeEach
         void setupUser() {
-            registerUser("test@email.com", "password123");
+            registerUser("test@email.com", "password123", "John", "Doe", LocalDate.of(1990, 1, 1));
         }
 
         @Test
@@ -242,7 +239,8 @@ public class UserLoginIT {
         @Test
         @DisplayName("Should not allow regular user to login as admin")
         void shouldNotLoginNonAdminAsAdmin() {
-            UserResponse user = registerUser("regular@user.com", "userPassword123");
+            UserResponse user = registerUser("regular@user.com", "userPassword123",
+                    "Jane", "Smith", LocalDate.of(1992, 5, 15));
 
             UserLoginRequest request = new UserLoginRequest("regular@user.com", "userPassword123");
             HttpEntity<UserLoginRequest> entity = new HttpEntity<>(request);

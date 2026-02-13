@@ -6,7 +6,6 @@ import com.amerbank.customer.customer.exception.*;
 import com.amerbank.customer.customer.model.Customer;
 import com.amerbank.customer.customer.repository.CustomerRepository;
 import com.amerbank.customer.customer.security.JwtService;
-import org.aspectj.lang.annotation.Before;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -14,8 +13,10 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.http.HttpStatus;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 
 import java.time.LocalDate;
@@ -43,10 +44,10 @@ class CustomerServiceTest {
     private RestClient.Builder restClientBuilder;
 
     @Mock
-    private RestClient.RequestBodyUriSpec requestBodyUriSpec;
+    private RestClient.RequestHeadersUriSpec requestHeadersUriSpec;
 
     @Mock
-    private RestClient.RequestBodySpec requestBodySpec;
+    private RestClient.RequestHeadersSpec requestHeadersSpec;
 
     @Mock
     private RestClient.ResponseSpec responseSpec;
@@ -54,22 +55,15 @@ class CustomerServiceTest {
     @Mock
     private JwtService jwtService;
 
-    @Mock
-    private KafkaTemplate<String, CustomerDeletedEvent> kafkaTemplate;
-
     private CustomerProperties props;
 
     private CustomerService customerService;
-
-
-
-
 
     @BeforeEach
     void setUp() {
         props = new CustomerProperties();
         props.setAuthServiceUrl("http://auth");
-        props.setAuthRegisterPath("/register");
+        props.setAuthUserByEmailPath("/user/by-email");
         TransactionSynchronizationManager.initSynchronization();
 
         when(restClientBuilder.build()).thenReturn(restClient);
@@ -79,97 +73,110 @@ class CustomerServiceTest {
                 customerMapper,
                 restClientBuilder,
                 jwtService,
-                kafkaTemplate,
                 props
         );
     }
+
     @AfterEach
     public void tearDown() {
-    TransactionSynchronizationManager.clearSynchronization();
+        TransactionSynchronizationManager.clearSynchronization();
     }
 
-    // ==================== saveCustomerTransactional Tests ====================
+    // ==================== Registration Tests ====================
+
+    @Test
+    @DisplayName("Should register customer successfully")
+    void shouldRegisterCustomerSuccessfully() {
+        // Arrange
+        Long userId = 123L;
+        CustomerRegistrationRequest request = new CustomerRegistrationRequest(
+                "John",
+                "Doe",
+                userId,
+                LocalDate.of(1990, 1, 1)
+        );
+
+        Customer savedCustomer = Customer.builder()
+                .id(1L)
+                .userId(userId)
+                .firstName("John")
+                .lastName("Doe")
+                .dateOfBirth(LocalDate.of(1990, 1, 1))
+                .kycVerified(true)
+                .build();
+
+        when(customerRepository.saveAndFlush(any(Customer.class))).thenReturn(savedCustomer);
+
+        // Act
+        CustomerRegistrationResponse response = customerService.registerCustomer(request);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(1L, response.id());
+
+        ArgumentCaptor<Customer> customerCaptor = ArgumentCaptor.forClass(Customer.class);
+        verify(customerRepository).saveAndFlush(customerCaptor.capture());
+
+        Customer capturedCustomer = customerCaptor.getValue();
+        assertEquals(userId, capturedCustomer.getUserId());
+        assertEquals("John", capturedCustomer.getFirstName());
+        assertEquals("Doe", capturedCustomer.getLastName());
+        assertEquals(LocalDate.of(1990, 1, 1), capturedCustomer.getDateOfBirth());
+        assertTrue(capturedCustomer.isKycVerified());
+    }
 
     @Test
     @DisplayName("Should throw CustomerRegistrationFailedException on data integrity violation")
     void shouldThrowCustomerRegistrationFailedOnDataIntegrityViolation() {
         // Arrange
-        CustomerRequest request = new CustomerRequest(
-                "test@email.com",
-                "password123",
-                "Test",
-                "User",
+        Long userId = 123L;
+        CustomerRegistrationRequest request = new CustomerRegistrationRequest(
+                "John",
+                "Doe",
+                userId,
                 LocalDate.of(1990, 1, 1)
         );
 
-        Long userId = 123L;
-        Customer customer = new Customer();
-        customer.setUserId(userId);
-
-        when(customerRepository.existsByUserId(userId)).thenReturn(false);
-        when(customerMapper.toCustomer(request, userId)).thenReturn(customer);
-        when(customerRepository.save(any(Customer.class)))
+        when(customerRepository.saveAndFlush(any(Customer.class)))
                 .thenThrow(new DataIntegrityViolationException("Constraint violation"));
 
         // Act & Assert
         assertThrows(CustomerRegistrationFailedException.class, () -> {
-            customerService.saveCustomerTransactional(request, userId);
+            customerService.registerCustomer(request);
         });
 
-        verify(customerRepository).save(any(Customer.class));
+        verify(customerRepository).saveAndFlush(any(Customer.class));
     }
 
     @Test
-    @DisplayName("Should throw CustomerAlreadyExistsException when customer exists for userId")
-    void shouldThrowCustomerAlreadyExistsException() {
+    @DisplayName("Should set KYC as verified when registering customer")
+    void shouldSetKycAsVerifiedWhenRegisteringCustomer() {
         // Arrange
-        CustomerRequest request = new CustomerRequest(
-                "test@email.com",
-                "password123",
-                "Test",
-                "User",
+        Long userId = 123L;
+        CustomerRegistrationRequest request = new CustomerRegistrationRequest(
+                "John",
+                "Doe",
+                userId,
                 LocalDate.of(1990, 1, 1)
         );
 
-        Long userId = 123L;
+        Customer savedCustomer = Customer.builder()
+                .id(1L)
+                .userId(userId)
+                .firstName("John")
+                .lastName("Doe")
+                .dateOfBirth(LocalDate.of(1990, 1, 1))
+                .kycVerified(true)
+                .build();
 
-        when(customerRepository.existsByUserId(userId)).thenReturn(true);
-
-        // Act & Assert
-        assertThrows(CustomerAlreadyExistsException.class, () -> {
-            customerService.saveCustomerTransactional(request, userId);
-        });
-
-        verify(customerRepository, never()).save(any());
-    }
-
-    @Test
-    @DisplayName("Should set KYC as verified when saving customer")
-    void shouldSetKycAsVerified() {
-        // Arrange
-        CustomerRequest request = new CustomerRequest(
-                "test@email.com",
-                "password123",
-                "Test",
-                "User",
-                LocalDate.of(1990, 1, 1)
-        );
-
-        Long userId = 123L;
-        Customer customer = new Customer();
-        customer.setUserId(userId);
-        customer.setKycVerified(false);
-
-        when(customerRepository.existsByUserId(userId)).thenReturn(false);
-        when(customerMapper.toCustomer(request, userId)).thenReturn(customer);
-        when(customerRepository.save(any(Customer.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(customerRepository.saveAndFlush(any(Customer.class))).thenReturn(savedCustomer);
 
         // Act
-        customerService.saveCustomerTransactional(request, userId);
+        customerService.registerCustomer(request);
 
         // Assert
         ArgumentCaptor<Customer> customerCaptor = ArgumentCaptor.forClass(Customer.class);
-        verify(customerRepository).save(customerCaptor.capture());
+        verify(customerRepository).saveAndFlush(customerCaptor.capture());
         assertTrue(customerCaptor.getValue().isKycVerified());
     }
 
@@ -275,23 +282,14 @@ class CustomerServiceTest {
     void shouldFindCustomerByIdMapped() {
         // Arrange
         Long customerId = 1L;
-        Long userID = 1L;
+        Long userId = 100L;
         Customer customer = new Customer();
         customer.setId(customerId);
+        customer.setUserId(userId);
         customer.setFirstName("John");
         customer.setLastName("Doe");
         customer.setDateOfBirth(LocalDate.of(1990, 1, 1));
         customer.setKycVerified(true);
-
-        CustomerResponse expectedResponse = new CustomerResponse(
-                customerId,
-                userID,
-                "John",
-                "Doe",
-                LocalDate.of(1990, 1, 1),
-                true,
-                LocalDateTime.now()
-        );
 
         when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
 
@@ -312,12 +310,14 @@ class CustomerServiceTest {
         // Arrange
         Customer customer1 = new Customer();
         customer1.setId(1L);
+        customer1.setUserId(100L);
         customer1.setFirstName("John");
         customer1.setLastName("Doe");
         customer1.setDateOfBirth(LocalDate.of(1990, 1, 1));
 
         Customer customer2 = new Customer();
         customer2.setId(2L);
+        customer2.setUserId(101L);
         customer2.setFirstName("Jane");
         customer2.setLastName("Smith");
         customer2.setDateOfBirth(LocalDate.of(1985, 5, 15));
@@ -357,8 +357,10 @@ class CustomerServiceTest {
     void shouldGetCustomerInfo() {
         // Arrange
         Long customerId = 1L;
+        Long userId = 100L;
         Customer customer = new Customer();
         customer.setId(customerId);
+        customer.setUserId(userId);
         customer.setFirstName("John");
         customer.setLastName("Doe");
         customer.setDateOfBirth(LocalDate.of(1990, 1, 1));
@@ -381,8 +383,10 @@ class CustomerServiceTest {
     void shouldGetMyCustomerInfo() {
         // Arrange
         Long customerId = 1L;
+        Long userId = 100L;
         Customer customer = new Customer();
         customer.setId(customerId);
+        customer.setUserId(userId);
         customer.setFirstName("John");
         customer.setLastName("Doe");
         customer.setDateOfBirth(LocalDate.of(1990, 1, 1));
@@ -398,6 +402,93 @@ class CustomerServiceTest {
         assertEquals("John", result.firstName());
         assertEquals("Doe", result.lastName());
         verify(customerRepository).findById(customerId);
+    }
+
+    @Test
+    @DisplayName("Should get customer info by email successfully")
+    void shouldGetCustomerInfoByEmail() {
+        // Arrange
+        String email = "test@email.com";
+        Long userId = 100L;
+        Long customerId = 1L;
+
+        UserResponse userResponse = new UserResponse(userId, email);
+        Customer customer = new Customer();
+        customer.setId(customerId);
+        customer.setUserId(userId);
+        customer.setFirstName("John");
+        customer.setLastName("Doe");
+        customer.setDateOfBirth(LocalDate.of(1990, 1, 1));
+        customer.setKycVerified(true);
+
+        when(jwtService.generateServiceToken()).thenReturn("service-token");
+        when(restClient.get()).thenReturn(requestHeadersUriSpec);
+        when(requestHeadersUriSpec.uri(anyString())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.accept(any())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.headers(any())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.toEntity(UserResponse.class))
+                .thenReturn(org.springframework.http.ResponseEntity.ok(userResponse));
+
+        when(customerRepository.findByUserId(userId)).thenReturn(Optional.of(customer));
+
+        // Act
+        CustomerResponse result = customerService.getCustomerInfoByEmail(email);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(customerId, result.id());
+        assertEquals("John", result.firstName());
+        verify(customerRepository).findByUserId(userId);
+    }
+
+
+
+    @Test
+    @DisplayName("Should throw AuthServiceUnavailableException when auth service is down")
+    void shouldThrowAuthServiceUnavailableWhenServiceDown() {
+        // Arrange
+        String email = "test@email.com";
+
+        when(jwtService.generateServiceToken()).thenReturn("service-token");
+        when(restClient.get()).thenReturn(requestHeadersUriSpec);
+        when(requestHeadersUriSpec.uri(anyString())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.accept(any())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.headers(any())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.toEntity(UserResponse.class))
+                .thenThrow(new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR));
+
+        // Act & Assert
+        assertThrows(AuthServiceUnavailableException.class, () -> {
+            customerService.getCustomerInfoByEmail(email);
+        });
+    }
+
+    @Test
+    @DisplayName("Should throw CustomerNotFoundException when customer not found for user email")
+    void shouldThrowCustomerNotFoundWhenCustomerNotFoundForUserEmail() {
+        // Arrange
+        String email = "test@email.com";
+        Long userId = 100L;
+
+        UserResponse userResponse = new UserResponse(userId, email);
+
+        when(jwtService.generateServiceToken()).thenReturn("service-token");
+        when(restClient.get()).thenReturn(requestHeadersUriSpec);
+        when(requestHeadersUriSpec.uri(anyString())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.accept(any())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.headers(any())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.toEntity(UserResponse.class))
+                .thenReturn(org.springframework.http.ResponseEntity.ok(userResponse));
+
+        when(customerRepository.findByUserId(userId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(CustomerNotFoundException.class, () -> {
+            customerService.getCustomerInfoByEmail(email);
+        });
     }
 
     // ==================== Update Tests ====================
@@ -525,34 +616,12 @@ class CustomerServiceTest {
     void shouldDeleteCustomerById() {
         // Arrange
         Long customerId = 1L;
-        Long userId = 100L;
-        Customer customer = new Customer();
-        customer.setId(customerId);
-        customer.setUserId(userId);
-
-        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
-        doNothing().when(customerRepository).delete(customer);
+        doNothing().when(customerRepository).deleteById(customerId);
 
         // Act
         customerService.deleteCustomerById(customerId);
 
         // Assert
-        verify(customerRepository).findById(customerId);
-        verify(customerRepository).delete(customer);
-    }
-
-    @Test
-    @DisplayName("Should throw CustomerNotFoundException when deleting non-existent customer")
-    void shouldThrowCustomerNotFoundWhenDeletingNonExistentCustomer() {
-        // Arrange
-        Long customerId = 999L;
-        when(customerRepository.findById(customerId)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThrows(CustomerNotFoundException.class, () -> {
-            customerService.deleteCustomerById(customerId);
-        });
-
-        verify(customerRepository, never()).delete(any());
+        verify(customerRepository).deleteById(customerId);
     }
 }

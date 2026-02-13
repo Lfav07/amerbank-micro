@@ -125,6 +125,7 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         user.setCustomerId(customerId);
+        userRepository.save(user);
     }
 
 

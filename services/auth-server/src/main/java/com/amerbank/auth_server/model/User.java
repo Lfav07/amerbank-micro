@@ -44,6 +44,7 @@ public class User {
     public User(Long id, Long customerId, String email, String password, boolean active, Set<Role> roles) {
         this.id = id;
         this.email = email;
+        this.customerId = customerId;
         this.password = password;
         this.active = active;
         this.roles = roles != null ? new HashSet<>(roles) : new HashSet<>();
