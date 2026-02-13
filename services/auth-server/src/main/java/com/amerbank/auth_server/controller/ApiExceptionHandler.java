@@ -2,6 +2,8 @@ package com.amerbank.auth_server.controller;
 
 import com.amerbank.auth_server.dto.ErrorResponse;
 import com.amerbank.auth_server.dto.ValidationErrorResponse;
+import com.amerbank.auth_server.exception.CustomerRegistrationFailedException;
+import com.amerbank.auth_server.exception.CustomerServiceUnavailableException;
 import com.amerbank.auth_server.exception.EmailAlreadyTakenException;
 import com.amerbank.auth_server.exception.UserNotFoundException;
 import com.amerbank.auth_server.util.TraceIdUtil;
@@ -188,6 +190,30 @@ public class ApiExceptionHandler {
     }
 
     // ============================================================
+    // ================ 503 SERVICE_UNAVAILABLE =================
+    // ============================================================
+
+    @ExceptionHandler(CustomerServiceUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handleCustomerServiceUnavailable(
+            CustomerServiceUnavailableException ex,
+            WebRequest request) {
+        String traceId = getTraceId(request);
+        String path = extractPath(request);
+
+        log.warn("Customer service unavailable - TraceId: {}, Message: {}", traceId, ex.getMessage());
+
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.SERVICE_UNAVAILABLE.value())
+                .error("Service Unavailable")
+                .message("Customer service unavailable")
+                .path(path)
+                .traceId(traceId)
+                .build();
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
+    }
+
+    // ============================================================
     // ================ 500 INTERNAL_SERVER_ERROR ================
     // ============================================================
 
@@ -207,6 +233,54 @@ public class ApiExceptionHandler {
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .error("Internal Server Error")
                 .message("Internal server error")
+                .path(path)
+                .traceId(traceId)
+                .build();
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+
+    // ============================================================
+    // ================ 500 CUSTOMER_REGISTRATION_FAILED =========
+    // ============================================================
+
+    @ExceptionHandler(CustomerRegistrationFailedException.class)
+    public ResponseEntity<ErrorResponse> handleCustomerRegistrationFailed(
+            CustomerRegistrationFailedException ex,
+            WebRequest request) {
+        String traceId = getTraceId(request);
+        String path = extractPath(request);
+
+        log.error("Customer registration failed - TraceId: {}, Message: {}", traceId, ex.getMessage(), ex);
+
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .error("Internal Server Error")
+                .message("Failed to register customer")
+                .path(path)
+                .traceId(traceId)
+                .build();
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+
+    // ============================================================
+    // ================ 500 ILLEGAL_STATE =========================
+    // ============================================================
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalState(
+            IllegalStateException ex,
+            WebRequest request) {
+        String traceId = getTraceId(request);
+        String path = extractPath(request);
+
+        log.error("Invalid response from customer service - TraceId: {}, Message: {}", traceId, ex.getMessage(), ex);
+
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .error("Internal Server Error")
+                .message("Invalid response from customer service")
                 .path(path)
                 .traceId(traceId)
                 .build();
