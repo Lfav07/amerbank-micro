@@ -1,0 +1,24 @@
+spring:
+  cloud:
+    config:
+      enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: validate
+      show-sql: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration/customer
+customer:
+  trace-id-header: TRACE_ID_HEADER
+  request-id-header: REQUEST_ID_HEADER
+  auth-service-url: http://auth-server
+  auth-register-path: /auth/internal/register
+  auth-user-by-email-path: /auth/internal/users/by-email
+eureka:
+  client:
+    enabled: false
+
+jwt:
+  secret: "testsecret123456789test123456789secret"
+  serviceTokenExpirationMs: 120000

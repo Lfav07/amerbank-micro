@@ -616,6 +616,7 @@ class CustomerServiceTest {
     void shouldDeleteCustomerById() {
         // Arrange
         Long customerId = 1L;
+        when(customerRepository.existsById(customerId)).thenReturn(true);
         doNothing().when(customerRepository).deleteById(customerId);
 
         // Act
