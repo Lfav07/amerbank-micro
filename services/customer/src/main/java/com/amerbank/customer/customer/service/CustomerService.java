@@ -278,6 +278,10 @@ public class CustomerService {
 
     // -------------------- Deletion --------------------
     public void deleteCustomerById(Long id) {
+        if (!customerRepository.existsById(id)) {
+            log.warn("Customer not found for id {}" , id);
+            throw new CustomerNotFoundException("Customer not found");
+        }
         customerRepository.deleteById(id);
         log.info("Customer successfully deleted");
     }
