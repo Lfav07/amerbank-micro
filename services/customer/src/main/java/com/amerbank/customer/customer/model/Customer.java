@@ -7,12 +7,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 
-@AllArgsConstructor
-@NoArgsConstructor
 @Entity
 @Getter
 @Setter
 @Table(name = "customers")
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Customer {
 
     @Id
@@ -45,14 +46,5 @@ public class Customer {
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
-    }
-    @Builder
-    public Customer(Long id, Long userId, String firstName, String lastName, LocalDate dateOfBirth, boolean kycVerified){
-        this.id = id;
-        this.userId = userId;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.dateOfBirth = dateOfBirth;
-        this.kycVerified = kycVerified;
     }
 }
