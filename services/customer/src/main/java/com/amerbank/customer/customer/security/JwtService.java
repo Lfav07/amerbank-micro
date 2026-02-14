@@ -1,6 +1,7 @@
 package com.amerbank.customer.customer.security;
 
 
+import com.amerbank.customer.customer.config.JwtProperties;
 import com.amerbank.customer.customer.dto.Role;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -16,18 +17,14 @@ import java.util.stream.Collectors;
 
 @Service
 public class JwtService {
+    private  final JwtProperties jwtProperties;
 
-    @Value("${jwt.secret}")
-    private String secret;
-
-    @Value("${jwt.expiration-ms:3600000}") // 1 hour default
-    private long expirationMs;
-
-    @Value("${jwt.service-token-expiration-ms:120000}") // 2 minutes for service tokens
-    private long serviceTokenExpirationMs;
+    public JwtService(JwtProperties jwtProperties) {
+        this.jwtProperties = jwtProperties;
+    }
 
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes());
+        return Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes());
     }
 
     public String extractUsername(String token) {
@@ -74,7 +71,7 @@ public class JwtService {
                 .audience().add("auth-server").and()
                 .claim("serviceName", "customer-service")
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + serviceTokenExpirationMs))
+                .expiration(new Date(System.currentTimeMillis() + jwtProperties.getServiceTokenExpirationMs()))
                 .signWith(getSigningKey())
                 .id(UUID.randomUUID().toString())
                 .compact();
