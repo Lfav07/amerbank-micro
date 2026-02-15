@@ -74,7 +74,6 @@ public class JwtService {
         return Jwts.builder()
                 .issuer("auth-server")
                 .subject(user.getEmail())
-                .audience().add(("customer-service")).and()
                 .claim("userId", user.getId())
                 .claim("customerId", customerId)
                 .claim("roles", user.getRoles().stream().map(Enum::name).toList())

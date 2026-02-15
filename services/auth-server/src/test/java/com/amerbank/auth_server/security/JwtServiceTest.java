@@ -117,17 +117,6 @@ class JwtServiceTest {
         }
 
         @Test
-        @DisplayName("Should generate token with correct audience")
-        void shouldGenerateTokenWithCorrectAudience() {
-            String token = jwtService.generateToken(testUser, TEST_CUSTOMER_ID);
-
-            Set<String> audience = jwtService.extractClaim(token, Claims::getAudience);
-
-            assertNotNull(audience);
-            assertTrue(audience.contains("customer-service"));
-        }
-
-        @Test
         @DisplayName("Should generate token with future expiration date")
         void shouldGenerateTokenWithFutureExpiration() {
             Date beforeGeneration = new Date();

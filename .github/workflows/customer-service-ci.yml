@@ -1,0 +1,42 @@
+name: Customer Service CI
+
+on:
+  push:
+    branches:
+      - main
+      - feature/**
+    paths:
+      - 'services/customer/**'
+      - '.github/workflows/**'
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'services/customer/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            services/customer
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'corretto'
+          java-version: '21'
+          cache: 'maven'
+
+      - name: Make mvnw executable
+        working-directory: 'services/customer'
+        run: chmod +x mvnw
+
+      - name: Build, test and package
+        working-directory: 'services/customer'
+        run: ./mvnw clean verify
