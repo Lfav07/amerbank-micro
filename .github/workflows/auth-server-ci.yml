@@ -1,4 +1,4 @@
-name: Auth Server CI
+name: Auth Server CI/CD
 
 on:
   push:
@@ -8,18 +8,16 @@ on:
     paths:
       - 'services/auth-server/**'
       - '.github/workflows/**'
+
   pull_request:
     branches:
       - main
     paths:
       - 'services/auth-server/**'
 
-
 jobs:
   build:
     runs-on: ubuntu-latest
-
-
 
     steps:
       - name: Checkout code
@@ -35,17 +33,34 @@ jobs:
           java-version: '21'
           cache: 'maven'
 
-      - name: Verify Docker
-        run: docker info
-
-      - name: Set Docker permissions
-        run: sudo chmod 666 /var/run/docker.sock
-
       - name: Make mvnw executable
         working-directory: 'services/auth-server'
         run: chmod +x mvnw
 
-      - name: Build with Maven
+      - name: Build, test and package
         working-directory: 'services/auth-server'
         run: ./mvnw clean verify
 
+      - name: Set image tag
+        run: echo "IMAGE_TAG=${GITHUB_SHA}" >> $GITHUB_ENV
+
+      - name: Log in to Docker Hub
+        if: github.ref == 'refs/heads/main' && secrets.DOCKER_USERNAME != '' && secrets.DOCKER_PASSWORD != ''
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build Docker image
+        if: github.ref == 'refs/heads/main' && secrets.DOCKER_USERNAME != '' && secrets.DOCKER_PASSWORD != ''
+
+        working-directory: 'services/auth-server'
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/auth-server:${{ env.IMAGE_TAG }} .
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/auth-server:latest .
+
+      - name: Push Docker image
+        if: github.ref == 'refs/heads/main' && secrets.DOCKER_USERNAME != '' && secrets.DOCKER_PASSWORD != ''
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/auth-server:${{ env.IMAGE_TAG }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/auth-server:latest
