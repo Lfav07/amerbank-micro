@@ -35,6 +35,12 @@ jobs:
           java-version: '21'
           cache: 'maven'
 
+      - name: Verify Docker
+        run: docker info
+
+      - name: Set Docker permissions
+        run: sudo chmod 666 /var/run/docker.sock
+
       - name: Make mvnw executable
         working-directory: 'services/auth-server'
         run: chmod +x mvnw
@@ -42,3 +48,5 @@ jobs:
       - name: Build with Maven
         working-directory: 'services/auth-server'
         run: ./mvnw clean verify
+        env:
+          DOCKER_HOST: unix:///var/run/docker.sock
