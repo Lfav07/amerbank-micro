@@ -23,6 +23,17 @@ services:
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
+  account:
+    container_name: account
+    build: ./services/account
+    ports:
+    - "8083:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      CONFIG_SERVER_URL: "http://host.docker.internal:8888"
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.2.15
