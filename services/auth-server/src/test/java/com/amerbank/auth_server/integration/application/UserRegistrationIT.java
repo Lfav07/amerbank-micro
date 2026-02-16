@@ -78,7 +78,7 @@ public class UserRegistrationIT {
         }
 
         @Test
-        @DisplayName("Should register user when called by customer service with valid service JWT")
+        @DisplayName("Should register user successfully")
         void shouldRegisterUser() {
             String email = "test@email.com";
             String password = "testPassword";

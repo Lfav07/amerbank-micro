@@ -30,9 +30,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.time.LocalDate;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -141,7 +139,7 @@ public class UserLoginIT {
             String token = login("test@email.com", "password123", "/auth/login");
 
             assertNotNull(token);
-            assertTrue(!jwtService.isTokenExpired(token));
+            assertFalse(jwtService.isTokenExpired(token));
         }
 
         @Test
