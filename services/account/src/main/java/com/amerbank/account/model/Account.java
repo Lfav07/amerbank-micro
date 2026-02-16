@@ -3,9 +3,7 @@ package com.amerbank.account.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -13,10 +11,13 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Data
+
 @AllArgsConstructor
 @NoArgsConstructor
+@Getter
+@Setter
 @Entity
+@Builder
 @Table(name = "accounts")
 public class Account {
 
@@ -54,5 +55,4 @@ public class Account {
     @Column(name = "updated_at")
     @UpdateTimestamp
     private  LocalDateTime updatedAt;
-
 }
