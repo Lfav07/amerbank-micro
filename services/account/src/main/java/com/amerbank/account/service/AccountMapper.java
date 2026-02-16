@@ -10,12 +10,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class AccountMapper {
 
-    public Account toAccount(AccountRequest request) {
-        Account account = new Account();
-        account.setStatus(AccountStatus.ACTIVE);
-        account.setType(request.type());
-        return account;
-    }
 
     public AccountResponse toResponse(Account account) {
         return new AccountResponse(
@@ -34,17 +28,6 @@ public class AccountMapper {
                 account.getBalance(),
                 account.getType(),
                 account.getStatus()
-        );
-    }
-
-
-    public AccountInfo getAccountInfo(AccountResponse response) {
-        return new AccountInfo(
-                response.id(),
-                response.accountNumber(),
-                response.balance(),
-                response.type(),
-                response.status()
         );
     }
 }
