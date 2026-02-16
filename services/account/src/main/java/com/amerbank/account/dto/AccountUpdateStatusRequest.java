@@ -1,10 +1,10 @@
 package com.amerbank.account.dto;
 
 import com.amerbank.account.model.AccountStatus;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 public record AccountUpdateStatusRequest(
-        @NotBlank
+        @NotNull
         AccountStatus status
 ) {
 }

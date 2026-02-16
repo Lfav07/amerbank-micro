@@ -80,7 +80,7 @@ public class AccountAdminController {
     // ============================================================
 
     /**
-     * Updates the type of an account.
+     * Updates the type of account.
      *
      * @param accountNumber the account number
      * @param request       the account type update request

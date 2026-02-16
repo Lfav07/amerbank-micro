@@ -173,9 +173,6 @@ public class AccountService {
     )
     public List<AccountResponse> getAccountsByCustomerId(Long customerId) {
         List<Account> accounts = accountRepository.findAllByCustomerId(customerId);
-        if (accounts.isEmpty()) {
-            throw new AccountNotFoundException("No accounts found for customerId " + customerId);
-        }
         return accounts.stream()
                 .map(accountMapper::toResponse)
                 .toList();
@@ -581,6 +578,7 @@ public class AccountService {
             @CacheEvict(value = "account-by-number", key = "#accountNumber"),
             @CacheEvict(value = "accounts-by-customer", key = "#customerId")
     })
+    @Transactional
     public void deleteAccount(String accountNumber, Long customerId) {
         accountRepository.deleteByAccountNumber(accountNumber);
     }
