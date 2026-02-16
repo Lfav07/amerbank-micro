@@ -9,6 +9,8 @@ import com.amerbank.customer.customer.exception.CustomerRegistrationFailedExcept
 import com.amerbank.customer.customer.exception.EmailAlreadyTakenException;
 import com.amerbank.customer.customer.exception.InvalidCredentialsException;
 import com.amerbank.customer.customer.exception.InvalidUserDataException;
+import com.amerbank.customer.customer.exception.ServiceAuthenticationException;
+import com.amerbank.customer.customer.exception.ServiceAuthorizationException;
 import com.amerbank.customer.customer.exception.UserRegistrationFailedException;
 import com.amerbank.customer.customer.util.TraceIdUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -112,7 +114,8 @@ public class ApiExceptionHandler {
     @ExceptionHandler({
         InvalidCredentialsException.class,
         AuthenticationException.class,
-        BadCredentialsException.class
+        BadCredentialsException.class,
+        ServiceAuthenticationException.class
     })
     public ResponseEntity<ErrorResponse> handleUnauthorized(
             RuntimeException ex,
@@ -137,9 +140,12 @@ public class ApiExceptionHandler {
     // ================ 403 FORBIDDEN ===========================
     // ============================================================
 
-    @ExceptionHandler(AccessDeniedException.class)
+    @ExceptionHandler({
+        AccessDeniedException.class,
+        ServiceAuthorizationException.class
+    })
     public ResponseEntity<ErrorResponse> handleAccessDenied(
-            AccessDeniedException ex,
+            RuntimeException ex,
             WebRequest request) {
         String traceId = getTraceId(request);
         String path = extractPath(request);

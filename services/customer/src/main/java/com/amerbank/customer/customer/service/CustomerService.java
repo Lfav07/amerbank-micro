@@ -79,6 +79,10 @@ public class CustomerService {
 
     @Transactional
     public CustomerRegistrationResponse registerCustomer(CustomerRegistrationRequest request) {
+        if (customerRepository.existsByUserId(request.userId())) {
+            log.warn("Failed to register customer for user id {}", request.userId());
+            throw new CustomerAlreadyExistsException("Customer Already Exists");
+        }
         log.info("Attempting to register new customer");
         Customer customer = Customer.builder().
                 userId(request.userId()).
