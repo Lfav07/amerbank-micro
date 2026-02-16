@@ -102,7 +102,7 @@ public class CustomerServiceIntegrationTests {
             CustomerRegistrationRequest request2 = new CustomerRegistrationRequest(
                     "Jane", "Smith", userId, LocalDate.of(1985, 5, 15));
 
-            assertThrows(CustomerRegistrationFailedException.class,
+            assertThrows(CustomerAlreadyExistsException.class,
                     () -> customerService.registerCustomer(request2));
         }
     }
