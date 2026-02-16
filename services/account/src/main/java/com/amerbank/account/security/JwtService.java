@@ -1,11 +1,13 @@
 package com.amerbank.account.security;
 
 
+import com.amerbank.account.config.JwtProperties;
 import com.amerbank.account.dto.Role;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -18,16 +20,13 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class JwtService {
+    private  final JwtProperties jwtProperties;
 
-    @Value("${jwt.secret}")
-    private String secret;
-
-    @Value("${jwt.expiration-ms:3600000}") // 1 hour default
-    private long expirationMs;
 
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes());
+        return Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes());
     }
 
     public String extractSubject(String token) {
@@ -57,7 +56,7 @@ public class JwtService {
             Claims claims = extractAllClaims(token);
 
             // Check expiration
-            if (claims.getExpiration().before(new Date())) return false;
+            if (isTokenExpired(token)) return false;
 
             // Check audience
             Set<String> audience = claims.getAudience();

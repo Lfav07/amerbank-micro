@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -12,6 +13,7 @@ import java.math.RoundingMode;
 @ConfigurationProperties(prefix = "account")
 @Getter
 @Setter
+@Component
 public class AccountProperties {
 
     //Account number generation

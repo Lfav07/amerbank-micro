@@ -10,7 +10,6 @@ import org.springframework.cache.annotation.EnableCaching;
 
 @SpringBootApplication
 @EnableCaching
-@EnableConfigurationProperties(AccountProperties.class)
 public class AccountApplication {
 
 	public static void main(String[] args) {
