@@ -40,18 +40,19 @@ public class AccountAdminIT {
             .withDatabaseName("testdb")
             .withUsername("test")
             .withPassword("test");
+    @Container
+    static RedisContainer redisContainer = new RedisContainer("redis:6.2.6").withExposedPorts(6379);
 
-    @BeforeAll
-    static void setupRedis(){
-        RedisContainer redisContainer = new RedisContainer("redis:6.2.6");
-        redisContainer.start();
-    }
+
 
     @DynamicPropertySource
     static void overrideProps(DynamicPropertyRegistry registry) {
+
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.data.redis.host", redisContainer::getHost);
+        registry.add("spring.data.redis.port", () -> redisContainer.getMappedPort(6379));
     }
 
     @TestConfiguration
