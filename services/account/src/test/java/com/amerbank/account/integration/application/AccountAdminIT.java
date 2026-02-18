@@ -490,12 +490,11 @@ public class AccountAdminIT {
                 @DisplayName("Should delete account")
                 void shouldDeleteAccount() {
                     String accountNumber = "ACCT0000000012";
-                    Long customerId = 11L;
-                    String endpoint = "/account/admin/" + accountNumber + "?customerId=" + customerId;
+                    String endpoint = "/account/admin/" + accountNumber;
 
                     Account account = Account.builder()
                             .accountNumber(accountNumber)
-                            .customerId(customerId)
+                            .customerId(1L)
                             .balance(new BigDecimal("700.00"))
                             .type(AccountType.CHECKING)
                             .status(AccountStatus.ACTIVE)
@@ -521,7 +520,7 @@ public class AccountAdminIT {
                 @DisplayName("Should return no content when account not found")
                 void shouldReturnNoContentWhenAccountNotFound() {
                     Long customerId = 12L;
-                    String endpoint = "/account/admin/ACCT9999999999?customerId=" + customerId;
+                    String endpoint = "/account/admin/ACCT9999999999";
 
                     HttpHeaders headers = new HttpHeaders();
                     headers.setBearerAuth(testJwtFactory.generateAdminToken("admin@amerbank.com"));

@@ -924,11 +924,9 @@ class AccountServiceTest {
     @DisplayName("Should delete account by account number")
     void shouldDeleteAccountByAccountNumber() {
         String accountNumber = "ACC0000000001";
-        Long customerId = 1L;
-
         doNothing().when(accountRepository).deleteByAccountNumber(accountNumber);
 
-        accountService.deleteAccount(accountNumber, customerId);
+        accountService.deleteAccount(accountNumber);
 
         verify(accountRepository).deleteByAccountNumber(accountNumber);
     }
