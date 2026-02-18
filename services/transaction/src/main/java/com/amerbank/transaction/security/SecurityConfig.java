@@ -21,20 +21,39 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain chain(HttpSecurity http) throws Exception {
-        http.csrf(csrf -> csrf.disable())
-                .securityMatcher("/transactions/**")
+        http
+                .csrf(csrf -> csrf.disable())
+
                 .authorizeHttpRequests(auth -> auth
+
+
                         .requestMatchers(
-                                "/transactions/user/**",
-                                "/account/{accountNumber}/me"
+                                "/transaction/me",
+                                "/transaction/me/**"
                         ).authenticated()
-                        .anyRequest().hasRole("ADMIN"))
+
+                        .requestMatchers(
+                                "/transaction/deposit",
+                                "/transaction/payment",
+                                "/transaction/refund"
+                        ).authenticated()
+
+                        .requestMatchers("/transaction/admin/**")
+                        .hasRole("ADMIN")
+
+                        .anyRequest().authenticated()
+                )
+
                 .sessionManagement(sess -> sess
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
                 .httpBasic(httpBasic -> httpBasic.disable())
+
                 .addFilterBefore(jwtAuthFilter,
                         UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
+
 }
 
