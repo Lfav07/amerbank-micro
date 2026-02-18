@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
@@ -118,10 +119,11 @@ public class ApiExceptionHandler {
         DepositFailedException.class,
         PaymentFailedException.class,
         RefundFailedException.class,
-        IllegalArgumentException.class
+        IllegalArgumentException.class,
+        MissingRequestHeaderException.class
     })
     public ResponseEntity<ErrorResponse> handleBadRequest(
-            RuntimeException ex,
+            Exception ex,
             WebRequest request) {
         String traceId = getTraceId(request);
         String path = extractPath(request);
@@ -224,12 +226,14 @@ public class ApiExceptionHandler {
         return request.getDescription(false).replace("uri=", "");
     }
 
-    private String getUserFriendlyMessage(RuntimeException ex) {
+    private String getUserFriendlyMessage(Exception ex) {
         return switch (ex.getClass().getSimpleName()) {
             case "IdempotentRequestException" -> "Invalid idempotency request";
             case "DepositFailedException" -> "Deposit failed";
             case "PaymentFailedException" -> "Payment failed";
             case "RefundFailedException" -> "Refund failed";
+            case "MissingRequestHeaderException" -> "Required request header '" 
+                    + ((MissingRequestHeaderException) ex).getHeaderName() + "' is not present";
             case "IllegalArgumentException" -> ex.getMessage();
             default -> "Invalid request";
         };
