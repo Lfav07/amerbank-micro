@@ -127,18 +127,15 @@ public class AccountAdminController {
 
     /**
      * Deletes an account by its account number.
-     * Requires customer ID for verification.
      *
      * @param accountNumber the account number to delete
-     * @param customerId    the customer ID for verification
      * @return 204 No Content if deletion is successful
      */
     @DeleteMapping("/{accountNumber}")
     public ResponseEntity<Void> deleteAccount(
-            @PathVariable @NotBlank String accountNumber,
-            @RequestParam @NotNull Long customerId) {
+            @PathVariable @NotBlank String accountNumber){
 
-        accountService.deleteAccount(accountNumber, customerId);
+        accountService.deleteAccount(accountNumber);
         return ResponseEntity.noContent().build();
     }
 

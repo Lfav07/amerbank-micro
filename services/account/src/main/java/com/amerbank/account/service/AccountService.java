@@ -579,7 +579,7 @@ public class AccountService {
             @CacheEvict(value = "accounts-by-customer", key = "#customerId")
     })
     @Transactional
-    public void deleteAccount(String accountNumber, Long customerId) {
+    public void deleteAccount(String accountNumber) {
         accountRepository.deleteByAccountNumber(accountNumber);
     }
 
