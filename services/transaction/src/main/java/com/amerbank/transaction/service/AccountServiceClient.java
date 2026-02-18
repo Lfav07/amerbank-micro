@@ -29,7 +29,6 @@ public class AccountServiceClient {
     private final RestClient restClient;
     private final JwtService jwtService;
     private final TransactionProperties transactionProperties;
-    private  final String internalEndpoint = "http://account/account/internal";
 
     public AccountServiceClient(RestClient.Builder restClientBuilder, JwtService jwtService, TransactionProperties transactionProperties) {
         this.restClient = restClientBuilder.build();
@@ -99,7 +98,7 @@ public class AccountServiceClient {
             Object body,
             Function<String, RuntimeException> exceptionFactory
     ) {
-        String url = internalEndpoint + endpoint;
+        String url = transactionProperties.getAccountServiceBase() + endpoint;
         String serviceToken = jwtService.generateServiceToken();
 
         try {
