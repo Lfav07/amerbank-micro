@@ -1,0 +1,24 @@
+spring:
+  cloud:
+    config:
+      enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: validate
+      show-sql: true
+  flyway:
+    schemas: transaction
+    enabled: true
+    locations: classpath:db/migration/transaction
+
+transaction:
+  account-service-base: "http://account/internal"
+  endpoint-owned: "/owned"
+  endpoint-deposit: "/deposit"
+  endpoint-payment: "/payment"
+  endpoint-refund: "/refund"
+jwt:
+  secret: "testsecret123456789test123456789secret"
+eureka:
+  client:
+    enabled: false
