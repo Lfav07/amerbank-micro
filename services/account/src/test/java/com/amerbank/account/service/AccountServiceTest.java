@@ -167,7 +167,7 @@ class AccountServiceTest {
 
     @Test
     @DisplayName("Should throw AccountNotFoundException when account number not found")
-    void shouldThrowAccountNotFoundExceptionWhenAccountNumberNotFound() {
+    void shouldThrowAccountNotFoundWhenAccountNumberNotFound() {
         String accountNumber = "ACC9999999999";
         when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.empty());
 
@@ -544,8 +544,8 @@ class AccountServiceTest {
     }
 
     @Test
-    @DisplayName("Should throw AccountNotFoundException when depositing to another customer's account")
-    void shouldThrowAccountNotFoundExceptionWhenDepositingToAnotherCustomerAccount() {
+    @DisplayName("Should throw AccountOwnershipException when depositing to another customer's account")
+    void shouldThrowAccountOwnershipExceptionWhenDepositingToAnotherCustomerAccount() {
         Long customerId = 1L;
         Long otherCustomerId = 2L;
         String accountNumber = "ACC0000000001";
@@ -563,7 +563,7 @@ class AccountServiceTest {
 
         when(accountRepository.findByAccountNumberForUpdate(accountNumber)).thenReturn(Optional.of(account));
 
-        assertThrows(AccountNotFoundException.class, () -> {
+        assertThrows(AccountOwnershipException.class, () -> {
             accountService.performDeposit(customerId, request);
         });
     }
