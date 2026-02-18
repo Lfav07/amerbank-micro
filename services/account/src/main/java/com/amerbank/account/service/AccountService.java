@@ -575,12 +575,16 @@ public class AccountService {
      * @throws AccountNotFoundException if the account is not found.
      */
     @Caching(evict = {
-            @CacheEvict(value = "account-by-number", key = "#accountNumber"),
-            @CacheEvict(value = "accounts-by-customer", key = "#customerId")
+            @CacheEvict(value = "account-by-number", key = "#accountNumber", condition = "#result != null"),
+            @CacheEvict(value = "accounts-by-customer", key = "#result", condition = "#result != null")
     })
     @Transactional
-    public void deleteAccount(String accountNumber) {
+    public Long deleteAccount(String accountNumber) {
+        Account account = findAccountEntity(accountNumber);
+        Long customerId = account.getCustomerId();
         accountRepository.deleteByAccountNumber(accountNumber);
+        log.info("Account successfully Deleted");
+        return customerId;
     }
 
     // -------------------------------

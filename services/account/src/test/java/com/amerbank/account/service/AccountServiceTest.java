@@ -7,6 +7,7 @@ import com.amerbank.account.model.Account;
 import com.amerbank.account.model.AccountStatus;
 import com.amerbank.account.model.AccountType;
 import com.amerbank.account.repository.AccountRepository;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -15,6 +16,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.testcontainers.shaded.org.checkerframework.checker.units.qual.A;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -127,8 +129,8 @@ class AccountServiceTest {
         Long customerId = 1L;
         AccountRequest request = new AccountRequest(AccountType.CHECKING);
 
-        org.hibernate.exception.ConstraintViolationException cve =
-                mock(org.hibernate.exception.ConstraintViolationException.class);
+        ConstraintViolationException cve =
+                mock(ConstraintViolationException.class);
         when(cve.getConstraintName()).thenReturn("unique_customer_account_type");
 
         DataIntegrityViolationException dive = new DataIntegrityViolationException("Constraint violation", cve);
@@ -924,8 +926,10 @@ class AccountServiceTest {
     @DisplayName("Should delete account by account number")
     void shouldDeleteAccountByAccountNumber() {
         String accountNumber = "ACC0000000001";
+        Account account = new Account();
+        account.setCustomerId(1L);
+        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
         doNothing().when(accountRepository).deleteByAccountNumber(accountNumber);
-
         accountService.deleteAccount(accountNumber);
 
         verify(accountRepository).deleteByAccountNumber(accountNumber);
