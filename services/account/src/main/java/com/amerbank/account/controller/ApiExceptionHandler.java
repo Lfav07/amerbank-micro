@@ -52,6 +52,32 @@ public class ApiExceptionHandler {
     }
 
     // ============================================================
+// ================ 403 FORBIDDEN ==============================
+// ============================================================
+
+    @ExceptionHandler(AccountOwnershipException.class)
+    public ResponseEntity<ErrorResponse> handleForbidden(
+            AccountOwnershipException ex,
+            WebRequest request) {
+        String traceId = getTraceId(request);
+        String path = extractPath(request);
+
+        log.warn("Forbidden operation - TraceId: {}, Message: {}", traceId, ex.getMessage());
+
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.FORBIDDEN.value())
+                .error("Forbidden")
+                .message("You are not authorized to perform this operation")
+                .path(path)
+                .traceId(traceId)
+                .build();
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
+
+
+    // ============================================================
     // ================ 409 CONFLICT =============================
     // ============================================================
 

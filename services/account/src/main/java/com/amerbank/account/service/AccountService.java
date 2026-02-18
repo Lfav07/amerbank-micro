@@ -10,7 +10,6 @@ import com.amerbank.account.repository.AccountRepository;
 import com.amerbank.account.dto.DepositBalanceRequest;
 import com.amerbank.account.dto.PaymentBalanceRequest;
 import com.amerbank.account.dto.RefundBalanceRequest;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.cache.annotation.CacheEvict;
@@ -388,7 +387,7 @@ public class AccountService {
         }
 
         if (!account.getCustomerId().equals(customerId)) {
-            throw new AccountNotFoundException("Account does not belong to authenticated customer");
+            throw new AccountOwnershipException("Account does not belong to authenticated customer");
         }
 
         account.setBalance(account.getBalance().add(request.amount()));
@@ -441,7 +440,7 @@ public class AccountService {
         }
 
         if (!fromAccount.getCustomerId().equals(customerId)) {
-            throw new AccountNotFoundException("Account does not belong to authenticated customer");
+            throw new AccountOwnershipException("Account does not belong to authenticated customer");
         }
 
         BigDecimal amount = request.amount();
@@ -503,7 +502,7 @@ public class AccountService {
         }
 
         if (!sender.getCustomerId().equals(customerId)) {
-            throw new AccountNotFoundException("Account does not belong to authenticated customer");
+            throw new AccountOwnershipException("Account does not belong to authenticated customer");
         }
 
         BigDecimal amount = request.amount();
