@@ -1,48 +1,155 @@
 services:
   auth-server:
-    container_name: auth-server
     build: ./services/auth-server
-    ports:
-      - "8081:8080"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      CONFIG_SERVER_URL: "http://host.docker.internal:8888"
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
+      CONFIG_SERVER_URL: "http://config-server:8080"
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-vPaBwIshrmI92nA7kPnor1KmIwvyu9gjhApJfe9rnhn}
     restart: unless-stopped
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
 
   customer:
-    container_name: customer
     build: ./services/customer
-    ports:
-    - "8082:8080"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      CONFIG_SERVER_URL: "http://host.docker.internal:8888"
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
+      CONFIG_SERVER_URL: "http://config-server:8080"
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-vPaBwIshrmI92nA7kPnor1KmIwvyu9gjhApJfe9rnhn}
+    restart: unless-stopped
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
   account:
-    container_name: account
     build: ./services/account
-    ports:
-    - "8083:8080"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      CONFIG_SERVER_URL: "http://host.docker.internal:8888"
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
+      CONFIG_SERVER_URL: "http://config-server:8080"
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-vPaBwIshrmI92nA7kPnor1KmIwvyu9gjhApJfe9rnhn}
+    restart: unless-stopped
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  transaction:
+    build: ./services/transaction
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      CONFIG_SERVER_URL: "http://config-server:8080"
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-vPaBwIshrmI92nA7kPnor1KmIwvyu9gjhApJfe9rnhn}
+    restart: unless-stopped
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  config-server:
+    build: ./services/config-server
+    ports:
+      - "8888:8080"
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -fs http://localhost:8080/actuator/health | grep '\"status\":\"UP\"' || exit 1" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+
+  discovery:
+    build: ./services/discovery
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      CONFIG_SERVER_URL: "http://config-server:8080"
+    ports:
+      - "8761:8761"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -fs http://localhost:8761/actuator/health | grep '\"status\":\"UP\"' || exit 1" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+    depends_on:
+      config-server:
+        condition: service_healthy
+
+  gateway:
+    build: ./services/gateway
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      CONFIG_SERVER_URL: "http://config-server:8080"
+      JWT_SECRET: ${JWT_SECRET:-vPaBwIshrmI92nA7kPnor1KmIwvyu9gjhApJfe9rnhn}
+    restart: unless-stopped
+    depends_on:
+      config-server:
+        condition: service_healthy
+
   redis:
     image: redis:7.2
     container_name: redis
     ports:
     - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     volumes:
     - redis-data:/data
     command: ["redis-server", "--appendonly", "yes"]
+    restart: unless-stopped
+
+
+
+
+  postgres:
+    image: postgres:17
+    container_name: postgres_container
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: amerbank
+    ports:
+        - "5432:5432"
+    volumes:
+        - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+
 
 volumes:
   redis-data:
+  pg-data:
 
