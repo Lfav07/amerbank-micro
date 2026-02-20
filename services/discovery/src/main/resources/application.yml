@@ -1,13 +1,12 @@
-spring:
-  application:
-    name: eureka-server
 server:
   port: 8761
-eureka:
-  client:
-    register-with-eureka: false
-    fetch-registry: false
-logging:
-  level:
-    com.netflix.eureka: OFF
-    com.netflix.discovery: OFF
+
+spring:
+  application:
+    name: discovery
+  profile:
+    active: ${SPRING_PROFILES_ACTIVE}
+
+  config:
+    import: "optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888}"
+
