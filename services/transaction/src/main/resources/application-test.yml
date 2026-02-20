@@ -19,6 +19,8 @@ transaction:
   endpoint-refund: "/refund"
 jwt:
   secret: "testsecret123456789test123456789secret"
+  serviceTokenExpirationMs: 120000
+  tokenExpirationMs: 360000-
 eureka:
   client:
     enabled: false
