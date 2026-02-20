@@ -1,4 +1,4 @@
-FROM maven:3.8.9 AS build
+FROM maven:3.9-amazoncorretto-21 AS build
 WORKDIR /app
 
 COPY pom.xml .
@@ -8,11 +8,13 @@ COPY src ./src
 RUN mvn package -DskipTests
 
 FROM amazoncorretto:21-alpine
+
 WORKDIR /app
 
 RUN addgroup spring && adduser -S spring -G spring
 
 COPY --from=build /app/target/*.jar app.jar
+
 RUN chown spring:spring app.jar
 
 USER spring
