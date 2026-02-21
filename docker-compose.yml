@@ -15,6 +15,8 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
+    networks:
+      - backend
 
   customer:
     build: ./services/customer
@@ -32,6 +34,8 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
+    networks:
+      - backend
 
   account:
     build: ./services/account
@@ -51,6 +55,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    networks:
+      - backend
 
   transaction:
     build: ./services/transaction
@@ -68,6 +74,8 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
+    networks:
+      - backend
 
   config-server:
     build: ./services/config-server
@@ -82,6 +90,8 @@ services:
       timeout: 3s
       retries: 5
       start_period: 15s
+    networks:
+      - backend
 
   discovery:
     build: ./services/discovery
@@ -100,6 +110,8 @@ services:
     depends_on:
       config-server:
         condition: service_healthy
+    networks:
+      - backend
 
   gateway:
     build: ./services/gateway
@@ -113,6 +125,8 @@ services:
     depends_on:
       config-server:
         condition: service_healthy
+    networks:
+      - backend
 
   redis:
     image: redis:7.2
@@ -129,6 +143,8 @@ services:
     - redis-data:/data
     command: ["redis-server", "--appendonly", "yes"]
     restart: unless-stopped
+    networks:
+      - backend
 
 
 
@@ -147,9 +163,14 @@ services:
         - pg-data:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+    networks:
+      - backend
 
 
 volumes:
   redis-data:
   pg-data:
 
+networks:
+  backend:
+    driver: bridge
