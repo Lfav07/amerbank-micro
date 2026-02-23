@@ -44,7 +44,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
 
-        String username = jwtService.extractUsername(token);
         Long customerId = jwtService.extractCustomerId(token);
         var roles = jwtService.extractRoles(token);
 
@@ -54,7 +53,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 .collect(Collectors.toList());
 
 
-        JwtUserPrincipal principal = new JwtUserPrincipal(username, customerId, authorities);
+        JwtUserPrincipal principal = new JwtUserPrincipal(customerId, authorities);
 
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(principal, null, authorities);
