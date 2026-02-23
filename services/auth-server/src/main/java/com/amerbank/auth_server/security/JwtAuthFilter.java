@@ -1,6 +1,5 @@
 package com.amerbank.auth_server.security;
 
-import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -34,7 +33,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
-        final String username;
 
         String path = request.getServletPath();
 
@@ -50,13 +48,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         try {
             jwt = authHeader.substring(7);
-            username = jwtService.extractUsername(jwt);
+            Long userId = jwtService.extractUserId(jwt);
 
-            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = userDetailsService.loadUserById(userId);
                 if (jwtService.isTokenValid(jwt, userDetails)) {
-                    Long userId = jwtService.extractUserId(jwt);
-                    JwtUserPrincipal jwtUserPrincipal = new JwtUserPrincipal(userDetails.getUsername(), userId, userDetails.getAuthorities());
+                    JwtUserPrincipal jwtUserPrincipal = new JwtUserPrincipal(userId, userDetails.getAuthorities());
 
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             jwtUserPrincipal, null, userDetails.getAuthorities()

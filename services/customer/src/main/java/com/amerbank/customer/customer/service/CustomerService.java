@@ -60,17 +60,8 @@ public class CustomerService {
 
     /**
      * Registers a new customer and links them to a user in the authentication service.
-     * <p>
-     * This method performs the following steps:
-     * <ol>
-     *     <li>Creates a {@link UserRegisterRequest} from the provided {@link CustomerRequest} with normalized email.</li>
-     *     <li>Calls the authentication service via HTTP to register a new user.</li>
-     *     <li>Validates the response from the authentication service.</li>
-     *     <li>Checks if a customer already exists for the returned user ID.</li>
-     *     <li>Maps the request to a {@link Customer} entity, sets KYC as verified, and saves it in the repository.</li>
-     * </ol>
      *
-     * @param request the registration data containing email, password, and customer details
+     * @param request the registration data containing customer details
      * @throws CustomerAlreadyExistsException      if a customer already exists for the given user ID
      * @throws UserRegistrationFailedException     if the authentication service returns null or a client-side error occurs
      * @throws AuthServiceUnavailableException     if the authentication service cannot be reached or returns a server-side error

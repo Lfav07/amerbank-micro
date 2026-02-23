@@ -5,7 +5,6 @@ import com.amerbank.auth_server.model.User;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -27,16 +26,13 @@ public class JwtService {
         return Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes());
     }
 
-    public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
-    }
-
     public String extractSubject(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
     public Long extractUserId(String token) {
-        return  extractClaim(token, claims -> claims.get("userId", Long.class));
+        String subject = extractClaim(token, Claims::getSubject);
+        return Long.parseLong(subject);
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> resolver) {
@@ -62,8 +58,8 @@ public class JwtService {
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+        final Long userId = extractUserId(token);
+        return userId.toString().equals(userDetails.getUsername()) && !isTokenExpired(token);
     }
 
     public boolean isTokenExpired(String token) {
@@ -73,8 +69,7 @@ public class JwtService {
     public String generateToken(User user, Long customerId) {
         return Jwts.builder()
                 .issuer("auth-server")
-                .subject(user.getEmail())
-                .claim("userId", user.getId())
+                .subject(user.getId().toString())
                 .claim("customerId", customerId)
                 .claim("roles", user.getRoles().stream().map(Enum::name).toList())
                 .issuedAt(new Date())
@@ -100,8 +95,7 @@ public class JwtService {
     public String generateAdminToken(User user) {
         return Jwts.builder()
                 .issuer("auth-server")
-                .subject(user.getEmail())
-                .claim("userId", user.getId())
+                .subject(user.getId().toString())
                 .claim("roles", user.getRoles().stream().map(Enum::name).toList())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + jwtProperties.getExpirationMs()))

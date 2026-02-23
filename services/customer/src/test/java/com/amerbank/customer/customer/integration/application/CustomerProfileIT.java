@@ -79,8 +79,8 @@ public class CustomerProfileIT {
         return response.getBody().id();
     }
 
-    private String getUserToken(String email, Long customerId) {
-        return testJwtFactory.generateCustomerUserToken(email, customerId);
+    private String getUserToken(Long userId, Long customerId) {
+        return testJwtFactory.generateCustomerUserToken(userId, customerId);
     }
 
     @Nested
@@ -91,8 +91,7 @@ public class CustomerProfileIT {
         @DisplayName("Should get own profile with valid token")
         void shouldGetOwnProfile() {
             Long customerId = createCustomer(1L, "John", "Doe");
-            String email = "john@example.com";
-            String token = getUserToken(email, customerId);
+            String token = getUserToken(1L, customerId);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(token);

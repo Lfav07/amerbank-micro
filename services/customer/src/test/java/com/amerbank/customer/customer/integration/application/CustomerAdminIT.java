@@ -82,12 +82,12 @@ public class CustomerAdminIT {
         return response.getBody().id();
     }
 
-    private String getAdminToken(String email, Long customerId) {
-        return testJwtFactory.generateAdminToken(email, customerId);
+    private String getAdminToken(Long userId, Long customerId) {
+        return testJwtFactory.generateAdminToken(userId, customerId);
     }
 
-    private String getUserToken(String email, Long customerId) {
-        return testJwtFactory.generateCustomerUserToken(email, customerId);
+    private String getUserToken(Long userId, Long customerId) {
+        return testJwtFactory.generateCustomerUserToken(userId, customerId);
     }
 
     @Nested
@@ -101,7 +101,7 @@ public class CustomerAdminIT {
             createCustomer(2L, "User", "One");
             createCustomer(3L, "User", "Two");
 
-            String token = getAdminToken("admin@example.com", adminCustomerId);
+            String token = getAdminToken(1L, adminCustomerId);
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(token);
             HttpEntity<?> entity = new HttpEntity<>(headers);
@@ -122,7 +122,7 @@ public class CustomerAdminIT {
         @DisplayName("Should not get all customers with regular user token")
         void shouldNotGetAllCustomersWithUserToken() {
             Long userCustomerId = createCustomer(1L, "Regular", "User");
-            String token = getUserToken("user@example.com", userCustomerId);
+            String token = getUserToken(1L, userCustomerId);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(token);
@@ -164,7 +164,7 @@ public class CustomerAdminIT {
             Long adminCustomerId = createCustomer(1L, "Admin", "User");
             Long customerId = createCustomer(2L, "John", "Doe");
 
-            String token = getAdminToken("admin@example.com", adminCustomerId);
+            String token = getAdminToken(1L, adminCustomerId);
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(token);
             HttpEntity<?> entity = new HttpEntity<>(headers);
@@ -187,7 +187,7 @@ public class CustomerAdminIT {
         void shouldReturn404ForNonExistentCustomerId() {
             Long adminCustomerId = createCustomer(1L, "Admin", "User");
 
-            String token = getAdminToken("admin@example.com", adminCustomerId);
+            String token = getAdminToken(1L, adminCustomerId);
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(token);
             HttpEntity<?> entity = new HttpEntity<>(headers);
@@ -208,7 +208,7 @@ public class CustomerAdminIT {
             Long userCustomerId = createCustomer(1L, "Regular", "User");
             Long customerId = createCustomer(2L, "John", "Doe");
 
-            String token = getUserToken("user@example.com", userCustomerId);
+            String token = getUserToken(1L, userCustomerId);
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(token);
             HttpEntity<?> entity = new HttpEntity<>(headers);
@@ -234,7 +234,7 @@ public class CustomerAdminIT {
             Long adminCustomerId = createCustomer(1L, "Admin", "User");
             Long customerId = createCustomer(2L, "John", "Doe");
 
-            String token = getAdminToken("admin@example.com", adminCustomerId);
+            String token = getAdminToken(1L, adminCustomerId);
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(token);
 
@@ -262,7 +262,7 @@ public class CustomerAdminIT {
         void shouldReturn404WhenUpdatingNonExistentCustomer() {
             Long adminCustomerId = createCustomer(1L, "Admin", "User");
 
-            String token = getAdminToken("admin@example.com", adminCustomerId);
+            String token = getAdminToken(1L, adminCustomerId);
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(token);
 
@@ -290,7 +290,7 @@ public class CustomerAdminIT {
             Long adminCustomerId = createCustomer(1L, "Admin", "User");
             Long customerId = createCustomer(2L, "John", "Doe");
 
-            String token = getAdminToken("admin@example.com", adminCustomerId);
+            String token = getAdminToken(1L, adminCustomerId);
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(token);
             HttpEntity<?> entity = new HttpEntity<>(headers);
@@ -316,7 +316,7 @@ public class CustomerAdminIT {
             Long adminCustomerId = createCustomer(1L, "Admin", "User");
             Long customerId = createCustomer(2L, "John", "Doe");
 
-            String token = getAdminToken("admin@example.com", adminCustomerId);
+            String token = getAdminToken(1L, adminCustomerId);
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(token);
             HttpEntity<?> entity = new HttpEntity<>(headers);
@@ -341,7 +341,7 @@ public class CustomerAdminIT {
         void shouldReturn404ForKycOnNonExistentCustomer() {
             Long adminCustomerId = createCustomer(1L, "Admin", "User");
 
-            String token = getAdminToken("admin@example.com", adminCustomerId);
+            String token = getAdminToken(1L, adminCustomerId);
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(token);
             HttpEntity<?> entity = new HttpEntity<>(headers);
@@ -362,7 +362,7 @@ public class CustomerAdminIT {
             Long userCustomerId = createCustomer(1L, "Regular", "User");
             Long customerId = createCustomer(2L, "John", "Doe");
 
-            String token = getUserToken("user@example.com", userCustomerId);
+            String token = getUserToken(1L, userCustomerId);
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(token);
             HttpEntity<?> entity = new HttpEntity<>(headers);
@@ -390,7 +390,7 @@ public class CustomerAdminIT {
 
             assertTrue(customerRepository.existsById(customerId));
 
-            String token = getAdminToken("admin@example.com", adminCustomerId);
+            String token = getAdminToken(1L, adminCustomerId);
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(token);
             HttpEntity<?> entity = new HttpEntity<>(headers);
@@ -411,7 +411,7 @@ public class CustomerAdminIT {
         void shouldReturn404WhenDeletingNonExistentCustomer() {
             Long adminCustomerId = createCustomer(1L, "Admin", "User");
 
-            String token = getAdminToken("admin@example.com", adminCustomerId);
+            String token = getAdminToken(1L, adminCustomerId);
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(token);
             HttpEntity<?> entity = new HttpEntity<>(headers);
@@ -432,7 +432,7 @@ public class CustomerAdminIT {
             Long userCustomerId = createCustomer(1L, "Regular", "User");
             Long customerId = createCustomer(2L, "John", "Doe");
 
-            String token = getUserToken("user@example.com", userCustomerId);
+            String token = getUserToken(1L, userCustomerId);
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(token);
             HttpEntity<?> entity = new HttpEntity<>(headers);

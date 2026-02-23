@@ -11,8 +11,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.crypto.SecretKey;
@@ -421,7 +419,7 @@ class JwtServiceTest {
         void shouldExtractUsernameFromToken() {
             String token = jwtService.generateToken(testUser, TEST_CUSTOMER_ID);
 
-            String username = jwtService.extractUsername(token);
+            String username = jwtService.extractSubject(token);
 
             assertEquals(TEST_EMAIL, username);
         }
@@ -512,7 +510,7 @@ class JwtServiceTest {
             String token = jwtService.generateToken(testUser, null);
 
             assertNotNull(token);
-            assertEquals(TEST_EMAIL, jwtService.extractUsername(token));
+            assertEquals(TEST_EMAIL, jwtService.extractSubject(token));
         }
 
         @Test
@@ -527,7 +525,7 @@ class JwtServiceTest {
             String token = customJwtService.generateToken(testUser, TEST_CUSTOMER_ID);
 
             assertNotNull(token);
-            assertEquals(TEST_EMAIL, customJwtService.extractUsername(token));
+            assertEquals(TEST_EMAIL, customJwtService.extractSubject(token));
         }
     }
 

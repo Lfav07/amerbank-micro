@@ -22,7 +22,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
-class JwtServiceTest {
+class fJwtServiceTest {
 
     private JwtProperties props;
     private JwtService jwtService;
@@ -198,9 +198,8 @@ class JwtServiceTest {
             SecretKey key = Keys.hmacShaKeyFor(TEST_SECRET.getBytes());
             return Jwts.builder()
                     .issuer("auth-server")
-                    .subject("test@email.com")
+                    .subject(String.valueOf(TEST_USER_ID))
                     .audience().add("customer-service").and()
-                    .claim("userId", TEST_USER_ID)
                     .claim("customerId", TEST_CUSTOMER_ID)
                     .claim("roles", List.of("ROLE_USER"))
                     .issuedAt(new Date())
@@ -213,9 +212,8 @@ class JwtServiceTest {
             SecretKey key = Keys.hmacShaKeyFor(TEST_SECRET.getBytes());
             return Jwts.builder()
                     .issuer("wrong-service")
-                    .subject("test@email.com")
+                    .subject(String.valueOf(TEST_USER_ID))
                     .audience().add("customer-service").and()
-                    .claim("userId", TEST_USER_ID)
                     .issuedAt(new Date())
                     .expiration(new Date(System.currentTimeMillis() + 120_000))
                     .signWith(key)
@@ -226,9 +224,8 @@ class JwtServiceTest {
             SecretKey key = Keys.hmacShaKeyFor(TEST_SECRET.getBytes());
             return Jwts.builder()
                     .issuer("auth-server")
-                    .subject("test@email.com")
+                    .subject(String.valueOf(TEST_USER_ID))
                     .audience().add("wrong-service").and()
-                    .claim("userId", TEST_USER_ID)
                     .issuedAt(new Date())
                     .expiration(new Date(System.currentTimeMillis() + 120_000))
                     .signWith(key)
@@ -239,9 +236,8 @@ class JwtServiceTest {
             SecretKey key = Keys.hmacShaKeyFor(TEST_SECRET.getBytes());
             return Jwts.builder()
                     .issuer("auth-server")
-                    .subject("test@email.com")
+                    .subject(String.valueOf(TEST_USER_ID))
                     .audience().add("customer-service").and()
-                    .claim("userId", TEST_USER_ID)
                     .issuedAt(new Date(System.currentTimeMillis() - 300_000))
                     .expiration(new Date(System.currentTimeMillis() - 60_000))
                     .signWith(key)
@@ -314,26 +310,6 @@ class JwtServiceTest {
     class TokenExtractionTests {
 
         @Test
-        @DisplayName("Should extract username from token")
-        void shouldExtractUsernameFromToken() {
-            String token = createTokenWithSubject("test@email.com");
-
-            String username = jwtService.extractUsername(token);
-
-            assertEquals("test@email.com", username);
-        }
-
-        @Test
-        @DisplayName("Should extract subject from token")
-        void shouldExtractSubjectFromToken() {
-            String token = createTokenWithSubject("test@email.com");
-
-            String subject = jwtService.extractSubject(token);
-
-            assertEquals("test@email.com", subject);
-        }
-
-        @Test
         @DisplayName("Should extract userId from token")
         void shouldExtractUserIdFromToken() {
             String token = createTokenWithUserId(TEST_USER_ID);
@@ -387,9 +363,8 @@ class JwtServiceTest {
             SecretKey key = Keys.hmacShaKeyFor(TEST_SECRET.getBytes());
             return Jwts.builder()
                     .issuer("auth-server")
-                    .subject("test@email.com")
+                    .subject(String.valueOf(userId))
                     .audience().add("customer-service").and()
-                    .claim("userId", userId)
                     .issuedAt(new Date())
                     .expiration(new Date(System.currentTimeMillis() + 120_000))
                     .signWith(key)
@@ -400,7 +375,7 @@ class JwtServiceTest {
             SecretKey key = Keys.hmacShaKeyFor(TEST_SECRET.getBytes());
             return Jwts.builder()
                     .issuer("auth-server")
-                    .subject("test@email.com")
+                    .subject(String.valueOf(TEST_USER_ID))
                     .audience().add("customer-service").and()
                     .claim("customerId", customerId)
                     .issuedAt(new Date())
@@ -413,9 +388,8 @@ class JwtServiceTest {
             SecretKey key = Keys.hmacShaKeyFor(TEST_SECRET.getBytes());
             return Jwts.builder()
                     .issuer("auth-server")
-                    .subject("test@email.com")
+                    .subject(String.valueOf(TEST_USER_ID))
                     .audience().add("customer-service").and()
-                    .claim("userId", TEST_USER_ID)
                     .claim("roles", roles)
                     .issuedAt(new Date())
                     .expiration(new Date(System.currentTimeMillis() + 120_000))
@@ -472,9 +446,8 @@ class JwtServiceTest {
             SecretKey key = Keys.hmacShaKeyFor(TEST_SECRET.getBytes());
             return Jwts.builder()
                     .issuer("auth-server")
-                    .subject("test@email.com")
+                    .subject(String.valueOf(TEST_USER_ID))
                     .audience().add("customer-service").and()
-                    .claim("userId", TEST_USER_ID)
                     .claim("roles", roles)
                     .issuedAt(new Date())
                     .expiration(new Date(System.currentTimeMillis() + 120_000))
@@ -486,9 +459,8 @@ class JwtServiceTest {
             SecretKey key = Keys.hmacShaKeyFor(TEST_SECRET.getBytes());
             return Jwts.builder()
                     .issuer("auth-server")
-                    .subject("test@email.com")
+                    .subject(String.valueOf(TEST_USER_ID))
                     .audience().add("customer-service").and()
-                    .claim("userId", TEST_USER_ID)
                     .claim("roles", "NOT_A_LIST")
                     .issuedAt(new Date())
                     .expiration(new Date(System.currentTimeMillis() + 120_000))

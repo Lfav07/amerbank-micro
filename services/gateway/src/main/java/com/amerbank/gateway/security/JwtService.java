@@ -43,7 +43,8 @@ public class JwtService {
     }
 
     public Long extractUserId(String token, Class<Long> longClass) {
-        return  extractClaim(token, claims -> claims.get("userId", Long.class));
+        String subject = extractSubject(token);
+        return Long.parseLong(subject);
     }
     public  Long extractCustomerId(String token) {
         return  extractClaim(token, claims -> claims.get("customerId", Long.class));
