@@ -59,13 +59,11 @@ public class CustomerService {
     // -------------------- Registration --------------------
 
     /**
-     * Registers a new customer and links them to a user in the authentication service.
+     * Registers a new customer in the database.
      *
      * @param request the registration data containing customer details
      * @throws CustomerAlreadyExistsException      if a customer already exists for the given user ID
-     * @throws UserRegistrationFailedException     if the authentication service returns null or a client-side error occurs
-     * @throws AuthServiceUnavailableException     if the authentication service cannot be reached or returns a server-side error
-     * @throws CustomerRegistrationFailedException if an unexpected error occurs during REST call or saving the customer (e.g., data integrity violation)
+     * @throws CustomerRegistrationFailedException if a data integrity violation occurs while saving the customer
      */
 
     @Transactional
@@ -109,6 +107,7 @@ public class CustomerService {
     }
 
     /**
+     * Retrieves the customer ID associated with a user ID.
      *
      * @param userId the user's id
      * @return the customer's id for the corresponding user
@@ -163,12 +162,11 @@ public class CustomerService {
     }
 
     /**
-     * Retrieves customer info for the current authenticated user.
+     * Retrieves customer info for the authenticated user.
      *
      * @param customerId the authenticated user's customer id
      * @return the corresponding CustomerResponse
-     * @throws CustomerNotFoundException       if the user or customer is not found
-     * @throws AuthServiceUnavailableException if the auth service is unavailable
+     * @throws CustomerNotFoundException if the customer is not found
      */
     public CustomerInfo getMyCustomerInfo(Long customerId) {
         CustomerResponse customer = findCustomerByIdMapped(customerId);
@@ -176,11 +174,11 @@ public class CustomerService {
     }
 
     /**
-     * Retrieves customer info by email. Intended for admin users only.
+     * Retrieves customer info by email address.
      *
      * @param email the user's email
      * @return the corresponding CustomerResponse
-     * @throws CustomerNotFoundException       if the user or customer is not found
+     * @throws CustomerNotFoundException       if no customer is found for the given email
      * @throws AuthServiceUnavailableException if the auth service is unavailable
      */
     public CustomerResponse getCustomerInfoByEmail(String email) {
@@ -272,6 +270,13 @@ public class CustomerService {
     }
 
     // -------------------- Deletion --------------------
+
+    /**
+     * Deletes a customer by their ID.
+     *
+     * @param id the customer's ID
+     * @throws CustomerNotFoundException if no customer is found with the given ID
+     */
     public void deleteCustomerById(Long id) {
         if (!customerRepository.existsById(id)) {
             log.warn("Customer not found for id {}" , id);

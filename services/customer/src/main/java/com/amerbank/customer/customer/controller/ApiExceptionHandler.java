@@ -14,22 +14,27 @@ import com.amerbank.customer.customer.exception.ServiceAuthorizationException;
 import com.amerbank.customer.customer.exception.UserRegistrationFailedException;
 import com.amerbank.customer.customer.util.TraceIdUtil;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
@@ -57,6 +62,26 @@ public class ApiExceptionHandler {
                 .status(HttpStatus.NOT_FOUND.value())
                 .error("Customer Not Found")
                 .message("Customer not found")
+                .path(path)
+                .traceId(traceId)
+                .build();
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    @ExceptionHandler(NoSuchElementException.class)
+    public ResponseEntity<ErrorResponse> handleNoSuchElement(
+            NoSuchElementException ex,
+            WebRequest request) {
+        String traceId = getTraceId(request);
+        String path = extractPath(request);
+
+        log.warn("Resource not found - TraceId: {}, Message: {}", traceId, ex.getMessage());
+
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.NOT_FOUND.value())
+                .error("Not Found")
+                .message("Resource not found")
                 .path(path)
                 .traceId(traceId)
                 .build();
@@ -231,6 +256,119 @@ public class ApiExceptionHandler {
                 .error("Bad Request")
                 .message("Validation failed")
                 .errors(fieldErrors)
+                .path(path)
+                .traceId(traceId)
+                .build();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler({
+        IllegalArgumentException.class,
+        IllegalStateException.class
+    })
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(
+            RuntimeException ex,
+            WebRequest request) {
+        String traceId = getTraceId(request);
+        String path = extractPath(request);
+
+        log.warn("Invalid request - TraceId: {}, Message: {}", traceId, ex.getMessage());
+
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Bad Request")
+                .message(ex.getMessage())
+                .path(path)
+                .traceId(traceId)
+                .build();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleMessageNotReadable(
+            HttpMessageNotReadableException ex,
+            WebRequest request) {
+        String traceId = getTraceId(request);
+        String path = extractPath(request);
+
+        log.warn("Malformed request body - TraceId: {}, Message: {}", traceId, ex.getMessage());
+
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Bad Request")
+                .message("Malformed request body")
+                .path(path)
+                .traceId(traceId)
+                .build();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingParameter(
+            MissingServletRequestParameterException ex,
+            WebRequest request) {
+        String traceId = getTraceId(request);
+        String path = extractPath(request);
+
+        log.warn("Missing request parameter - TraceId: {}, Parameter: {}", traceId, ex.getParameterName());
+
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Bad Request")
+                .message("Missing required parameter: " + ex.getParameterName())
+                .path(path)
+                .traceId(traceId)
+                .build();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(
+            MethodArgumentTypeMismatchException ex,
+            WebRequest request) {
+        String traceId = getTraceId(request);
+        String path = extractPath(request);
+
+        log.warn("Type mismatch - TraceId: {}, Parameter: {}, Expected: {}",
+                traceId, ex.getName(), ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "unknown");
+
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Bad Request")
+                .message("Invalid value for parameter: " + ex.getName())
+                .path(path)
+                .traceId(traceId)
+                .build();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ValidationErrorResponse> handleConstraintViolation(
+            ConstraintViolationException ex,
+            WebRequest request) {
+        String traceId = getTraceId(request);
+        String path = extractPath(request);
+
+        var violations = ex.getConstraintViolations()
+                .stream()
+                .collect(Collectors.toMap(
+                        v -> v.getPropertyPath().toString(),
+                        v -> v.getMessage(),
+                        (existing, replacement) -> existing
+                ));
+
+        log.warn("Constraint violation - TraceId: {}, Violations: {}", traceId, violations);
+
+        ValidationErrorResponse response = ValidationErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Bad Request")
+                .message("Validation failed")
+                .errors(violations)
                 .path(path)
                 .traceId(traceId)
                 .build();
