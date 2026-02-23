@@ -47,7 +47,7 @@ public class UserController {
 
 
         userService.updateEmail(principal.userId(), request.newEmail());
-        return ResponseEntity.ok(message("Email successfully updated"));
+        return ResponseEntity.ok(message("Email successfully updated. Please "));
     }
 
     @PatchMapping("/me/password")

@@ -42,10 +42,10 @@ public class TestJwtFactory {
                 .compact();
     }
 
-    public String generateUserToken(String email, Long customerId, List<String> roles) {
+    public String generateUserToken(Long userId, Long customerId, List<String> roles) {
         return Jwts.builder()
                 .issuer("auth-server")
-                .subject(email)
+                .subject(String.valueOf(userId))
                 .claim("customerId", customerId)
                 .claim("roles", roles)
                 .issuedAt(new Date())
@@ -54,11 +54,11 @@ public class TestJwtFactory {
                 .compact();
     }
 
-    public String generateAdminToken(String email, Long customerId) {
-        return generateUserToken(email, customerId, List.of("ROLE_ADMIN"));
+    public String generateAdminToken(Long userId, Long customerId) {
+        return generateUserToken(userId, customerId, List.of("ROLE_ADMIN"));
     }
 
-    public String generateCustomerUserToken(String email, Long customerId) {
-        return generateUserToken(email, customerId, List.of("ROLE_USER"));
+    public String generateCustomerUserToken(Long userId, Long customerId) {
+        return generateUserToken(userId, customerId, List.of("ROLE_USER"));
     }
 }
