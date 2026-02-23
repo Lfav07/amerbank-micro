@@ -15,6 +15,11 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
@@ -192,6 +197,128 @@ public class ApiExceptionHandler {
                 .build();
         
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    // ============================================================
+    // ================ 400 BAD_REQUEST (Other) ==================
+    // ============================================================
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(
+            HttpMessageNotReadableException ex,
+            WebRequest request) {
+        String traceId = getTraceId(request);
+        String path = extractPath(request);
+
+        log.warn("Malformed request body - TraceId: {}, Message: {}", traceId, ex.getMessage());
+
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Bad Request")
+                .message("Malformed request body or invalid JSON")
+                .path(path)
+                .traceId(traceId)
+                .build();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingParameter(
+            MissingServletRequestParameterException ex,
+            WebRequest request) {
+        String traceId = getTraceId(request);
+        String path = extractPath(request);
+
+        log.warn("Missing request parameter - TraceId: {}, Parameter: {}", traceId, ex.getParameterName());
+
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Bad Request")
+                .message("Missing required parameter: " + ex.getParameterName())
+                .path(path)
+                .traceId(traceId)
+                .build();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    // ============================================================
+    // ================ 404 NOT_FOUND (No Handler) ==============
+    // ============================================================
+
+    @ExceptionHandler(NoHandlerFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoHandlerFound(
+            NoHandlerFoundException ex,
+            WebRequest request) {
+        String traceId = getTraceId(request);
+        String path = extractPath(request);
+
+        log.warn("No handler found - TraceId: {}, Path: {}", traceId, ex.getRequestURL());
+
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.NOT_FOUND.value())
+                .error("Not Found")
+                .message("Endpoint not found")
+                .path(path)
+                .traceId(traceId)
+                .build();
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    // ============================================================
+    // ================ 405 METHOD_NOT_ALLOWED ===================
+    // ============================================================
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMethodNotSupported(
+            HttpRequestMethodNotSupportedException ex,
+            WebRequest request) {
+        String traceId = getTraceId(request);
+        String path = extractPath(request);
+
+        log.warn("Method not supported - TraceId: {}, Method: {}, Path: {}",
+                traceId, ex.getMethod(), ex.getSupportedHttpMethods());
+
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.METHOD_NOT_ALLOWED.value())
+                .error("Method Not Allowed")
+                .message("HTTP method " + ex.getMethod() + " not supported for this endpoint")
+                .path(path)
+                .traceId(traceId)
+                .build();
+
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(response);
+    }
+
+    // ============================================================
+    // ================ 415 UNSUPPORTED_MEDIA_TYPE ===============
+    // ============================================================
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMediaTypeNotSupported(
+            HttpMediaTypeNotSupportedException ex,
+            WebRequest request) {
+        String traceId = getTraceId(request);
+        String path = extractPath(request);
+
+        log.warn("Media type not supported - TraceId: {}, ContentType: {}", traceId, ex.getContentType());
+
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE.value())
+                .error("Unsupported Media Type")
+                .message("Content type " + ex.getContentType() + " not supported")
+                .path(path)
+                .traceId(traceId)
+                .build();
+
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(response);
     }
 
     // ============================================================

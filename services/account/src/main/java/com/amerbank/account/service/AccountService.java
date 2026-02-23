@@ -161,8 +161,7 @@ public class AccountService {
      * Retrieves all accounts associated with a given customer ID.
      *
      * @param customerId the customer ID whose accounts are to be retrieved.
-     * @return a list of account response DTOs.
-     * @throws AccountNotFoundException if the customer has no accounts.
+     * @return a list of account response DTOs, or an empty list if none found.
      */
 
     @Cacheable(
@@ -181,8 +180,7 @@ public class AccountService {
      * Retrieves accounts of the authenticated customer.
      *
      * @param customerId the current customer's id.
-     * @return a list of account info DTOs.
-     * @throws AccountNotFoundException if the authenticated customer has no accounts.
+     * @return a list of account info DTOs, or an empty list if none found.
      */
 
 
@@ -194,6 +192,14 @@ public class AccountService {
                 .toList();
     }
 
+    /**
+     * Retrieves a specific account by type for the authenticated customer.
+     *
+     * @param customerId the customer's id.
+     * @param type       the account type.
+     * @return the account info DTO.
+     * @throws AccountNotFoundException if no account of the specified type is found.
+     */
     public AccountInfo getMyAccountByType(Long customerId, AccountType type) {
         Account account = accountRepository.findByCustomerIdAndType(customerId, type)
                 .orElseThrow(() -> new AccountNotFoundException(
@@ -558,6 +564,15 @@ public class AccountService {
      * @throws AccountNotFoundException    if no matching account is found.
      * @throws NullAccountBalanceException if the account balance is null.
      */
+    /**
+     * Checks if the account has sufficient funds for a given amount.
+     *
+     * @param accountNumber    the account number.
+     * @param amountToTransfer the amount to check against the balance.
+     * @return true if the account balance is greater than or equal to the amount, false otherwise.
+     * @throws AccountNotFoundException    if no matching account is found.
+     * @throws NullAccountBalanceException if the account balance is null.
+     */
     public boolean hasSufficientFundsByAccountNumber(String accountNumber, BigDecimal amountToTransfer) {
         BigDecimal balance = getAccountBalanceByAccountNumber(accountNumber);
         return balance.compareTo(amountToTransfer) >= 0;
@@ -644,10 +659,11 @@ public class AccountService {
     }
 
     /**
-     * Finds an account entity by account number.
+     * Checks if the specified account number belongs to the given customer.
      *
+     * @param customerId   the customer ID to check.
      * @param accountNumber the account number to find.
-     * @return true if the given accountNumber belongs to logged in customer
+     * @return true if the given accountNumber belongs to the customer
      * @throws AccountNotFoundException if the account is not found.
      */
     public boolean isAccountOwnedByCustomer(Long customerId, String accountNumber) {
