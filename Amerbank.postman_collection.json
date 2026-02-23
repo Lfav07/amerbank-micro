@@ -1,0 +1,2210 @@
+{
+  "info": {
+    "_postman_id": "d959a7e6-89b4-4566-93a0-6b479d041221",
+    "name": "Amerbank-micro",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "34423973"
+  },
+  "item": [
+    {
+      "name": "User-Service",
+      "item": [
+        {
+          "name": "Get self user info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/auth/me",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Register user",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"tester@example.com\",\r\n    \"password\": \"test12\",\r\n    \"firstName\": \"Luis\",\r\n    \"lastName\": \"Vieira\",\r\n    \"dateOfBirth\": \"2007-09-18\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/auth/register",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login user",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"tester@example.com\",\r\n    \"password\": \"test12\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update email",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n\"newEmail\": \"tester@email.com\",\r\n\"password\": \"test12\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/auth/me/email",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "auth",
+                "me",
+                "email"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update password",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n\"oldPassword\": \"test1\",\r\n\"newPassword\": \"test2\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/auth/me/password",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "auth",
+                "me",
+                "password"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoLXNlcnZlciIsInN1YiI6InRlc3RlckBleGFtcGxlLmNvbSIsInVzZXJJZCI6MTUyLCJjdXN0b21lcklkIjoxNTIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJpYXQiOjE3NzE4NjcwMDgsImV4cCI6MTc3MTg3MDYwOH0.CHiAXGqOyu6l8ooo0fb0-2BKbdog7eb8wJHRM_ebnn8",
+            "type": "string"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "User-Service (ADMIN)",
+      "item": [
+        {
+          "name": "Get all users",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/auth/admin/users",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "auth",
+                "admin",
+                "users"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get user by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/auth/admin/users/2",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "auth",
+                "admin",
+                "users",
+                "2"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get user by email",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/auth/admin/users/by-email?email=tester1@example.com",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "auth",
+                "admin",
+                "users",
+                "by-email"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "tester1@example.com"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Register Admin",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"admin@example.com\",\r\n    \"password\": \"administrator\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/auth/admin/register",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "auth",
+                "admin",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login Admin",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"admin@example.com\",\r\n    \"password\": \"administrator\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/auth/admin/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "auth",
+                "admin",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update user password",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"newEmail\": \"tester@example.com\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/auth/admin/users/1/email",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "auth",
+                "admin",
+                "users",
+                "1",
+                "email"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update user email",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"newPassword\": \"test\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/auth/admin/users/1/password",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "auth",
+                "admin",
+                "users",
+                "1",
+                "password"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete user by id",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"test3@example.com\",\r\n    \"password\": \"test12\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/auth/admin/users/3",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "auth",
+                "admin",
+                "users",
+                "3"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete all users",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBleGFtcGxlLmNvbSIsInVzZXJJZCI6Miwicm9sZXMiOlsiUk9MRV9BRE1JTiJdLCJpYXQiOjE3NTUyMDQ0MjksImV4cCI6MTc1NTIwODAyOX0.UDrcFOJOIZ_fPi0hTx4Xbu2fQzUFqbC7dHwaRx-WCBM",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"test3@example.com\",\r\n    \"password\": \"test12\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/auth/all/delete",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "auth",
+                "all",
+                "delete"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoLXNlcnZlciIsInN1YiI6ImFkbWluQGV4YW1wbGUuY29tIiwidXNlcklkIjozLCJyb2xlcyI6WyJST0xFX0FETUlOIl0sImlhdCI6MTc3MTg2NzAzNywiZXhwIjoxNzcxODcwNjM3fQ.YhpPzte3QKknslEdx7jIS2H5S3uU7SGUWKq7YEIH1kU",
+            "type": "string"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customer",
+      "item": [
+        {
+          "name": "Get self customer info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/customer/me",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "customer",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoLXNlcnZlciIsInN1YiI6IjU1NCIsImN1c3RvbWVySWQiOjIwNywicm9sZXMiOlsiUk9MRV9VU0VSIl0sImlhdCI6MTc3MTgyMDQ4NSwiZXhwIjoxNzcxODI0MDg1fQ.NmxJNkFrtgF6EQUbFC8b9Q8y9lDAl6rgL4uDNjf3Lj0",
+            "type": "string"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customer (ADMIN)",
+      "item": [
+        {
+          "name": "(ADMIN) Get all customers info",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"type\": \"CHECKING\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/customer/admin/customers",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "customer",
+                "admin",
+                "customers"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "(ADMIN) Get customer info by id",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/customer/admin/customers/102",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "customer",
+                "admin",
+                "customers",
+                "102"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "(ADMIN) Get customer info by email",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/customer/admin/customers/by-email?email=tester1@example.com",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "customer",
+                "admin",
+                "customers",
+                "by-email"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "tester1@example.com"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "(ADMIN) Verify customer kyc",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "http://localhost:8080/customer/1/verify-kyc",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "customer",
+                "1",
+                "verify-kyc"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "(ADMIN) Unverify customer kyc Copy",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "http://localhost:8080/customer/1/unverify-kyc",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "customer",
+                "1",
+                "unverify-kyc"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "(ADMIN) Delete customer by id",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/customer/admin/customers/2",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "customer",
+                "admin",
+                "customers",
+                "2"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "(ADMIN) Delete All Customers",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/customer/all/delete",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "customer",
+                "all",
+                "delete"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update customer",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"customerId\": \"1\",\r\n    \"firstName\": \"test\",\r\n    \"lastName\": \"tested\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/customer/update",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "customer",
+                "update"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoLXNlcnZlciIsInN1YiI6ImFkbWluQGV4YW1wbGUuY29tIiwidXNlcklkIjo1NTMsInJvbGVzIjpbIlJPTEVfQURNSU4iXSwiaWF0IjoxNzcxMzU4MzQyLCJleHAiOjE3NzEzNjE5NDJ9.byLlFIcI1fnvEMTM6W4OWsmEe4eN9M-kgnRAWMREaYI",
+            "type": "string"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Account",
+      "item": [
+        {
+          "name": "Get all self accounts info",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/account/me",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "account",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get all self accounts info Copy",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/account/me",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "account",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get  self account info by type",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/account/me/type?type=CHECKING",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "account",
+                "me",
+                "type"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "CHECKING"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get all self accounts balances",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"type\": \"CHECKING\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/account/me/balances",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "account",
+                "me",
+                "balances"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get self account balance by type",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/account/me/balance?type=CHECKING",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "account",
+                "me",
+                "balance"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "CHECKING"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Check if account has sufficient funds",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/account/me/has-funds?type=CHECKING&amount=1000",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "account",
+                "me",
+                "has-funds"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "CHECKING"
+                },
+                {
+                  "key": "amount",
+                  "value": "1000"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Register account",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"type\": \"SAVINGS\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/account/register",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "account",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Check if account belongs to authenticated customer",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"accountNumber\": \"ACCT5894909133\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/account/me/owned",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "account",
+                "me",
+                "owned"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoLXNlcnZlciIsInN1YiI6IjU1NCIsImN1c3RvbWVySWQiOjIwNywicm9sZXMiOlsiUk9MRV9VU0VSIl0sImlhdCI6MTc3MTgyMDQ4NSwiZXhwIjoxNzcxODI0MDg1fQ.NmxJNkFrtgF6EQUbFC8b9Q8y9lDAl6rgL4uDNjf3Lj0",
+            "type": "string"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Account (ADMIN)",
+      "item": [
+        {
+          "name": "Get all accounts for customer id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/account/admin/customers/253",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "account",
+                "admin",
+                "customers",
+                "253"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get account by type for customer id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/account/admin/customers/302/type?type=CHECKING",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "account",
+                "admin",
+                "customers",
+                "302",
+                "type"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "CHECKING"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get account by account number",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/account/admin/ACCT4317796272",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "account",
+                "admin",
+                "ACCT4317796272"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Check if account is active",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/account/admin/ACCT4317796272/active",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "account",
+                "admin",
+                "ACCT4317796272",
+                "active"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get account balance by account number",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/account/admin/ACCT4317796272/balance",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "account",
+                "admin",
+                "ACCT4317796272",
+                "balance"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update account status",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"status\": \"ACTIVE\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/account/admin/ACCT5894909133/status",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "account",
+                "admin",
+                "ACCT5894909133",
+                "status"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Account",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"status\": \"SUSPENDED\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/account/admin/ACCT8315441653",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "account",
+                "admin",
+                "ACCT8315441653"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoLXNlcnZlciIsInN1YiI6ImFkbWluQGV4YW1wbGUuY29tIiwidXNlcklkIjo1NTMsInJvbGVzIjpbIlJPTEVfQURNSU4iXSwiaWF0IjoxNzcxNDM4MDMzLCJleHAiOjE3NzE0NDE2MzN9.oKRAqeb8KFFbcSH88YRT1WxQI2LqLqQvA1AdPfe4TMc",
+            "type": "string"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transaction",
+      "item": [
+        {
+          "name": "Get self transactions by account number",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "idempotency-key",
+                "value": "testKey21",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT4317796272\",\r\n    \"toAccountNumber\": \"ACCT0320042191\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/transaction/me?accountNumber=ACCT4317796272",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "transaction",
+                "me"
+              ],
+              "query": [
+                {
+                  "key": "accountNumber",
+                  "value": "ACCT4317796272"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get self transactions by from account",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "idempotency-key",
+                "value": "testKey21",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT4317796272\",\r\n    \"toAccountNumber\": \"ACCT0320042191\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/transaction/me/from?fromAccountNumber=ACCT4317796272",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "transaction",
+                "me",
+                "from"
+              ],
+              "query": [
+                {
+                  "key": "fromAccountNumber",
+                  "value": "ACCT4317796272"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get self transactions by to account",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "idempotency-key",
+                "value": "testKey21",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT4317796272\",\r\n    \"toAccountNumber\": \"ACCT0320042191\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/transaction/me/to?toAccountNumber=ACCT3447103503",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "transaction",
+                "me",
+                "to"
+              ],
+              "query": [
+                {
+                  "key": "toAccountNumber",
+                  "value": "ACCT3447103503"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get self transactions by from and to account",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "idempotency-key",
+                "value": "testKey21",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT4317796272\",\r\n    \"toAccountNumber\": \"ACCT0320042191\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/transaction/me/transfer?fromAccountNumber=ACCT4317796272&toAccountNumber=ACCT0320042191",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "transaction",
+                "me",
+                "transfer"
+              ],
+              "query": [
+                {
+                  "key": "fromAccountNumber",
+                  "value": "ACCT4317796272"
+                },
+                {
+                  "key": "toAccountNumber",
+                  "value": "ACCT0320042191"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get self transactions by type",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "idempotency-key",
+                "value": "testKey21",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT4317796272\",\r\n    \"toAccountNumber\": \"ACCT0320042191\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/transaction/me/type?accountNumber=ACCT4317796272&type=PAYMENT",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "transaction",
+                "me",
+                "type"
+              ],
+              "query": [
+                {
+                  "key": "accountNumber",
+                  "value": "ACCT4317796272"
+                },
+                {
+                  "key": "type",
+                  "value": "PAYMENT"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get self transactions by status",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "idempotency-key",
+                "value": "testKey21",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT4317796272\",\r\n    \"toAccountNumber\": \"ACCT0320042191\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/transaction/me/status?accountNumber=ACCT4317796272&status=APPROVED",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "transaction",
+                "me",
+                "status"
+              ],
+              "query": [
+                {
+                  "key": "accountNumber",
+                  "value": "ACCT4317796272"
+                },
+                {
+                  "key": "status",
+                  "value": "APPROVED"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Payment transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "idempotency-key",
+                "value": "testKey21x",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT4317796272\",\r\n    \"toAccountNumber\": \"ACCT0320042191\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/transaction/payment",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "transaction",
+                "payment"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Deposit transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "idempotency-key",
+                "value": "testKey2112",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT4317796272\",\r\n    \"toAccountNumber\": \"ACCT4317796272\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/transaction/deposit",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "transaction",
+                "deposit"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refund transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "idempotency-key",
+                "value": "testKeyy15aybzm12zxyh",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"transactionId\": \"958d4fd4-9075-434e-8d50-337ae6392cc6\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/transaction/refund",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "transaction",
+                "refund"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoLXNlcnZlciIsInN1YiI6InRlc3RlcjRAZXhhbXBsZS5jb20iLCJ1c2VySWQiOjc1MiwiY3VzdG9tZXJJZCI6MzAyLCJyb2xlcyI6WyJST0xFX1VTRVIiXSwiaWF0IjoxNzcxNTEyNTE1LCJleHAiOjE3NzE1MTYxMTV9.-oUz5EkA8p_EYy22AmZoLaOEIP1OvuSzzghbW_OMz6Q",
+            "type": "string"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transaction (ADMIN)",
+      "item": [
+        {
+          "name": "Get self transactions by account number",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "idempotency-key",
+                "value": "testKey21",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT4317796272\",\r\n    \"toAccountNumber\": \"ACCT0320042191\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/transaction/me?accountNumber=ACCT4317796272",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "transaction",
+                "me"
+              ],
+              "query": [
+                {
+                  "key": "accountNumber",
+                  "value": "ACCT4317796272"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get self transactions by from account",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "idempotency-key",
+                "value": "testKey21",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT4317796272\",\r\n    \"toAccountNumber\": \"ACCT0320042191\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/transaction/me/from?fromAccountNumber=ACCT4317796272",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "transaction",
+                "me",
+                "from"
+              ],
+              "query": [
+                {
+                  "key": "fromAccountNumber",
+                  "value": "ACCT4317796272"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get self transactions by to account",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "idempotency-key",
+                "value": "testKey21",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT4317796272\",\r\n    \"toAccountNumber\": \"ACCT0320042191\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/transaction/me/to?toAccountNumber=ACCT3447103503",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "transaction",
+                "me",
+                "to"
+              ],
+              "query": [
+                {
+                  "key": "toAccountNumber",
+                  "value": "ACCT3447103503"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get self transactions by from and to account",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "idempotency-key",
+                "value": "testKey21",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT4317796272\",\r\n    \"toAccountNumber\": \"ACCT0320042191\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/transaction/me/transfer?fromAccountNumber=ACCT4317796272&toAccountNumber=ACCT0320042191",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "transaction",
+                "me",
+                "transfer"
+              ],
+              "query": [
+                {
+                  "key": "fromAccountNumber",
+                  "value": "ACCT4317796272"
+                },
+                {
+                  "key": "toAccountNumber",
+                  "value": "ACCT0320042191"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get self transactions by type",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "idempotency-key",
+                "value": "testKey21",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT4317796272\",\r\n    \"toAccountNumber\": \"ACCT0320042191\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/transaction/me/type?accountNumber=ACCT4317796272&type=PAYMENT",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "transaction",
+                "me",
+                "type"
+              ],
+              "query": [
+                {
+                  "key": "accountNumber",
+                  "value": "ACCT4317796272"
+                },
+                {
+                  "key": "type",
+                  "value": "PAYMENT"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get self transactions by status",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "idempotency-key",
+                "value": "testKey21",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT4317796272\",\r\n    \"toAccountNumber\": \"ACCT0320042191\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/transaction/me/status?accountNumber=ACCT4317796272&status=APPROVED",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "transaction",
+                "me",
+                "status"
+              ],
+              "query": [
+                {
+                  "key": "accountNumber",
+                  "value": "ACCT4317796272"
+                },
+                {
+                  "key": "status",
+                  "value": "APPROVED"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Payment transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "idempotency-key",
+                "value": "testKey21x",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT4317796272\",\r\n    \"toAccountNumber\": \"ACCT0320042191\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/transaction/payment",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "transaction",
+                "payment"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Deposit transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "idempotency-key",
+                "value": "testKey2112",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT4317796272\",\r\n    \"toAccountNumber\": \"ACCT4317796272\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/transaction/deposit",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "transaction",
+                "deposit"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refund transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "idempotency-key",
+                "value": "testKeyy15aybzm12zxyh",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"transactionId\": \"958d4fd4-9075-434e-8d50-337ae6392cc6\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/transaction/refund",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "transaction",
+                "refund"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoLXNlcnZlciIsInN1YiI6InRlc3RlcjRAZXhhbXBsZS5jb20iLCJ1c2VySWQiOjc1MiwiY3VzdG9tZXJJZCI6MzAyLCJyb2xlcyI6WyJST0xFX1VTRVIiXSwiaWF0IjoxNzcxNTEyNTE1LCJleHAiOjE3NzE1MTYxMTV9.-oUz5EkA8p_EYy22AmZoLaOEIP1OvuSzzghbW_OMz6Q",
+            "type": "string"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
