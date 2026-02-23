@@ -93,10 +93,23 @@ public class TransactionService {
         return transactionRepository.findByFromAccountNumberAndType(fromAccount, type);
     }
 
+    /**
+     * Retrieves a transaction by its unique identifier and returns it as a DTO.
+     *
+     * @param id the unique identifier of the transaction
+     * @return the transaction as a response DTO
+     * @throws TransactionNotFoundException if no transaction exists with the given ID
+     */
     public TransactionResponse getTransactionResponseById(UUID id) {
         return transactionMapper.toResponse(findTransactionById(id));
     }
 
+    /**
+     * Retrieves all transactions from a specific source account and returns them as DTOs.
+     *
+     * @param fromAccount the source account number
+     * @return a list of transaction response DTOs
+     */
     public List<TransactionResponse> getTransactionResponsesByFromAccountNumber(String fromAccount) {
         return findTransactionsByFromAccountNumber(fromAccount)
                 .stream()
@@ -104,6 +117,12 @@ public class TransactionService {
                 .toList();
     }
 
+    /**
+     * Retrieves all transactions to a specific destination account and returns them as DTOs.
+     *
+     * @param toAccount the destination account number
+     * @return a list of transaction response DTOs
+     */
     public List<TransactionResponse> getTransactionResponsesByToAccountNumber(String toAccount) {
         return findTransactionsByToAccountNumber(toAccount)
                 .stream()
@@ -111,6 +130,13 @@ public class TransactionService {
                 .toList();
     }
 
+    /**
+     * Retrieves all transactions between two specific accounts and returns them as DTOs.
+     *
+     * @param fromAccount the source account number
+     * @param toAccount the destination account number
+     * @return a list of transaction response DTOs
+     */
     public List<TransactionResponse> getTransactionResponsesByFromAndToAccountNumber(String fromAccount, String toAccount) {
         return findTransactionsByFromAndToAccountNumber(fromAccount, toAccount)
                 .stream()
@@ -118,6 +144,12 @@ public class TransactionService {
                 .toList();
     }
 
+    /**
+     * Retrieves all transactions with a specific status and returns them as DTOs.
+     *
+     * @param status the transaction status to filter by
+     * @return a list of transaction response DTOs
+     */
     public List<TransactionResponse> getTransactionResponsesByStatus(TransactionStatus status) {
         return findTransactionsByStatus(status)
                 .stream()
@@ -125,6 +157,12 @@ public class TransactionService {
                 .toList();
     }
 
+    /**
+     * Retrieves all transactions of a specific type and returns them as DTOs.
+     *
+     * @param type the transaction type to filter by
+     * @return a list of transaction response DTOs
+     */
     public List<TransactionResponse> getTransactionResponsesByType(TransactionType type) {
         return findTransactionsByType(type)
                 .stream()
