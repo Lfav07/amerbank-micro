@@ -29,7 +29,6 @@ class JwtServiceTest {
     private static final String TEST_SECRET = "f3zxdc27v0613fbm9784zfe25f981f43";
     private static final Long TEST_CUSTOMER_ID = 123L;
     private static final Long TEST_USER_ID = 1L;
-    private static final String TEST_EMAIL = "email@test.com";
 
     @BeforeEach
     void setUp() {
@@ -41,7 +40,7 @@ class JwtServiceTest {
 
         testUser = User.builder()
                 .id(TEST_USER_ID)
-                .email(TEST_EMAIL)
+                .email("email@test.com")
                 .password("myPassword")
                 .active(true)
                 .roles(Set.of(Role.ROLE_USER))
@@ -62,17 +61,17 @@ class JwtServiceTest {
         }
 
         @Test
-        @DisplayName("Should generate token with correct subject")
+        @DisplayName("Should generate token with userId as subject")
         void shouldGenerateTokenWithCorrectSubject() {
             String token = jwtService.generateToken(testUser, TEST_CUSTOMER_ID);
 
             String extractedSubject = jwtService.extractSubject(token);
 
-            assertEquals(TEST_EMAIL, extractedSubject);
+            assertEquals(TEST_USER_ID.toString(), extractedSubject);
         }
 
         @Test
-        @DisplayName("Should generate token with correct userId claim")
+        @DisplayName("Should generate token with correct userId")
         void shouldGenerateTokenWithCorrectUserId() {
             String token = jwtService.generateToken(testUser, TEST_CUSTOMER_ID);
 
@@ -237,7 +236,7 @@ class JwtServiceTest {
         }
 
         @Test
-        @DisplayName("Should generate admin token with correct subject")
+        @DisplayName("Should generate admin token with userId as subject")
         void shouldGenerateAdminTokenWithCorrectSubject() {
             User adminUser = User.builder()
                     .id(2L)
@@ -249,7 +248,7 @@ class JwtServiceTest {
 
             String token = jwtService.generateAdminToken(adminUser);
 
-            assertEquals("admin@test.com", jwtService.extractSubject(token));
+            assertEquals("2", jwtService.extractSubject(token));
         }
 
         @Test
@@ -298,7 +297,7 @@ class JwtServiceTest {
             String token = jwtService.generateToken(testUser, TEST_CUSTOMER_ID);
 
             UserDetails userDetails = org.springframework.security.core.userdetails.User
-                    .withUsername(TEST_EMAIL)
+                    .withUsername(TEST_USER_ID.toString())
                     .password("dummy")
                     .authorities("ROLE_USER")
                     .build();
@@ -307,12 +306,12 @@ class JwtServiceTest {
         }
 
         @Test
-        @DisplayName("Should return false when token username does not match user details")
+        @DisplayName("Should return false when token userId does not match user details username")
         void shouldReturnFalseWhenUsernameDoesNotMatch() {
             String token = jwtService.generateToken(testUser, TEST_CUSTOMER_ID);
 
             UserDetails userDetails = org.springframework.security.core.userdetails.User
-                    .withUsername("different@test.com")
+                    .withUsername("999")
                     .password("dummy")
                     .authorities("ROLE_USER")
                     .build();
@@ -332,7 +331,6 @@ class JwtServiceTest {
     @Nested
     @DisplayName("Token Validation - Service Token")
     class ServiceTokenValidationTests {
-
 
         @Test
         @DisplayName("Should return false for token with wrong issuer")
@@ -415,13 +413,13 @@ class JwtServiceTest {
     class TokenExtractionTests {
 
         @Test
-        @DisplayName("Should extract username from token")
-        void shouldExtractUsernameFromToken() {
+        @DisplayName("Should extract userId from token as subject")
+        void shouldExtractUserIdFromToken() {
             String token = jwtService.generateToken(testUser, TEST_CUSTOMER_ID);
 
-            String username = jwtService.extractSubject(token);
+            Long userId = jwtService.extractUserId(token);
 
-            assertEquals(TEST_EMAIL, username);
+            assertEquals(TEST_USER_ID, userId);
         }
 
         @Test
@@ -431,20 +429,8 @@ class JwtServiceTest {
 
             String subject = jwtService.extractSubject(token);
 
-            assertEquals(TEST_EMAIL, subject);
+            assertEquals(TEST_USER_ID.toString(), subject);
         }
-
-        @Test
-        @DisplayName("Should extract userId from token")
-        void shouldExtractUserIdFromToken() {
-            String token = jwtService.generateToken(testUser, TEST_CUSTOMER_ID);
-
-            Long userId = jwtService.extractUserId(token);
-
-            assertEquals(TEST_USER_ID, userId);
-        }
-
-
 
         @Test
         @DisplayName("Should throw exception when extracting claims from invalid token")
@@ -510,7 +496,7 @@ class JwtServiceTest {
             String token = jwtService.generateToken(testUser, null);
 
             assertNotNull(token);
-            assertEquals(TEST_EMAIL, jwtService.extractSubject(token));
+            assertEquals(TEST_USER_ID.toString(), jwtService.extractSubject(token));
         }
 
         @Test
@@ -525,7 +511,7 @@ class JwtServiceTest {
             String token = customJwtService.generateToken(testUser, TEST_CUSTOMER_ID);
 
             assertNotNull(token);
-            assertEquals(TEST_EMAIL, customJwtService.extractSubject(token));
+            assertEquals(TEST_USER_ID.toString(), customJwtService.extractSubject(token));
         }
     }
 
@@ -547,7 +533,7 @@ class JwtServiceTest {
             String expiredToken = createExpiredToken();
 
             UserDetails userDetails = org.springframework.security.core.userdetails.User
-                    .withUsername(TEST_EMAIL)
+                    .withUsername(TEST_USER_ID.toString())
                     .password("dummy")
                     .authorities("ROLE_USER")
                     .build();
@@ -559,8 +545,7 @@ class JwtServiceTest {
             SecretKey key = Keys.hmacShaKeyFor(TEST_SECRET.getBytes());
             return Jwts.builder()
                     .issuer("auth-server")
-                    .subject(TEST_EMAIL)
-                    .claim("userId", TEST_USER_ID)
+                    .subject(TEST_USER_ID.toString())
                     .claim("roles", List.of("ROLE_USER"))
                     .issuedAt(new Date(System.currentTimeMillis() - 7200000))
                     .expiration(new Date(System.currentTimeMillis() - 3600000))
