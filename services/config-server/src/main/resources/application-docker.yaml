@@ -15,18 +15,8 @@ spring:
     config:
       server:
         git:
-          uri: git@github.com:Lfav07/amerbank-config.git
+          uri: https://github.com/Lfav07/amerbank-config.git
           default-label: main
-          clone-on-start: true
-          ignore-local-ssh-settings: true
-          private-key: |
-            -----BEGIN OPENSSH PRIVATE KEY-----
-            b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
-            QyNTUxOQAAACCc/pTWgttLUiTFaQLzGavED4Hh9J/n0NIgHg14gGC9DQAAAKAPs5e5D7OX
-            uQAAAAtzc2gtZWQyNTUxOQAAACCc/pTWgttLUiTFaQLzGavED4Hh9J/n0NIgHg14gGC9DQ
-            AAAEDRt/aHE2VGVBoOm2xT1MkfH3x4hYlygWb1hZQrW2ecAZz+lNaC20tSJMVpAvMZq8QP
-            geH0n+fQ0iAeDXiAYL0NAAAAFmFtZXJiYW5rLWNvbmZpZy1zZXJ2ZXIBAgMEBQYH
-            -----END OPENSSH PRIVATE KEY-----
           timeout: 30
           search-paths: configurations
 management:
