@@ -11,6 +11,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 
+/**
+ * Client for communicating with the customer-service via REST.
+ * Used for service-to-service authentication and customer registration.
+ */
 @Service
 public class CustomerServiceClient {
 
@@ -23,6 +27,13 @@ public class CustomerServiceClient {
     }
 
 
+    /**
+     * Retrieves the customer ID associated with a user ID from customer-service.
+     *
+     * @param userId the ID of the user to look up
+     * @return the associated customer ID
+     * @throws IllegalStateException if the request fails
+     */
     public Long getCustomerIdByUserId(Long userId) {
         String customerServiceUrl = "http://customer";
         String url = customerServiceUrl + "/customer/internal/by-user/" + userId;
@@ -37,6 +48,13 @@ public class CustomerServiceClient {
         }
         throw new IllegalStateException("Failed to fetch customerId");
     }
+    /**
+     * Registers a new customer in the customer-service.
+     *
+     * @param request the customer registration request
+     * @return the customer registration response with customer ID
+     * @throws CustomerRegistrationFailedException if registration fails
+     */
     public CustomerRegistrationResponse registerCustomer(CustomerRegistrationRequest request) {
         String customerServiceUrl = "http://customer";
         String url = customerServiceUrl + "/customer/internal/register";

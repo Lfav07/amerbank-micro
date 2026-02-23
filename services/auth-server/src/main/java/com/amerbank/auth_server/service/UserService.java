@@ -55,6 +55,18 @@ public class UserService {
     // Registration
     // -------------------------------------------------------------------------
 
+    /**
+     * Registers a new regular user and creates a corresponding customer profile.
+     * This is a transactional operation that creates the user and registers them
+     * with the customer-service. If customer registration fails, the user is deleted.
+     *
+     * @param request the registration request containing email, password, and user details
+     * @return the created user response
+     * @throws EmailAlreadyTakenException if the email is already registered
+     * @throws CustomerServiceUnavailableException if the customer-service is unavailable
+     * @throws CustomerRegistrationFailedException if customer registration fails
+     * @throws RegistrationFailedException if an unexpected error occurs
+     */
     public UserResponse registerUser(UserRegisterRequest request) {
 
         log.debug("Processing new user registration");
@@ -101,6 +113,14 @@ public class UserService {
     }
 
 
+    /**
+     * Creates a new user in the database within a transaction.
+     * The user is created with ROLE_USER and active status.
+     *
+     * @param request the registration request
+     * @return the created user entity
+     * @throws EmailAlreadyTakenException if the email is already registered
+     */
     @Transactional
     public User createUserTransactional(UserRegisterRequest request) {
 
@@ -118,6 +138,13 @@ public class UserService {
         }
     }
 
+    /**
+     * Updates a user's customer ID within a transaction.
+     *
+     * @param userId     the ID of the user to update
+     * @param customerId the customer ID to associate with the user
+     * @throws UserNotFoundException if the user does not exist
+     */
     @Transactional
     public void updateUserCustomerIdTransactional(Long userId, Long customerId) {
 
@@ -191,10 +218,11 @@ public class UserService {
     // -------------------------------------------------------------------------
 
     /**
-     * Authenticates a user if the password and email are correct.
+     * Authenticates a user with email and password.
      *
-     * @param email    The user's email.
-     * @param password The user's password.
+     * @param email    the user's email
+     * @param password the user's password
+     * @throws Exception if authentication fails
      */
     private void authenticate(String email, String password) {
         String normalizedEmail = normalizeEmail(email);
@@ -205,11 +233,11 @@ public class UserService {
 
 
     /**
-     * Logs-in a user and creates a jwt token.
+     * Authenticates a user and generates a JWT token.
      *
      * @param request the login request containing email and password
-     * @return AuthenticationResponse containing jwt token
-     * @throws UserNotFoundException if the user is not found.
+     * @return AuthenticationResponse containing the JWT token
+     * @throws Exception if authentication fails or user not found
      */
     public AuthenticationResponse login(UserLoginRequest request) {
         log.debug("Processing user login attempt");
@@ -230,12 +258,12 @@ public class UserService {
     }
 
     /**
-     * Logs-in an admin and creates a jwt token.
-     * Enabled for demonstrative purposes.
+     * Authenticates an admin user and generates a JWT token.
      *
      * @param request the login request containing email and password
-     * @return AuthenticationResponse containing jwt token
-     * @throws UserNotFoundException if the user is not found.
+     * @return AuthenticationResponse containing the JWT token
+     * @throws AccessDeniedException if the user is not an admin
+     * @throws Exception if authentication fails
      */
     public AuthenticationResponse loginAdmin(UserLoginRequest request) {
         log.debug("Processing admin login attempt");
@@ -422,6 +450,13 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException("User not found!"));
     }
 
+    /**
+     * Retrieves the current user's own profile information.
+     *
+     * @param id the ID of the authenticated user
+     * @return the user response DTO
+     * @throws UserNotFoundException if the user is not found
+     */
     public UserResponse getOwnUserInfo(Long id) {
         return mapper.toResponse(findById(id));
     }
@@ -468,6 +503,7 @@ public class UserService {
 
     /**
      * Deletes all users from the database.
+     * For demo purposes only - not for production use.
      */
     public void deleteAllUsers() {
         userRepository.deleteAll();
