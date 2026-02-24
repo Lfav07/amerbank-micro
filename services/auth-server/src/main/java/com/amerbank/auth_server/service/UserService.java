@@ -458,7 +458,7 @@ public class UserService {
      * @throws UserNotFoundException if the user is not found
      */
     public UserResponse getOwnUserInfo(Long id) {
-        return mapper.toResponse(findById(id));
+        return findByIdMapped(id);
     }
 
     /**
