@@ -143,140 +143,32 @@ To access protected endpoints:
 **Internal Services:**
 Internal service-to-service calls must include the `SCOPE_service` claim in the JWT.
 
-## API Endpoints
+##  API Documentation (Swagger)
 
-### Public Endpoints
+This service provides interactive API documentation using **Swagger UI**, allowing you to explore and test endpoints
+directly from the browser.
 
-| Method | Endpoint               | Description        |
-|--------|------------------------|--------------------|
-| POST   | `/auth/login`          | User login         |
-| POST   | `/auth/register`       | User registration  |
-| POST   | `/auth/admin/login`    | Admin login        |
-| POST   | `/auth/admin/register` | Admin registration |
+### Access Swagger UI
 
-### Protected Endpoints (User)
+http://localhost:8081/swagger-ui/index.html#/
 
-| Method | Endpoint            | Description           |
-|--------|---------------------|-----------------------|
-| GET    | `/auth/me`          | Get current user info |
-| PATCH  | `/auth/me/email`    | Update own email      |
-| PATCH  | `/auth/me/password` | Update own password   |
+---
 
-### Protected Endpoints (Admin)
+###  Swagger UI Preview
 
-| Method | Endpoint                          | Description          |
-|--------|-----------------------------------|----------------------|
-| GET    | `/auth/admin/users`               | List all users       |
-| GET    | `/auth/admin/users/{id}`          | Get user by ID       |
-| GET    | `/auth/admin/users/by-email`      | Get user by email    |
-| PATCH  | `/auth/admin/users/{id}/email`    | Update user email    |
-| PATCH  | `/auth/admin/users/{id}/password` | Update user password |
-| DELETE | `/auth/admin/users/{id}`          | Delete user          |
+<!-- Add screenshot here -->
+![Swagger UI](../../images/Swagger-auth-server.png)
 
-### Internal Endpoints (Service-to-Service)
+---
 
-| Method | Endpoint                        | Description       |
-|--------|---------------------------------|-------------------|
-| GET    | `/auth/internal/users/by-email` | Get user by email |
+### Authentication on Swagger
 
-## Health Check
+Most endpoints require a **JWT token**.
 
-| Method | Endpoint           | Description           |
-|--------|--------------------|-----------------------|
-| GET    | `/actuator/health` | Service health status |
-
-## Example Requests & Responses
-
-### Login
-
-**Request:**
-
-```bash
-curl -X POST http://localhost:8080/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "password": "yourpassword"
-  }'
-```
-
-**Response:**
-
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
-### Register
-
-**Request:**
-
-```bash
-curl -X POST http://localhost:8080/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "newuser@example.com",
-    "password": "securepassword",
-    "firstName": "John",
-    "lastName": "Doe",
-    "dateOfBirth": "1990-01-15"
-  }'
-```
-
-**Response:**
-
-```json
-{
-  "id": 1,
-  "customerId": 100,
-  "email": "user@example.com"
-}
-```
-
-### Get Current User
-
-**Request:**
-
-```bash
-curl -X GET http://localhost:8080/auth/me \
-  -H "Authorization: Bearer <token>"
-```
-
-**Response:**
-
-```json
-{
-  "id": 1,
-  "customerId": 100,
-  "email": "user@example.com"
-}
-```
-
-## Error Handling
-
-The API returns standard error responses:
-
-```json
-{
-  "timestamp": "2026-02-21T10:30:00",
-  "status": 404,
-  "error": "Not Found",
-  "message": "User not found"
-}
-```
-
-**Common HTTP Status Codes:**
-| Status | Description |
-|--------|-------------|
-| 200 | Success |
-| 201 | Created |
-| 400 | Bad Request (validation error) |
-| 401 | Unauthorized (invalid credentials) |
-| 403 | Forbidden (insufficient permissions) |
-| 404 | Not Found |
-| 409 | Conflict (email already taken) |
-| 500 | Internal Server Error |
+1. Authenticate using `/auth/login`
+2. Copy the returned token
+3. Click **Authorize** in Swagger UI
+4. Enter the token copied
 
 ## Security
 
@@ -284,6 +176,78 @@ The API returns standard error responses:
 - Passwords are encrypted using BCrypt
 - Two authentication chains: customer-facing and service-to-service
 - Internal endpoints require `SCOPE_service` claim in JWT
+
+### 🔌 Key Endpoints
+
+#### Authentication
+
+- `POST /auth/login` — Authenticate user and receive JWT
+- `POST /auth/register` — Register a new user
+
+#### User Operations
+
+- `GET /auth/me` — Get current authenticated user
+- `PATCH /auth/me/email` — Update email
+- `PATCH /auth/me/password` — Update password
+
+#### Admin Operations
+
+- `GET /auth/admin/users` — List all users
+- `GET /auth/admin/users/{id}` — Get user by ID
+- `DELETE /auth/admin/users/{id}` — Delete user
+
+> For full request/response details, validation rules, and error schemas, refer to Swagger UI.
+
+Common Status Codes:
+
+| Status | Description           |
+|--------|-----------------------|
+| 200    | Success               |
+| 201    | Created               |
+| 400    | Validation error      |
+| 401    | Unauthorized          |
+| 403    | Forbidden             |
+| 404    | Not found             |
+| 409    | Conflict              |
+| 500    | Internal server error |
+
+## Quick Example
+
+**Login Request**
+
+POST /auth/login
+
+```json
+{
+  "email": "user@example.com",
+  "password": "yourpassword"
+}
+```
+
+Response
+
+```json
+
+
+{
+  "token": "your-jwt-token"
+}
+```
+
+## Error Handling
+
+The API returns standardized error responses:
+
+```json
+{
+  "timestamp": "2026-02-21T10:30:00",
+  "status": 404,
+  "error": "Not Found",
+  "message": "Resource not found",
+  "path": "/api/resource",
+  "traceId": "abc123"
+}
+```
 
 ## Testing
 
