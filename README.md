@@ -2,12 +2,11 @@
 
 ![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white)
 ![Spring](https://img.shields.io/badge/spring-%236DB33F.svg?style=for-the-badge&logo=spring&logoColor=white)
-
 ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
-
 ![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)
 ![Redis](https://img.shields.io/badge/redis-%23DD0031.svg?style=for-the-badge&logo=redis&logoColor=white)
-#### Amerbank is an open-source online banking system built with Java 21 and Spring Boot 3, following a microservices architecture.
+
+## Amerbank is an open-source online banking system built with Java 21 and Spring Boot 3, following a microservices architecture.
 
 It is designed to simulate a real-world banking platform, supporting core financial operations such as account
 management, transactions, and secure authentication. The system focuses on scalability, security, and modular design,
@@ -40,6 +39,7 @@ http://localhost:8080
 - [Technologies](#technologies)
 - [Features](#features)
 - [Running the Project](#running-the-project)
+- [API Testing](#api-testing)
 - [Detailed Service Documentation](#detailed-service-documentation)
 - [Future Improvements](#future-improvements)
 
@@ -239,7 +239,7 @@ Security features include:
 
 ### Environment Variables
 
-#### This section is optional if you are running with Docker compose. docker-compose.yml has preconfigured dummy values to bootstrap the application.
+#### This section is optional if you are running with Docker compose. docker-compose.yml has preconfigured default values to bootstrap the application.
 
 Create a `.env` file or set these environment variables:
 
@@ -265,6 +265,7 @@ docker-compose up --build
 #### Running Locally
 
 * Ensure PostgreSQL is running and has the database "amerbank" created.
+* Account Microservice Requires a Redis DB instance up on port 6379.
 
 Start the services manually by following the recommended order:
 
@@ -273,12 +274,21 @@ Start the services manually by following the recommended order:
 3. API Gateway
 4. Auth Server
 5. Customer Service
-6. Account Service (Requires a Redis DB instance up on port 6379)
+6. Account Service
 7. Transaction Service
 
-## Postman Collection
+## API Testing
 
-Import the Postman collection to test the API endpoints:
+### Swagger
+ -  Before accessing the swagger endpoint, make sure the desired service is running.
+#### The project API's are fully documented and compatible with Swagger OpenAPI.
+* [Auth Server Swagger UI](http://localhost:8081/swagger-ui/index.html#/)
+* [Customer Service Swagger UI](http://localhost:8082/swagger-ui/index.html#/)
+* [Account Service  Swagger UI](http://localhost:8083/swagger-ui/index.html#/)
+* [Transaction Service Swagger UI](http://localhost:8084/swagger-ui/index.html#/)
+### Postman Collection
+
+The application contains a ready-to-use postman collection exported as JSON, the following steps shows how to import it:
 
 1. Open Postman
 2. Click **Import** → **File** → **Upload Files**
