@@ -5,6 +5,7 @@ import com.amerbank.auth_server.dto.ValidationErrorResponse;
 import com.amerbank.auth_server.exception.CustomerRegistrationFailedException;
 import com.amerbank.auth_server.exception.CustomerServiceUnavailableException;
 import com.amerbank.auth_server.exception.EmailAlreadyTakenException;
+import com.amerbank.auth_server.exception.RegistrationFailedException;
 import com.amerbank.auth_server.exception.UserNotFoundException;
 import com.amerbank.auth_server.util.TraceIdUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -189,6 +192,47 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(
+            HttpMessageNotReadableException ex,
+            WebRequest request) {
+        String traceId = getTraceId(request);
+        String path = extractPath(request);
+
+        log.warn("Malformed request body - TraceId: {}, Message: {}", traceId, ex.getMessage());
+
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Bad Request")
+                .message("Malformed request body")
+                .path(path)
+                .traceId(traceId)
+                .build();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatch(
+            MethodArgumentTypeMismatchException ex,
+            WebRequest request) {
+        String traceId = getTraceId(request);
+        String path = extractPath(request);
+
+        String message = String.format("Invalid value for parameter '%s'", ex.getName());
+        log.warn("Type mismatch - TraceId: {}, Message: {}", traceId, message);
+
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Bad Request")
+                .message(message)
+                .path(path)
+                .traceId(traceId)
+                .build();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
     // ============================================================
     // ================ 503 SERVICE_UNAVAILABLE =================
     // ============================================================
@@ -233,6 +277,30 @@ public class ApiExceptionHandler {
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .error("Internal Server Error")
                 .message("Internal server error")
+                .path(path)
+                .traceId(traceId)
+                .build();
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+
+    // ============================================================
+    // ================ 500 REGISTRATION_FAILED ==================
+    // ============================================================
+
+    @ExceptionHandler(RegistrationFailedException.class)
+    public ResponseEntity<ErrorResponse> handleRegistrationFailed(
+            RegistrationFailedException ex,
+            WebRequest request) {
+        String traceId = getTraceId(request);
+        String path = extractPath(request);
+
+        log.error("Registration failed - TraceId: {}, Message: {}", traceId, ex.getMessage(), ex);
+
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .error("Internal Server Error")
+                .message("Registration failed")
                 .path(path)
                 .traceId(traceId)
                 .build();

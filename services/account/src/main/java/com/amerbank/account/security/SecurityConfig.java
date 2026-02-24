@@ -49,6 +49,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/account/admin/**"    // delete account
                         ).hasRole("ADMIN")
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         .anyRequest().hasRole("ADMIN"))  // fallback: admin
                 .sessionManagement(sess -> sess
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))

@@ -25,6 +25,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -84,16 +85,16 @@ public class AccountRegistrationIT {
             headers.setBearerAuth(testJwtFactory.generateUserToken(customerId, email));
             HttpEntity<AccountRequest> entity = new HttpEntity<>(request, headers);
 
-            ResponseEntity<String> response = restTemplate.exchange(
+            ResponseEntity<Map<String, String>> response = restTemplate.exchange(
                     endpoint,
                     HttpMethod.POST,
                     entity,
-                    String.class
+                    (Class<Map<String, String>>) (Class<?>) Map.class
             );
 
-            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertEquals(HttpStatus.CREATED, response.getStatusCode());
             assertNotNull(response.getBody());
-            assertEquals("Account successfully registered", response.getBody());
+            assertEquals("Account successfully registered", response.getBody().get("message"));
 
             List<com.amerbank.account.model.Account> accounts = accountRepository.findAllByCustomerId(customerId);
             assertFalse(accounts.isEmpty());
@@ -113,14 +114,14 @@ public class AccountRegistrationIT {
             headers.setBearerAuth(testJwtFactory.generateUserToken(customerId, email));
             HttpEntity<AccountRequest> entity = new HttpEntity<>(request, headers);
 
-            ResponseEntity<String> response = restTemplate.exchange(
+            ResponseEntity<Map<String, String>> response = restTemplate.exchange(
                     endpoint,
                     HttpMethod.POST,
                     entity,
-                    String.class
+                    (Class<Map<String, String>>) (Class<?>) Map.class
             );
 
-            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertEquals(HttpStatus.CREATED, response.getStatusCode());
 
             List<com.amerbank.account.model.Account> accounts = accountRepository.findAllByCustomerId(customerId);
             assertFalse(accounts.isEmpty());
@@ -140,7 +141,7 @@ public class AccountRegistrationIT {
             headers.setBearerAuth(testJwtFactory.generateUserToken(customerId, email));
             HttpEntity<AccountRequest> entity = new HttpEntity<>(request, headers);
 
-            restTemplate.exchange(endpoint, HttpMethod.POST, entity, String.class);
+            restTemplate.exchange(endpoint, HttpMethod.POST, entity, (Class<Map<String, String>>) (Class<?>) Map.class);
 
             ResponseEntity<String> response = restTemplate.exchange(
                     endpoint,
@@ -251,7 +252,7 @@ public class AccountRegistrationIT {
                     AccountInfo[].class
             );
 
-            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertEquals(HttpStatus.CREATED, response.getStatusCode());
             assertNotNull(response.getBody());
             assertEquals(1, response.getBody().length);
             assertEquals("ACCT0000000001", response.getBody()[0].accountNumber());
@@ -275,7 +276,7 @@ public class AccountRegistrationIT {
                     AccountInfo[].class
             );
 
-            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertEquals(HttpStatus.CREATED, response.getStatusCode());
             assertNotNull(response.getBody());
             assertEquals(0, response.getBody().length);
         }
@@ -307,7 +308,7 @@ public class AccountRegistrationIT {
                     AccountInfo.class
             );
 
-            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertEquals(HttpStatus.CREATED, response.getStatusCode());
             assertNotNull(response.getBody());
             assertEquals(AccountType.SAVINGS, response.getBody().type());
         }

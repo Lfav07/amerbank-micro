@@ -137,7 +137,33 @@ To access protected endpoints:
 All transaction endpoints require an `idempotency-key` header with a unique value.
 This prevents duplicate transactions when retrying requests.
 
-## API Endpoints
+
+##  API Documentation (Swagger)
+
+This service provides interactive API documentation using **Swagger UI**, allowing you to explore and test endpoints
+directly from the browser.
+
+### Access Swagger UI
+
+http://localhost:8084/swagger-ui/index.html#/
+
+---
+
+###  Swagger UI Preview
+![Swagger UI](../../images/Swagger-transaction-service.png)
+
+---
+
+### Authentication on Swagger
+
+Most endpoints require a **JWT token**.
+
+1. Authenticate using `/auth/login`
+2. Copy the returned token
+3. Click **Authorize** in Swagger UI
+4. Enter the token copied
+
+
 
 ### Protected Endpoints (User)
 
@@ -173,37 +199,6 @@ This prevents duplicate transactions when retrying requests.
 ## Example Requests & Responses
 
 All requests should be made through the gateway at **localhost:8080**.
-
-### Deposit Funds
-
-**Request:**
-
-```bash
-curl -X POST http://localhost:8080/transaction/deposit \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <token>" \
-  -H "idempotency-key: dep-abc123" \
-  -d '{
-    "accountNumber": "ACC-XXXX-XXXX-XXXX",
-    "amount": 500.00
-  }'
-```
-
-**Response:**
-
-```json
-{
-  "id": "tx-12345",
-  "amount": 500.00,
-  "fromAccountNumber": null,
-  "toAccountNumber": "ACC-XXXX-XXXX-XXXX",
-  "type": "DEPOSIT",
-  "status": "APPROVED",
-  "failureReason": null,
-  "idempotencyKey": "dep-abc123",
-  "createdAt": "2026-02-22T10:30:00"
-}
-```
 
 ### Make a Payment
 
@@ -275,35 +270,6 @@ curl -X GET "http://localhost:8080/transaction/me?accountNumber=ACC-XXXX-XXXX-XX
 ]
 ```
 
-### Refund a Transaction
-
-**Request:**
-
-```bash
-curl -X POST http://localhost:8080/transaction/refund \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <token>" \
-  -H "idempotency-key: ref-refund123" \
-  -d '{
-    "transactionId": "tx-67890"
-  }'
-```
-
-**Response:**
-
-```json
-{
-  "id": "tx-11111",
-  "amount": 100.00,
-  "fromAccountNumber": "ACC-YYYY-YYYY-YYYY",
-  "toAccountNumber": "ACC-XXXX-XXXX-XXXX",
-  "type": "REFUND",
-  "status": "APPROVED",
-  "failureReason": null,
-  "idempotencyKey": "ref-refund123",
-  "createdAt": "2026-02-22T12:00:00"
-}
-```
 
 ## Error Handling
 

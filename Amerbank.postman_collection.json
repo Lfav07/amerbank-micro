@@ -39,7 +39,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"email\": \"tester@example.com\",\r\n    \"password\": \"test12\",\r\n    \"firstName\": \"Luis\",\r\n    \"lastName\": \"Vieira\",\r\n    \"dateOfBirth\": \"2007-09-18\"\r\n}",
+              "raw": "{\r\n    \"email\": \"tester@example.com\",\r\n    \"password\": \"test12\",\r\n    \"firstName\": \"John\",\r\n    \"lastName\": \"Doe\",\r\n    \"dateOfBirth\": \"2007-09-18\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
