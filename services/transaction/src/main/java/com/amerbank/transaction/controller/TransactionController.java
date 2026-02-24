@@ -215,6 +215,7 @@ public class TransactionController {
                     
                     **Idempotency:**
                     Requires an idempotency key header to prevent duplicate deposits in case of network failures.
+                    The idempotency key must be unique for each request - use a different key after each request.
                     """
     )
     @ApiResponses({
@@ -291,6 +292,7 @@ public class TransactionController {
                     
                     **Idempotency:**
                     Requires an idempotency key header to prevent duplicate payments in case of network failures.
+                    The idempotency key must be unique for each request - use a different key after each request.
                     """
     )
     @ApiResponses({
@@ -370,6 +372,7 @@ public class TransactionController {
                     
                     **Idempotency:**
                     Requires an idempotency key header to prevent duplicate refunds.
+                    The idempotency key must be unique for each request - use a different key after each request.
                     """
     )
     @ApiResponses({
