@@ -139,6 +139,36 @@ To access protected endpoints:
 **Internal Services:**
 Internal service-to-service calls must include the `SCOPE_service` claim in the JWT.
 
+##  API Documentation (Swagger)
+
+This service provides interactive API documentation using **Swagger UI**, allowing you to explore and test endpoints
+directly from the browser.
+
+### Access Swagger UI
+
+http://localhost:8083/swagger-ui/index.html#/
+
+---
+
+###  Swagger UI Preview
+![Swagger UI](../../images/Swagger-account-service.png)
+
+---
+
+### Authentication on Swagger
+
+Most endpoints require a **JWT token**.
+
+1. Authenticate using `/auth/login`
+2. Copy the returned token
+3. Click **Authorize** in Swagger UI
+4. Enter the token copied
+
+
+
+
+
+
 ## API Endpoints
 
 ### Protected Endpoints (User)
@@ -183,6 +213,7 @@ Internal service-to-service calls must include the `SCOPE_service` claim in the 
 | GET    | `/actuator/health` | Service health status |
 
 ## Example Requests & Responses
+All requests should be made through the gateway at **localhost:8080**
 
 ### Register Account
 
@@ -225,52 +256,6 @@ curl -X GET http://localhost:8080/account/me \
 ]
 ```
 
-### Get Account Balance
-
-**Request:**
-
-```bash
-curl -X GET "http://localhost:8080/account/me/balance?type=CHECKING" \
-  -H "Authorization: Bearer <token>"
-```
-
-**Response:**
-
-```json
-1000.00
-```
-
-### Deposit Funds (via transaction-service)
-
-The deposit flow goes through transaction-service:
-
-**Request:**
-
-```bash
-curl -X POST http://localhost:8080/transaction/deposit \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <token>" \
-  -H "idempotency-key: dep-12345" \
-  -d '{
-    "accountNumber": "ACC-XXXX-XXXX-XXXX",
-    "amount": 500.00
-  }'
-```
-
-**Response:**
-
-```json
-{
-  "id": "tx-12345",
-  "type": "DEPOSIT",
-  "fromAccountNumber": null,
-  "toAccountNumber": "ACC-XXXX-XXXX-XXXX",
-  "amount": 500.00,
-  "status": "APPROVED",
-  "createdAt": "2026-02-22T10:30:00"
-}
-```
-
 ## Error Handling
 
 The API returns standard error responses:
@@ -285,17 +270,17 @@ The API returns standard error responses:
 ```
 
 **Common HTTP Status Codes:**
-| Status | Description |
-|--------|-------------|
-| 200 | Success |
-| 201 | Created |
-| 204 | No Content |
-| 400 | Bad Request (validation error) |
-| 401 | Unauthorized (invalid credentials) |
-| 403 | Forbidden (insufficient permissions) |
-| 404 | Not Found |
-| 409 | Conflict (account already exists) |
-| 500 | Internal Server Error |
+
+| Status | Description           |
+|--------|-----------------------|
+| 200    | Success               |
+| 201    | Created               |
+| 400    | Validation error      |
+| 401    | Unauthorized          |
+| 403    | Forbidden             |
+| 404    | Not found             |
+| 409    | Conflict              |
+| 500    | Internal server error |
 
 ## Security
 
