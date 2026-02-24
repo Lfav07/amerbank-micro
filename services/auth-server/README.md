@@ -156,7 +156,6 @@ http://localhost:8081/swagger-ui/index.html#/
 
 ###  Swagger UI Preview
 
-<!-- Add screenshot here -->
 ![Swagger UI](../../images/Swagger-auth-server.png)
 
 ---
@@ -212,6 +211,7 @@ Common Status Codes:
 | 500    | Internal server error |
 
 ## Quick Example
+All requests should be made through the gateway at **localhost:8080**
 
 **Login Request**
 
