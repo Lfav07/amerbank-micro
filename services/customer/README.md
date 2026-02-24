@@ -144,8 +144,6 @@ http://localhost:8082/swagger-ui/index.html#/
 ---
 
 ###  Swagger UI Preview
-
-<!-- Add screenshot here -->
 ![Swagger UI](../../images/Swagger-customer-service.png)
 
 ---
@@ -157,7 +155,7 @@ Most endpoints require a **JWT token**.
 1. Authenticate using `/auth/login`
 2. Copy the returned token
 3. Click **Authorize** in Swagger UI
-4. Enter:
+4. Enter the token copied
 
 ### Public Endpoints
 
@@ -196,6 +194,7 @@ Most endpoints require a **JWT token**.
 | GET    | `/actuator/health` | Service health status |
 
 ## Example Requests & Responses
+All requests should be made through the gateway at **localhost:8080**
 
 ### Get Current User Profile
 
