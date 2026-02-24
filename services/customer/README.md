@@ -132,7 +132,32 @@ To access protected endpoints:
 **Internal Services:**
 Internal service-to-service calls must include the `SCOPE_service` claim in the JWT.
 
-## API Endpoints
+##  API Documentation (Swagger)
+
+This service provides interactive API documentation using **Swagger UI**, allowing you to explore and test endpoints
+directly from the browser.
+
+### Access Swagger UI
+
+http://localhost:8082/swagger-ui/index.html#/
+
+---
+
+###  Swagger UI Preview
+
+<!-- Add screenshot here -->
+![Swagger UI](../../images/Swagger-customer-service.png)
+
+---
+
+### Authentication on Swagger
+
+Most endpoints require a **JWT token**.
+
+1. Authenticate using `/auth/login`
+2. Copy the returned token
+3. Click **Authorize** in Swagger UI
+4. Enter:
 
 ### Public Endpoints
 
@@ -193,29 +218,6 @@ curl -X GET http://localhost:8080/customer/me \
 }
 ```
 
-### Register Customer (Internal)
-
-**Request:**
-
-```bash
-curl -X POST http://localhost:8080/customer/internal/register \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <service_token>" \
-  -d '{
-    "userId": 1,
-    "firstName": "John",
-    "lastName": "Doe",
-    "dateOfBirth": "1990-01-15"
-  }'
-```
-
-**Response:**
-
-```json
-{
-  "customerId": 100
-}
-```
 
 ### Get Customer by Email (Admin)
 
@@ -253,17 +255,19 @@ The API returns standard error responses:
 }
 ```
 
-**Common HTTP Status Codes:**
-| Status | Description |
-|--------|-------------|
-| 200 | Success |
-| 201 | Created |
-| 400 | Bad Request (validation error) |
-| 401 | Unauthorized (invalid credentials) |
-| 403 | Forbidden (insufficient permissions) |
-| 404 | Not Found |
-| 409 | Conflict (customer already exists) |
-| 500 | Internal Server Error |
+Common Status Codes:
+
+| Status | Description           |
+|--------|-----------------------|
+| 200    | Success               |
+| 201    | Created               |
+| 400    | Validation error      |
+| 401    | Unauthorized          |
+| 403    | Forbidden             |
+| 404    | Not found             |
+| 409    | Conflict              |
+| 500    | Internal server error |
+
 
 ## Security
 
