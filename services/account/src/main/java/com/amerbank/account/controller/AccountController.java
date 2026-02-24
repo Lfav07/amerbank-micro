@@ -17,6 +17,9 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import java.util.Map;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
@@ -102,7 +105,7 @@ public class AccountController {
             )
     })
     @PostMapping("/register")
-    public ResponseEntity<String> registerAccount(
+    public ResponseEntity<Map<String, String>> registerAccount(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Account creation request containing the desired account type",
                     required = true,
@@ -118,7 +121,7 @@ public class AccountController {
             @AuthenticationPrincipal JwtUserPrincipal jwtUserPrincipal) {
 
         accountService.createAccount(accountRequest, jwtUserPrincipal.customerId());
-        return ResponseEntity.ok("Account successfully registered");
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "Account successfully registered"));
     }
 
     @Operation(
