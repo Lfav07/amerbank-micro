@@ -12,6 +12,7 @@ import java.time.LocalDate;
 @Schema(description = "User registration request")
 public record UserRegisterRequest(
         @Schema(description = "User email address", example = "john.doe@example.com")
+        @NotBlank
         @Email
         String email,
         @Schema(description = "User password (minimum 4 characters)", example = "password123")
