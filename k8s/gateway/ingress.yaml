@@ -1,40 +1,37 @@
-# The Kubernetes API version that handles Ingress resources
+
 apiVersion: networking.k8s.io/v1
 
-# The type of Kubernetes resource we're defining
+
 kind: Ingress
 
 metadata:
-  # The name of this Ingress resource inside the cluster
+
   name: api-gateway-ingress
   namespace: amerbank
 
   annotations:
-    # Tells NGINX to rewrite the URL path to "/" before forwarding to the service
-    # e.g. /api/users becomes / when it hits your backend
+
     nginx.ingress.kubernetes.io/rewrite-target: /
 
 spec:
-  # Tells Kubernetes to use the NGINX ingress controller to handle this Ingress
-  # (you could have multiple ingress controllers installed, this picks which one)
+
   ingressClassName: nginx
 
   rules:
 
     -  http:
         paths:
-          # Match any request path that starts with "/"  (i.e. everything)
+
           - path: /
 
-            # Prefix means "/foo" also matches "/foo/bar", "/foo/baz", etc.
-            # The alternative is "Exact" which only matches that exact path
+
             pathType: Prefix
 
             backend:
               service:
-                # The name of the Kubernetes Service to forward traffic to
+
                 name: gateway
 
                 port:
-                  # The port on that Service to send traffic to (matches service.yaml port, not targetPort)
+
                   number: 8080
