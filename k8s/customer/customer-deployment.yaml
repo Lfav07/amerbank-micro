@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: customer
+  namespace: amerbank
+  labels:
+    app: customer
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: customer
+
+  template:
+    metadata:
+      labels:
+        app: customer
+
+    spec:
+      initContainers:
+        - name: wait-for-config-server
+          image: busybox
+          command: ['sh', '-c', 'until wget -qO- http://config-server:8080/actuator/health | grep -q "UP"; do echo "Waiting for config-server..."; sleep 5; done']
+
+        - name: wait-for-discovery
+          image: busybox
+          command: ['sh', '-c', 'until wget -qO- http://discovery:8761/actuator/health | grep -q "UP"; do echo "Waiting for discovery..."; sleep 5; done']
+
+        - name: wait-for-postgres
+          image: busybox
+          command: ['sh', '-c', 'until nc -z postgres 5432; do echo "Waiting for postgres..."; sleep 3; done']
+
+      containers:
+        - name: customer
+          image: customer:latest
+          imagePullPolicy: Never
+
+          ports:
+            - containerPort: 8080
+
+          envFrom:
+            - configMapRef:
+                name: customer-config
+
+          env:
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: customer-secret
+                  key: db-username
+
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: customer-secret
+                  key: db-password
+
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: customer-secret
+                  key: jwt-secret
+
+            - name: SPRING_PROFILES_ACTIVE
+              valueFrom:
+                secretKeyRef:
+                  name: customer-secret
+                  key: spring-profiles-active
+
+            - name: CONFIG_SERVER_URL
+              valueFrom:
+                secretKeyRef:
+                  name: customer-secret
+                  key: config-server-url
+
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 45
+            periodSeconds: 10
+            failureThreshold: 5
+
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            failureThreshold: 3
+
+          lifecycle:
+            preStop:
+              exec:
+                command: [ "sh", "-c", "sleep 5"]
+
+      terminationGracePeriodSeconds: 30
