@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: transaction-config
+  namespace: amerbank
+data:
+  SPRING_APPLICATION_JSON: '{"spring":{"application":{"name":"transaction"}}}'
