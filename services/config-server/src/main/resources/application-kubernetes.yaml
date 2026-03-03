@@ -15,7 +15,7 @@ spring:
       server:
         git:
           uri: https://github.com/Lfav07/amerbank-config.git
-          default-label: feature/k8s
+          default-label: main
           timeout: 30
           search-paths: configurations
 
