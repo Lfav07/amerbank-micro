@@ -1,0 +1,35 @@
+server:
+  port: 8080
+  tomcat:
+    connection-timeout: 2s
+    keep-alive-timeout: 15s
+    threads:
+      max: 50
+      min-spare: 5
+
+spring:
+  application:
+    name: config-server
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://github.com/Lfav07/amerbank-config.git
+          default-label: feature/k8s
+          timeout: 30
+          search-paths: configurations
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, refresh
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    readiness-state:
+      enabled: true
+    liveness-state:
+      enabled: true
