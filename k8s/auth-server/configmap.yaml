@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-server-config
+  namespace: amerbank
+data:
+  SPRING_APPLICATION_JSON: '{"spring":{"application":{"name":"auth-server"}}}'
