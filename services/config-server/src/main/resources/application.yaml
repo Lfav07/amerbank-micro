@@ -16,7 +16,7 @@ spring:
       server:
         git:
           uri: https://github.com/Lfav07/amerbank-config.git
-          default-label: main
+          default-label: feature/frontend
           clone-on-start: true
           ignore-local-ssh-settings: true
           timeout: 30
