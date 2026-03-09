@@ -69,8 +69,8 @@ Key components include:
 - **JWT Authentication**  
   Stateless authentication was chosen to enable scalability and reduce server-side session management.
 
-- **Database per Service**
-  Each service owns its database to ensure loose coupling and independence.
+- **Database schema per Service**
+  Each service owns its database schema to ensure loose coupling and independence.
 
 - **Centralized Configuration**  
   Config Server allows dynamic configuration changes without redeployment.
@@ -86,7 +86,7 @@ All client requests are routed through the API Gateway, which acts as a single e
 for forwarding requests to the appropriate microservice, such as authentication, customer, account, or transaction
 services.
 
-Each microservice handles its own domain logic and maintains an independent database, ensuring loose coupling and
+Each microservice handles its own domain logic and maintains an independent database schema, ensuring loose coupling and
 scalability.
 
 Protected endpoints require a valid JWT issued by the Auth Server.
@@ -95,15 +95,15 @@ For detailed execution flows, refer to each microservice's README.
 
 ```mermaid
 graph TD
-    Client --> Gateway
-    Gateway --> auth-server
-    Gateway --> customer
-    Gateway --> account
-    Gateway --> transaction
-    auth-server --> UsersDB[(Users DB)]
-    customer --> CustomersDB[(Customers DB)]
-    account --> AccountDB[(Accounts DB)]
-    transaction --> transactionDB[(Transactions DB)]
+  Client --> Gateway
+  Gateway --> auth-server
+  Gateway --> customer
+  Gateway --> account
+  Gateway --> transaction
+  auth-server --> UsersDB[(Users DB Schema)]
+  customer --> CustomersDB[(Customers DB Schema)]
+  account --> AccountDB[(Accounts DB Schema)]
+  transaction --> transactionDB[(Transactions DB Schema)]
 ```
 
 ##  Request Flow Example
@@ -125,8 +125,8 @@ These interactions are currently implemented using synchronous REST communicatio
 
 ```mermaid
 graph TD
-    auth-server -->|Integrated Customer Registration| customer
-    transaction -->|Integrated Balance Updates| account
+  auth-server -->|Integrated Customer Registration| customer
+  transaction -->|Integrated Balance Updates| account
 ```
 
 ##  Infrastructure Overview
@@ -141,23 +141,23 @@ All services fetch configuration from the Config Server and register themselves 
 
 ```mermaid
 graph LR
-    subgraph Application
-        gateway
-        auth-server
-        customer
-        account
-        transaction
-    end
+  subgraph Application
+    gateway
+    auth-server
+    customer
+    account
+    transaction
+  end
 
-    subgraph Infrastructure
-        config-server
-        discovery-server
-        Redis
-    end
+  subgraph Infrastructure
+    config-server
+    discovery-server
+    Redis
+  end
 
-    Application --> config-server
-    Application --> discovery-server
-    account --> Redis
+  Application --> config-server
+  Application --> discovery-server
+  account --> Redis
 ```
 
 ## Services
@@ -283,7 +283,7 @@ Start the services manually by following the recommended order:
 ## API Testing
 
 ### Swagger
- -  Before accessing the swagger endpoint, make sure the desired service is running.
+-  Before accessing the swagger endpoint, make sure the desired service is running.
 #### The project API's are fully documented and compatible with Swagger OpenAPI.
 * [Auth Server Swagger UI](http://localhost:8081/swagger-ui/index.html#/)
 * [Customer Service Swagger UI](http://localhost:8082/swagger-ui/index.html#/)
