@@ -1,7 +1,7 @@
 # Config Server
 
 [![Java](https://img.shields.io/badge/Java-21-blue)](https://openjdk.org/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.4-brightgreen)](https://spring.io/projects/spring-boot)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.13-brightgreen)](https://spring.io/projects/spring-boot)
 [![Spring Cloud](https://img.shields.io/badge/Spring%20Cloud-2024.0.1-brightgreen)](https://spring.io/projects/spring-cloud)
 
 Centralized configuration management microservice for the Amerbank banking platform.
