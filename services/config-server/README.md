@@ -57,13 +57,13 @@ which retrieves configurations from a GitHub repository.
 
 ## Technology Stack
 
-| Category          | Technology                        |
-|-------------------|-----------------------------------|
-| Framework         | Spring Boot 3.4.4                 |
-| Language          | Java 21                           |
-| Configuration     | Spring Cloud Config Server         |
-| Backend           | Git (GitHub)                      |
-| Cloud             | Spring Cloud 2024.0.0             |
+| Category          | Technology                 |
+|-------------------|----------------------------|
+| Framework         | Spring Boot 3.4.4          |
+| Language          | Java 21                    |
+| Configuration     | Spring Cloud Config Server |
+| Backend           | Git (GitHub)               |
+| Cloud             | Spring Cloud 2024.0.1      |
 
 ## Getting Started
 
