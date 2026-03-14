@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "d959a7e6-89b4-4566-93a0-6b479d041221",
+    "_postman_id": "28cafdf6-5a7f-49c7-af6f-92ff2862388a",
     "name": "Amerbank-micro",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "34423973"
@@ -39,7 +39,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"email\": \"tester@example.com\",\r\n    \"password\": \"test12\",\r\n    \"firstName\": \"John\",\r\n    \"lastName\": \"Doe\",\r\n    \"dateOfBirth\": \"2007-09-18\"\r\n}",
+              "raw": "{\r\n    \"email\": \"tester@example.com\",\r\n    \"password\": \"test12\",\r\n    \"firstName\": \"Luis\",\r\n    \"lastName\": \"Vieira\",\r\n    \"dateOfBirth\": \"2007-09-18\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -159,7 +159,7 @@
         "bearer": [
           {
             "key": "token",
-            "value": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoLXNlcnZlciIsInN1YiI6InRlc3RlckBleGFtcGxlLmNvbSIsInVzZXJJZCI6MTUyLCJjdXN0b21lcklkIjoxNTIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJpYXQiOjE3NzE4NjcwMDgsImV4cCI6MTc3MTg3MDYwOH0.CHiAXGqOyu6l8ooo0fb0-2BKbdog7eb8wJHRM_ebnn8",
+            "value": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoLXNlcnZlciIsInN1YiI6IjMiLCJyb2xlcyI6WyJST0xFX0FETUlOIl0sImlhdCI6MTc3Mjk4OTg2MiwiZXhwIjoxNzcyOTkzNDYyfQ.CRBACqka_HTrngfACRgk1t7p361TP_MUnf7paZ59cQI",
             "type": "string"
           }
         ]
@@ -472,7 +472,7 @@
         "bearer": [
           {
             "key": "token",
-            "value": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoLXNlcnZlciIsInN1YiI6ImFkbWluQGV4YW1wbGUuY29tIiwidXNlcklkIjozLCJyb2xlcyI6WyJST0xFX0FETUlOIl0sImlhdCI6MTc3MTg2NzAzNywiZXhwIjoxNzcxODcwNjM3fQ.YhpPzte3QKknslEdx7jIS2H5S3uU7SGUWKq7YEIH1kU",
+            "value": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoLXNlcnZlciIsInN1YiI6IjMiLCJyb2xlcyI6WyJST0xFX0FETUlOIl0sImlhdCI6MTc3Mjk4OTg2MiwiZXhwIjoxNzcyOTkzNDYyfQ.CRBACqka_HTrngfACRgk1t7p361TP_MUnf7paZ59cQI",
             "type": "string"
           }
         ]
@@ -531,7 +531,7 @@
         "bearer": [
           {
             "key": "token",
-            "value": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoLXNlcnZlciIsInN1YiI6IjU1NCIsImN1c3RvbWVySWQiOjIwNywicm9sZXMiOlsiUk9MRV9VU0VSIl0sImlhdCI6MTc3MTgyMDQ4NSwiZXhwIjoxNzcxODI0MDg1fQ.NmxJNkFrtgF6EQUbFC8b9Q8y9lDAl6rgL4uDNjf3Lj0",
+            "value": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoLXNlcnZlciIsInN1YiI6IjgwMiIsImN1c3RvbWVySWQiOjM1Miwicm9sZXMiOlsiUk9MRV9VU0VSIl0sImlhdCI6MTc3MTg4NTIzOCwiZXhwIjoxNzcxODg4ODM4fQ.zZrlQ6OTCJxpn1gRsUjZGndxgx6NusnPMGpBs5UfUr4",
             "type": "string"
           }
         ]
@@ -1081,7 +1081,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"accountNumber\": \"ACCT5894909133\"\r\n}",
+              "raw": "{\r\n    \"accountNumber\": \"ACCT9614021168\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1110,7 +1110,7 @@
         "bearer": [
           {
             "key": "token",
-            "value": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoLXNlcnZlciIsInN1YiI6IjU1NCIsImN1c3RvbWVySWQiOjIwNywicm9sZXMiOlsiUk9MRV9VU0VSIl0sImlhdCI6MTc3MTgyMDQ4NSwiZXhwIjoxNzcxODI0MDg1fQ.NmxJNkFrtgF6EQUbFC8b9Q8y9lDAl6rgL4uDNjf3Lj0",
+            "value": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoLXNlcnZlciIsInN1YiI6IjgwMiIsImN1c3RvbWVySWQiOjM1Miwicm9sZXMiOlsiUk9MRV9VU0VSIl0sImlhdCI6MTc3Mjk5NjU5NywiZXhwIjoxNzczMDAwMTk3fQ.IYlDjmfAk1r7nJjiWpoaNS9R69wUL5L18qjeAm7BQBk",
             "type": "string"
           }
         ]
@@ -1785,30 +1785,17 @@
       "name": "Transaction (ADMIN)",
       "item": [
         {
-          "name": "Get self transactions by account number",
-          "protocolProfileBehavior": {
-            "disableBodyPruning": true
-          },
+          "name": "Get transaction by ID",
           "request": {
             "method": "GET",
             "header": [
               {
-                "key": "idempotency-key",
-                "value": "testKey21",
-                "type": "text"
+                "key": "Authorization",
+                "value": "Bearer <token>"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT4317796272\",\r\n    \"toAccountNumber\": \"ACCT0320042191\"\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "url": {
-              "raw": "http://localhost:8080/transaction/me?accountNumber=ACCT4317796272",
+              "raw": "http://localhost:8080/transaction/admin/128083f9-489b-484e-a482-91ebe2e85323",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -1816,12 +1803,38 @@
               "port": "8080",
               "path": [
                 "transaction",
-                "me"
+                "admin",
+                "128083f9-489b-484e-a482-91ebe2e85323"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get transactions by source account",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer <token>"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/transaction/admin?fromAccount=ACCT3497178300",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "transaction",
+                "admin"
               ],
               "query": [
                 {
-                  "key": "accountNumber",
-                  "value": "ACCT4317796272"
+                  "key": "fromAccount",
+                  "value": "ACCT3497178300"
                 }
               ]
             }
@@ -1829,30 +1842,17 @@
           "response": []
         },
         {
-          "name": "Get self transactions by from account",
-          "protocolProfileBehavior": {
-            "disableBodyPruning": true
-          },
+          "name": "Get transactions by destination account",
           "request": {
             "method": "GET",
             "header": [
               {
-                "key": "idempotency-key",
-                "value": "testKey21",
-                "type": "text"
+                "key": "Authorization",
+                "value": "Bearer <token>"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT4317796272\",\r\n    \"toAccountNumber\": \"ACCT0320042191\"\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "url": {
-              "raw": "http://localhost:8080/transaction/me/from?fromAccountNumber=ACCT4317796272",
+              "raw": "http://localhost:8080/transaction/admin?toAccount=ACCT4711408292",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -1860,13 +1860,12 @@
               "port": "8080",
               "path": [
                 "transaction",
-                "me",
-                "from"
+                "admin"
               ],
               "query": [
                 {
-                  "key": "fromAccountNumber",
-                  "value": "ACCT4317796272"
+                  "key": "toAccount",
+                  "value": "ACCT4711408292"
                 }
               ]
             }
@@ -1874,30 +1873,17 @@
           "response": []
         },
         {
-          "name": "Get self transactions by to account",
-          "protocolProfileBehavior": {
-            "disableBodyPruning": true
-          },
+          "name": "Get transactions between accounts",
           "request": {
             "method": "GET",
             "header": [
               {
-                "key": "idempotency-key",
-                "value": "testKey21",
-                "type": "text"
+                "key": "Authorization",
+                "value": "Bearer <token>"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT4317796272\",\r\n    \"toAccountNumber\": \"ACCT0320042191\"\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "url": {
-              "raw": "http://localhost:8080/transaction/me/to?toAccountNumber=ACCT3447103503",
+              "raw": "http://localhost:8080/transaction/admin?fromAccount=ACCT3497178300&toAccount=ACCT4711408292",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -1905,62 +1891,16 @@
               "port": "8080",
               "path": [
                 "transaction",
-                "me",
-                "to"
+                "admin"
               ],
               "query": [
                 {
-                  "key": "toAccountNumber",
-                  "value": "ACCT3447103503"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get self transactions by from and to account",
-          "protocolProfileBehavior": {
-            "disableBodyPruning": true
-          },
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "idempotency-key",
-                "value": "testKey21",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT4317796272\",\r\n    \"toAccountNumber\": \"ACCT0320042191\"\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "http://localhost:8080/transaction/me/transfer?fromAccountNumber=ACCT4317796272&toAccountNumber=ACCT0320042191",
-              "protocol": "http",
-              "host": [
-                "localhost"
-              ],
-              "port": "8080",
-              "path": [
-                "transaction",
-                "me",
-                "transfer"
-              ],
-              "query": [
-                {
-                  "key": "fromAccountNumber",
-                  "value": "ACCT4317796272"
+                  "key": "fromAccount",
+                  "value": "ACCT3497178300"
                 },
                 {
-                  "key": "toAccountNumber",
-                  "value": "ACCT0320042191"
+                  "key": "toAccount",
+                  "value": "ACCT4711408292"
                 }
               ]
             }
@@ -1968,30 +1908,17 @@
           "response": []
         },
         {
-          "name": "Get self transactions by type",
-          "protocolProfileBehavior": {
-            "disableBodyPruning": true
-          },
+          "name": "Get transactions by status",
           "request": {
             "method": "GET",
             "header": [
               {
-                "key": "idempotency-key",
-                "value": "testKey21",
-                "type": "text"
+                "key": "Authorization",
+                "value": "Bearer <token>"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT4317796272\",\r\n    \"toAccountNumber\": \"ACCT0320042191\"\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "url": {
-              "raw": "http://localhost:8080/transaction/me/type?accountNumber=ACCT4317796272&type=PAYMENT",
+              "raw": "http://localhost:8080/transaction/admin?status=FAILED",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -1999,14 +1926,40 @@
               "port": "8080",
               "path": [
                 "transaction",
-                "me",
-                "type"
+                "admin"
               ],
               "query": [
                 {
-                  "key": "accountNumber",
-                  "value": "ACCT4317796272"
-                },
+                  "key": "status",
+                  "value": "FAILED"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get transactions by type",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer <token>"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/transaction/admin?type=PAYMENT",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "transaction",
+                "admin"
+              ],
+              "query": [
                 {
                   "key": "type",
                   "value": "PAYMENT"
@@ -2015,194 +1968,6 @@
             }
           },
           "response": []
-        },
-        {
-          "name": "Get self transactions by status",
-          "protocolProfileBehavior": {
-            "disableBodyPruning": true
-          },
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "idempotency-key",
-                "value": "testKey21",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT4317796272\",\r\n    \"toAccountNumber\": \"ACCT0320042191\"\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "http://localhost:8080/transaction/me/status?accountNumber=ACCT4317796272&status=APPROVED",
-              "protocol": "http",
-              "host": [
-                "localhost"
-              ],
-              "port": "8080",
-              "path": [
-                "transaction",
-                "me",
-                "status"
-              ],
-              "query": [
-                {
-                  "key": "accountNumber",
-                  "value": "ACCT4317796272"
-                },
-                {
-                  "key": "status",
-                  "value": "APPROVED"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Payment transaction",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "idempotency-key",
-                "value": "testKey21x",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT4317796272\",\r\n    \"toAccountNumber\": \"ACCT0320042191\"\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "http://localhost:8080/transaction/payment",
-              "protocol": "http",
-              "host": [
-                "localhost"
-              ],
-              "port": "8080",
-              "path": [
-                "transaction",
-                "payment"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Deposit transaction",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "idempotency-key",
-                "value": "testKey2112",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT4317796272\",\r\n    \"toAccountNumber\": \"ACCT4317796272\"\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "http://localhost:8080/transaction/deposit",
-              "protocol": "http",
-              "host": [
-                "localhost"
-              ],
-              "port": "8080",
-              "path": [
-                "transaction",
-                "deposit"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Refund transaction",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "idempotency-key",
-                "value": "testKeyy15aybzm12zxyh",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n    \"transactionId\": \"958d4fd4-9075-434e-8d50-337ae6392cc6\"\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "http://localhost:8080/transaction/refund",
-              "protocol": "http",
-              "host": [
-                "localhost"
-              ],
-              "port": "8080",
-              "path": [
-                "transaction",
-                "refund"
-              ]
-            }
-          },
-          "response": []
-        }
-      ],
-      "auth": {
-        "type": "bearer",
-        "bearer": [
-          {
-            "key": "token",
-            "value": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoLXNlcnZlciIsInN1YiI6InRlc3RlcjRAZXhhbXBsZS5jb20iLCJ1c2VySWQiOjc1MiwiY3VzdG9tZXJJZCI6MzAyLCJyb2xlcyI6WyJST0xFX1VTRVIiXSwiaWF0IjoxNzcxNTEyNTE1LCJleHAiOjE3NzE1MTYxMTV9.-oUz5EkA8p_EYy22AmZoLaOEIP1OvuSzzghbW_OMz6Q",
-            "type": "string"
-          }
-        ]
-      },
-      "event": [
-        {
-          "listen": "prerequest",
-          "script": {
-            "type": "text/javascript",
-            "packages": {},
-            "requests": {},
-            "exec": [
-              ""
-            ]
-          }
-        },
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "packages": {},
-            "requests": {},
-            "exec": [
-              ""
-            ]
-          }
         }
       ]
     }
