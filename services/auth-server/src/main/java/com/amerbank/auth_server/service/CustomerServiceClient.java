@@ -27,27 +27,7 @@ public class CustomerServiceClient {
     }
 
 
-    /**
-     * Retrieves the customer ID associated with a user ID from customer-service.
-     *
-     * @param userId the ID of the user to look up
-     * @return the associated customer ID
-     * @throws IllegalStateException if the request fails
-     */
-    public Long getCustomerIdByUserId(Long userId) {
-        String customerServiceUrl = "http://customer";
-        String url = customerServiceUrl + "/customer/internal/by-user/" + userId;
-      //  ResponseEntity<Long> response = restTemplate.getForEntity(url, Long.class);
-        ResponseEntity<Long> response = restClient.get()
-                .uri(url).accept(MediaType.APPLICATION_JSON)
-                .headers(h -> h.setBearerAuth(service.generateServiceToken()))
-                .retrieve()
-                .toEntity(Long.class);
-        if (response.getStatusCode().is2xxSuccessful()) {
-            return response.getBody();
-        }
-        throw new IllegalStateException("Failed to fetch customerId");
-    }
+
     /**
      * Registers a new customer in the customer-service.
      *
