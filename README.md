@@ -25,8 +25,6 @@ cd amerbank-micro
 docker-compose up --build
 ```
 
-Access the API Gateway at:
-http://localhost:8080
 
 ## Table of Contents
 
