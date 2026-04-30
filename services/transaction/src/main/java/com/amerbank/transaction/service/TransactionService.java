@@ -492,9 +492,6 @@ public class TransactionService {
                     return tx;
                 },
                 tx -> {
-                    System.out.println(tx.getFromAccountNumber());
-                    System.out.println(tx.getToAccountNumber());
-                    System.out.println(tx.getAmount());
                     accountServiceClient.refund(
                             customerId,
                             tx.getFromAccountNumber(),

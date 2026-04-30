@@ -4,7 +4,7 @@ server:
 spring:
   application:
     name: account
-  profile:
+  profiles:
     active: ${SPRING_PROFILES_ACTIVE}
 
   config:
