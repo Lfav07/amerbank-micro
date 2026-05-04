@@ -1,4 +1,4 @@
-package com.amerbank.audit_logging.util;
+package com.amerbank.audit_logging.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
