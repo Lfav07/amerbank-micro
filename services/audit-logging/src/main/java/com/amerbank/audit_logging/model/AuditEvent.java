@@ -1,6 +1,5 @@
 package com.amerbank.audit_logging.model;
 
-import com.amerbank.audit_logging.util.JsonConverter;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -18,30 +17,33 @@ import java.util.UUID;
 public class AuditEvent {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(nullable = false, updatable = false)
     private UUID eventId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, updatable = false)
     private String eventType;
 
-    @CreationTimestamp
-    @Column(nullable = false)
+    @Column(nullable = false, updatable = false)
     private Instant timestamp;
 
-    @Column(nullable = false)
+    @Column(nullable = false, updatable = false)
     private String service;
 
     // Who triggered it (user/system)
+    @Column(nullable = false, updatable = false)
     private String actorId;
 
     // What was affected (account, transfer, etc.)
+    @Column(nullable = false, updatable = false)
     private String entityId;
+    @Column(nullable = false, updatable = false)
     private String entityType;
 
-    @Column(nullable = false)
+    @Column(nullable = false, updatable = false)
     private String status;
 
     // Trace across services
+    @Column(nullable = false, updatable = false)
     private String correlationId;
 
     // Flexible data
