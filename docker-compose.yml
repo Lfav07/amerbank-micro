@@ -168,9 +168,29 @@ services:
 
 
       CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
-
+    healthcheck:
+      test: [ "CMD", "kafka-broker-api-versions", "--bootstrap-server", "kafka:29092" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
     volumes:
       - kafka-data:/var/lib/kafka/data
+    networks:
+      - backend
+
+
+  kafka-init:
+    image: confluentinc/cp-kafka:7.6.1
+    depends_on:
+      kafka:
+        condition: service_healthy
+    volumes:
+      - ./create-topics.sh:/create-topics.sh
+    entrypoint: ["/bin/bash", "/create-topics.sh"]
+    restart: "no"
+    environment:
+      KAFKA_BROKER: "kafka:29092"
     networks:
       - backend
   redis:
