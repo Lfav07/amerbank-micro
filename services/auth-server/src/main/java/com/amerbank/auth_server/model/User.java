@@ -1,6 +1,6 @@
 package com.amerbank.auth_server.model;
 
-import com.amerbank.auth_server.dto.Role;
+import com.amerbank.auth_server.dto.response.Role;
 import jakarta.persistence.*;
 import lombok.*;
 

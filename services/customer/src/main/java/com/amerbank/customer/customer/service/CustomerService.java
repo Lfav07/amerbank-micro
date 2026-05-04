@@ -2,6 +2,11 @@ package com.amerbank.customer.customer.service;
 
 import com.amerbank.customer.customer.config.CustomerProperties;
 import com.amerbank.customer.customer.dto.*;
+import com.amerbank.customer.customer.dto.request.CustomerRegistrationRequest;
+import com.amerbank.customer.customer.dto.request.CustomerUpdateRequest;
+import com.amerbank.customer.customer.dto.response.CustomerRegistrationResponse;
+import com.amerbank.customer.customer.dto.response.CustomerResponse;
+import com.amerbank.customer.customer.dto.response.UserResponse;
 import com.amerbank.customer.customer.exception.*;
 import com.amerbank.customer.customer.model.Customer;
 import com.amerbank.customer.customer.repository.CustomerRepository;
@@ -11,8 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.client.*;
 import org.springframework.web.util.UriComponentsBuilder;
 

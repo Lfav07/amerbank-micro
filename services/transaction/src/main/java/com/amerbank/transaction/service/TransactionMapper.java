@@ -1,8 +1,8 @@
 package com.amerbank.transaction.service;
 
-import com.amerbank.transaction.dto.DepositTransactionRequest;
-import com.amerbank.transaction.dto.PaymentTransactionRequest;
-import com.amerbank.transaction.dto.TransactionResponse;
+import com.amerbank.transaction.dto.request.DepositTransactionRequest;
+import com.amerbank.transaction.dto.request.PaymentTransactionRequest;
+import com.amerbank.transaction.dto.response.TransactionResponse;
 import com.amerbank.transaction.model.Transaction;
 import com.amerbank.transaction.model.TransactionStatus;
 import com.amerbank.transaction.model.TransactionType;

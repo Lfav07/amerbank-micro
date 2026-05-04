@@ -1,8 +1,7 @@
 package com.amerbank.account.integration.application;
 
 import com.amerbank.account.dto.AccountInfo;
-import com.amerbank.account.dto.AccountRequest;
-import com.amerbank.account.dto.AccountResponse;
+import com.amerbank.account.dto.request.AccountRequest;
 import com.amerbank.account.model.AccountType;
 import com.amerbank.account.repository.AccountRepository;
 import com.amerbank.account.util.TestJwtFactory;
@@ -14,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.*;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;

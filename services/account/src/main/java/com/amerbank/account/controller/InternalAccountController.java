@@ -1,6 +1,8 @@
 package com.amerbank.account.controller;
 
-import com.amerbank.account.dto.*;
+import com.amerbank.account.dto.request.*;
+import com.amerbank.account.dto.response.ErrorResponse;
+import com.amerbank.account.dto.response.ValidationErrorResponse;
 import com.amerbank.account.service.AccountService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;

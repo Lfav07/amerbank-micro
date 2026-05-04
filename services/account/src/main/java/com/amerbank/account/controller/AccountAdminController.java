@@ -1,7 +1,10 @@
 package com.amerbank.account.controller;
 
-import com.amerbank.account.dto.*;
-import com.amerbank.account.model.AccountType;
+import com.amerbank.account.dto.request.AccountUpdateStatusRequest;
+import com.amerbank.account.dto.request.AccountUpdateTypeRequest;
+import com.amerbank.account.dto.response.AccountResponse;
+import com.amerbank.account.dto.response.ErrorResponse;
+import com.amerbank.account.dto.response.ValidationErrorResponse;
 import com.amerbank.account.service.AccountService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -14,14 +17,12 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 /**
  * REST controller for administrative account operations.

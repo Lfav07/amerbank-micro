@@ -1,8 +1,8 @@
 package com.amerbank.account.integration.application;
 
-import com.amerbank.account.dto.AccountResponse;
-import com.amerbank.account.dto.AccountUpdateStatusRequest;
-import com.amerbank.account.dto.AccountUpdateTypeRequest;
+import com.amerbank.account.dto.response.AccountResponse;
+import com.amerbank.account.dto.request.AccountUpdateStatusRequest;
+import com.amerbank.account.dto.request.AccountUpdateTypeRequest;
 import com.amerbank.account.model.Account;
 import com.amerbank.account.model.AccountStatus;
 import com.amerbank.account.model.AccountType;
@@ -14,7 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.*;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -24,7 +23,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 

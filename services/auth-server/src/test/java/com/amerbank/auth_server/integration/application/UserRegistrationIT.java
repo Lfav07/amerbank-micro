@@ -1,11 +1,10 @@
 package com.amerbank.auth_server.integration.application;
 
-import com.amerbank.auth_server.dto.Role;
-import com.amerbank.auth_server.dto.UserRegisterRequest;
-import com.amerbank.auth_server.dto.UserResponse;
+import com.amerbank.auth_server.dto.response.Role;
+import com.amerbank.auth_server.dto.request.UserRegisterRequest;
+import com.amerbank.auth_server.dto.response.UserResponse;
 import com.amerbank.auth_server.model.User;
 import com.amerbank.auth_server.repository.UserRepository;
-import com.amerbank.auth_server.security.JwtService;
 import com.amerbank.auth_server.util.TestJwtFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -15,12 +14,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.*;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -28,7 +25,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 
 import java.time.LocalDate;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.*;
 

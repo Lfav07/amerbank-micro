@@ -1,6 +1,10 @@
 package com.amerbank.auth_server.service;
 
-import com.amerbank.auth_server.dto.*;
+import com.amerbank.auth_server.dto.request.*;
+import com.amerbank.auth_server.dto.response.AuthenticationResponse;
+import com.amerbank.auth_server.dto.response.CustomerRegistrationResponse;
+import com.amerbank.auth_server.dto.response.Role;
+import com.amerbank.auth_server.dto.response.UserResponse;
 import com.amerbank.auth_server.model.User;
 import com.amerbank.auth_server.repository.UserRepository;
 import com.amerbank.auth_server.security.JwtService;

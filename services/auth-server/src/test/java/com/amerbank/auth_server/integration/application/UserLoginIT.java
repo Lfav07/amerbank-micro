@@ -1,6 +1,11 @@
 package com.amerbank.auth_server.integration.application;
 
-import com.amerbank.auth_server.dto.*;
+import com.amerbank.auth_server.dto.request.AdminRegisterRequest;
+import com.amerbank.auth_server.dto.request.CustomerRegistrationRequest;
+import com.amerbank.auth_server.dto.request.UserLoginRequest;
+import com.amerbank.auth_server.dto.request.UserRegisterRequest;
+import com.amerbank.auth_server.dto.response.CustomerRegistrationResponse;
+import com.amerbank.auth_server.dto.response.UserResponse;
 import com.amerbank.auth_server.repository.UserRepository;
 import com.amerbank.auth_server.security.JwtService;
 import com.amerbank.auth_server.service.CustomerServiceClient;

@@ -1,7 +1,7 @@
 package com.amerbank.auth_server.controller;
 
-import com.amerbank.auth_server.dto.ErrorResponse;
-import com.amerbank.auth_server.dto.ValidationErrorResponse;
+import com.amerbank.auth_server.dto.response.ErrorResponse;
+import com.amerbank.auth_server.dto.response.ValidationErrorResponse;
 import com.amerbank.auth_server.exception.CustomerRegistrationFailedException;
 import com.amerbank.auth_server.exception.CustomerServiceUnavailableException;
 import com.amerbank.auth_server.exception.EmailAlreadyTakenException;
@@ -26,7 +26,6 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice

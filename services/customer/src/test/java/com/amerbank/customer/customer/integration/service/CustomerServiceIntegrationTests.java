@@ -1,6 +1,10 @@
 package com.amerbank.customer.customer.integration.service;
 
 import com.amerbank.customer.customer.dto.*;
+import com.amerbank.customer.customer.dto.request.CustomerRegistrationRequest;
+import com.amerbank.customer.customer.dto.request.CustomerUpdateRequest;
+import com.amerbank.customer.customer.dto.response.CustomerRegistrationResponse;
+import com.amerbank.customer.customer.dto.response.CustomerResponse;
 import com.amerbank.customer.customer.exception.*;
 import com.amerbank.customer.customer.model.Customer;
 import com.amerbank.customer.customer.repository.CustomerRepository;

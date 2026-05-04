@@ -1,6 +1,9 @@
 package com.amerbank.transaction.integration.application;
 
-import com.amerbank.transaction.dto.*;
+import com.amerbank.transaction.dto.request.DepositTransactionRequest;
+import com.amerbank.transaction.dto.request.PaymentTransactionRequest;
+import com.amerbank.transaction.dto.request.RefundTransactionRequest;
+import com.amerbank.transaction.dto.response.TransactionResponse;
 import com.amerbank.transaction.model.Transaction;
 import com.amerbank.transaction.model.TransactionStatus;
 import com.amerbank.transaction.model.TransactionType;
@@ -30,7 +33,6 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 

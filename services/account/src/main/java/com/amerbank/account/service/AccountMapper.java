@@ -1,10 +1,8 @@
 package com.amerbank.account.service;
 
 import com.amerbank.account.dto.AccountInfo;
-import com.amerbank.account.dto.AccountRequest;
-import com.amerbank.account.dto.AccountResponse;
+import com.amerbank.account.dto.response.AccountResponse;
 import com.amerbank.account.model.Account;
-import com.amerbank.account.model.AccountStatus;
 import org.springframework.stereotype.Component;
 
 @Component

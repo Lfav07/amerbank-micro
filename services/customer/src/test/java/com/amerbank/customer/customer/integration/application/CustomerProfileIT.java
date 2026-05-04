@@ -1,8 +1,8 @@
 package com.amerbank.customer.customer.integration.application;
 
 import com.amerbank.customer.customer.dto.CustomerInfo;
-import com.amerbank.customer.customer.dto.CustomerRegistrationRequest;
-import com.amerbank.customer.customer.dto.CustomerRegistrationResponse;
+import com.amerbank.customer.customer.dto.request.CustomerRegistrationRequest;
+import com.amerbank.customer.customer.dto.response.CustomerRegistrationResponse;
 import com.amerbank.customer.customer.repository.CustomerRepository;
 import com.amerbank.customer.customer.util.TestJwtFactory;
 import org.junit.jupiter.api.AfterEach;

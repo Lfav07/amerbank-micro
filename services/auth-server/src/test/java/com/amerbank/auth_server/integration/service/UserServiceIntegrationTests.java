@@ -1,6 +1,9 @@
 package com.amerbank.auth_server.integration.service;
 
-import com.amerbank.auth_server.dto.*;
+import com.amerbank.auth_server.dto.request.*;
+import com.amerbank.auth_server.dto.response.AuthenticationResponse;
+import com.amerbank.auth_server.dto.response.CustomerRegistrationResponse;
+import com.amerbank.auth_server.dto.response.UserResponse;
 import com.amerbank.auth_server.exception.EmailAlreadyTakenException;
 import com.amerbank.auth_server.exception.UserNotFoundException;
 import com.amerbank.auth_server.model.User;

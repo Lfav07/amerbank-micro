@@ -1,7 +1,7 @@
 package com.amerbank.account.controller;
 
-import com.amerbank.account.dto.ErrorResponse;
-import com.amerbank.account.dto.ValidationErrorResponse;
+import com.amerbank.account.dto.response.ErrorResponse;
+import com.amerbank.account.dto.response.ValidationErrorResponse;
 import com.amerbank.account.exception.*;
 import com.amerbank.account.util.TraceIdUtil;
 import jakarta.servlet.http.HttpServletRequest;

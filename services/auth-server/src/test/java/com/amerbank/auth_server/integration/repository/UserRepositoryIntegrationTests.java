@@ -1,6 +1,6 @@
 package com.amerbank.auth_server.integration.repository;
 
-import com.amerbank.auth_server.dto.Role;
+import com.amerbank.auth_server.dto.response.Role;
 import com.amerbank.auth_server.model.User;
 import com.amerbank.auth_server.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,10 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.context.annotation.Profile;
-import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;

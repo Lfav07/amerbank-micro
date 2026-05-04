@@ -1,12 +1,13 @@
 package com.amerbank.auth_server.integration.application;
 
-import com.amerbank.auth_server.dto.*;
+import com.amerbank.auth_server.dto.request.*;
+import com.amerbank.auth_server.dto.response.CustomerRegistrationResponse;
+import com.amerbank.auth_server.dto.response.UserResponse;
 import com.amerbank.auth_server.repository.UserRepository;
 import com.amerbank.auth_server.security.JwtService;
 import com.amerbank.auth_server.service.CustomerServiceClient;
 import com.amerbank.auth_server.util.TestJwtFactory;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

@@ -1,7 +1,7 @@
 package com.amerbank.transaction.controller;
 
-import com.amerbank.transaction.dto.ErrorResponse;
-import com.amerbank.transaction.dto.TransactionResponse;
+import com.amerbank.transaction.dto.response.ErrorResponse;
+import com.amerbank.transaction.dto.response.TransactionResponse;
 import com.amerbank.transaction.model.TransactionStatus;
 import com.amerbank.transaction.model.TransactionType;
 import com.amerbank.transaction.service.TransactionService;

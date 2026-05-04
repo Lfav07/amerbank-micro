@@ -1,6 +1,10 @@
 package com.amerbank.account.integration.application;
 
-import com.amerbank.account.dto.*;
+import com.amerbank.account.dto.request.ServiceAccountOwnedRequest;
+import com.amerbank.account.dto.request.ServiceDepositBalanceRequest;
+import com.amerbank.account.dto.request.ServicePaymentRequest;
+import com.amerbank.account.dto.request.ServiceRefundBalanceRequest;
+import com.amerbank.account.dto.response.ErrorResponse;
 import com.amerbank.account.model.Account;
 import com.amerbank.account.model.AccountStatus;
 import com.amerbank.account.model.AccountType;
@@ -12,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.*;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
