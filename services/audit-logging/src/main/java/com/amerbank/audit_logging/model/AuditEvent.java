@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @Entity
-@Table(name = "audit_logs")
+@Table(name = "audit_log")
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
