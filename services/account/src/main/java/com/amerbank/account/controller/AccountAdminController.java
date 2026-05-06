@@ -3,6 +3,7 @@ package com.amerbank.account.controller;
 import com.amerbank.account.dto.request.AccountUpdateStatusRequest;
 import com.amerbank.account.dto.request.AccountUpdateTypeRequest;
 import com.amerbank.account.dto.response.AccountResponse;
+import com.amerbank.account.model.AccountType;
 import com.amerbank.account.dto.response.ErrorResponse;
 import com.amerbank.account.dto.response.ValidationErrorResponse;
 import com.amerbank.account.service.AccountService;
@@ -23,6 +24,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * REST controller for administrative account operations.
@@ -48,12 +50,175 @@ public class AccountAdminController {
             summary = "Get all accounts for a customer",
             description = """
                     Retrieves all bank accounts for a specific customer by customer ID.
-                    
+
                     **Authentication:** Required
                     **Authorization:** Requires ADMIN role
-                    
+
                     **Use case:** When an admin needs to view all accounts belonging to a specific customer.
-                    
+
+                    **Authorization header:** `Authorization: Bearer {token}`
+                    """,
+            security = @SecurityRequirement(name = JWT_SCHEME)
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Accounts retrieved successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = AccountResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - invalid or missing JWT token",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - requires ADMIN role",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            )
+    })
+    @GetMapping("/customers/{customerId}")
+    public ResponseEntity<List<AccountResponse>> getAccountsByCustomerId(
+            @Parameter(description = "Customer ID", required = true)
+            @PathVariable Long customerId) {
+
+        List<AccountResponse> accounts = accountService.getAccountsByCustomerId(customerId);
+        return ResponseEntity.ok(accounts);
+    }
+
+    @Operation(
+            summary = "Get account by customer ID and type",
+            description = """
+                    Retrieves a specific account for a customer using the customer ID and account type.
+
+                    **Authentication:** Required
+                    **Authorization:** Requires ADMIN role
+
+                    **Use case:** When an admin needs to inspect a customer's specific account type.
+
+                    **Authorization header:** `Authorization: Bearer {token}`
+                    """,
+            security = @SecurityRequirement(name = JWT_SCHEME)
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Account retrieved successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = AccountResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - invalid or missing JWT token",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - requires ADMIN role",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Not Found - account not found",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            )
+    })
+    @GetMapping("/customers/{customerId}/type")
+    public ResponseEntity<AccountResponse> getAccountByCustomerIdAndType(
+            @Parameter(description = "Customer ID", required = true)
+            @PathVariable Long customerId,
+            @Parameter(description = "Account type", required = true)
+            @RequestParam AccountType type) {
+
+        AccountResponse account = accountService.getAccountByCustomerIdAndType(customerId, type);
+        return ResponseEntity.ok(account);
+    }
+
+    @Operation(
+            summary = "Get account by account number",
+            description = """
+                    Retrieves a specific account using its account number.
+
+                    **Authentication:** Required
+                    **Authorization:** Requires ADMIN role
+
+                    **Use case:** When an admin needs to inspect a single account.
+
+                    **Authorization header:** `Authorization: Bearer {token}`
+                    """,
+            security = @SecurityRequirement(name = JWT_SCHEME)
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Account retrieved successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = AccountResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - invalid or missing JWT token",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - requires ADMIN role",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Not Found - account not found",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            )
+    })
+    @GetMapping("/{accountNumber}")
+    public ResponseEntity<AccountResponse> getAccountByAccountNumber(
+            @Parameter(description = "Account number", required = true)
+            @PathVariable @NotBlank String accountNumber) {
+
+        AccountResponse account = accountService.getAccountByAccountNumber(accountNumber);
+        return ResponseEntity.ok(account);
+    }
+
+    @Operation(
+            summary = "Update account type",
+            description = """
+                    Updates the account type of an existing account.
+
+                    **Authentication:** Required
+                    **Authorization:** Requires ADMIN role
+
                     **Authorization header:** `Authorization: Bearer {token}`
                     """,
             security = @SecurityRequirement(name = JWT_SCHEME)

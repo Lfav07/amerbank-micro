@@ -5,6 +5,7 @@ import com.amerbank.account.dto.request.AccountRequest;
 import com.amerbank.account.model.AccountType;
 import com.amerbank.account.repository.AccountRepository;
 import com.amerbank.account.util.TestJwtFactory;
+import com.redis.testcontainers.RedisContainer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -39,12 +40,16 @@ public class AccountRegistrationIT {
             .withDatabaseName("testdb")
             .withUsername("test")
             .withPassword("test");
+    @Container
+    static RedisContainer redisContainer = new RedisContainer("redis:6.2.6").withExposedPorts(6379);
 
     @DynamicPropertySource
     static void overrideProps(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.data.redis.host", redisContainer::getHost);
+        registry.add("spring.data.redis.port", () -> redisContainer.getMappedPort(6379));
     }
 
     @TestConfiguration
@@ -250,7 +255,7 @@ public class AccountRegistrationIT {
                     AccountInfo[].class
             );
 
-            assertEquals(HttpStatus.CREATED, response.getStatusCode());
+            assertEquals(HttpStatus.OK, response.getStatusCode());
             assertNotNull(response.getBody());
             assertEquals(1, response.getBody().length);
             assertEquals("ACCT0000000001", response.getBody()[0].accountNumber());
@@ -274,7 +279,7 @@ public class AccountRegistrationIT {
                     AccountInfo[].class
             );
 
-            assertEquals(HttpStatus.CREATED, response.getStatusCode());
+            assertEquals(HttpStatus.OK, response.getStatusCode());
             assertNotNull(response.getBody());
             assertEquals(0, response.getBody().length);
         }
@@ -306,7 +311,7 @@ public class AccountRegistrationIT {
                     AccountInfo.class
             );
 
-            assertEquals(HttpStatus.CREATED, response.getStatusCode());
+            assertEquals(HttpStatus.OK, response.getStatusCode());
             assertNotNull(response.getBody());
             assertEquals(AccountType.SAVINGS, response.getBody().type());
         }

@@ -515,9 +515,8 @@ public class AccountAdminIT {
                 }
 
                 @Test
-                @DisplayName("Should return no content when account not found")
-                void shouldReturnNoContentWhenAccountNotFound() {
-                    Long customerId = 12L;
+                @DisplayName("Should return not found when account not found")
+                void shouldReturnNotFoundWhenAccountNotFound() {
                     String endpoint = "/account/admin/ACCT9999999999";
 
                     HttpHeaders headers = new HttpHeaders();
@@ -531,7 +530,7 @@ public class AccountAdminIT {
                             String.class
                     );
 
-                    assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+                    assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
                 }
             }
 

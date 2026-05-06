@@ -340,7 +340,7 @@ public class InternalAccountIT {
         }
 
         @Test
-        @DisplayName("Should return not found when account not owned by customer")
+        @DisplayName("Should return forbidden when account not owned by customer")
         void shouldReturnNotFoundWhenAccountNotOwnedByCustomer() {
             Long customerId = 1L;
             Long differentCustomerId = 2L;
@@ -369,7 +369,7 @@ public class InternalAccountIT {
                     String.class
             );
 
-            assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+            assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
         }
 
         @Test
@@ -640,7 +640,7 @@ public class InternalAccountIT {
                     String.class
             );
 
-            assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+            assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
         }
 
         @Test
@@ -1002,7 +1002,7 @@ public class InternalAccountIT {
                     String.class
             );
 
-            assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+            assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
         }
 
         @Test
