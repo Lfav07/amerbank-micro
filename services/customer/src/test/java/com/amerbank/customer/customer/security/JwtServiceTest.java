@@ -22,7 +22,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
-class fJwtServiceTest {
+class JwtServiceTest {
 
     private JwtProperties props;
     private JwtService jwtService;

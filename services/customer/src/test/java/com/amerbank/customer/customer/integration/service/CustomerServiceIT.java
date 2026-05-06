@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @Testcontainers
 @Transactional
 @ActiveProfiles("test")
-public class CustomerServiceIntegrationTests {
+public class CustomerServiceIT {
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine")
