@@ -76,24 +76,25 @@ public class AuditService {
         return mapper.toResponse(event);
     }
 
-    public Page<AuditEventResponse> search(
-            AuditFilterRequest filter,
-            Pageable pageable) {
 
-        Pageable sorted = PageRequest.of(
-                pageable.getPageNumber(),
-                pageable.getPageSize(),
-                Sort.by(Sort.Direction.DESC, "timestamp")
-        );
-
-        Page<AuditEvent> page = repository.findAll(
-                AuditEventSpecification.withFilters(filter),
-                sorted
-        );
-
-        return page.map(mapper::toResponse);
-    }
-    public Page<AuditEventSummaryResponse> findSummary(AuditFilterRequest filter, Pageable pageable){
+//    public Page<AuditEventResponse> search(
+//            AuditFilterRequest filter,
+//            Pageable pageable) {
+//
+//        Pageable sorted = PageRequest.of(
+//                pageable.getPageNumber(),
+//                pageable.getPageSize(),
+//                Sort.by(Sort.Direction.DESC, "timestamp")
+//        );
+//
+//        Page<AuditEvent> page = repository.findAll(
+//                AuditEventSpecification.withFilters(filter),
+//                sorted
+//        );
+//
+//        return page.map(mapper::toResponse);
+//    }
+    public Page<AuditEventSummaryResponse> searchSummary(AuditFilterRequest filter, Pageable pageable){
         Pageable sorted = PageRequest.of(
                 pageable.getPageNumber(),
                 pageable.getPageSize(),
