@@ -37,7 +37,7 @@ import static org.mockito.Mockito.when;
 @Testcontainers
 @Transactional
 @ActiveProfiles("test")
-public class TransactionServiceIntegrationTests {
+public class TransactionServiceIT {
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine")
