@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @Testcontainers
 @ActiveProfiles("test")
 @ImportAutoConfiguration(FlywayAutoConfiguration.class)
-class UserRepositoryIntegrationTests {
+class UserRepositoryIT {
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine")
