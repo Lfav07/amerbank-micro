@@ -30,20 +30,20 @@ public class AuditEvent {
     private String service;
 
     // Who triggered it (user/system)
-    @Column(nullable = false, updatable = false)
+    @Column(updatable = false)
     private String actorId;
 
     // What was affected (account, transfer, etc.)
-    @Column(nullable = false, updatable = false)
+    @Column(updatable = false)
     private String entityId;
-    @Column(nullable = false, updatable = false)
+    @Column(updatable = false)
     private String entityType;
 
     @Column(nullable = false, updatable = false)
     private String status;
 
     // Trace across services
-    @Column(nullable = false, updatable = false)
+    @Column(updatable = false)
     private String correlationId;
 
     // Flexible data
