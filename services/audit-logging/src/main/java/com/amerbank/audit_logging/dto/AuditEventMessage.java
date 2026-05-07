@@ -1,16 +1,23 @@
 package com.amerbank.audit_logging.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
 public record AuditEventMessage(
+        @NotNull
         UUID eventId,
 
+        @NotBlank
         String eventType,
 
+        @NotNull
         Instant timestamp,
 
+        @NotBlank
         String service,
 
 
@@ -18,8 +25,10 @@ public record AuditEventMessage(
 
 
         String entityId,
+
         String entityType,
 
+        @NotBlank
         String status,
 
         String correlationId,
