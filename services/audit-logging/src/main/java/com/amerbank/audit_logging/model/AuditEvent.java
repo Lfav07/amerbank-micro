@@ -3,7 +3,10 @@ package com.amerbank.audit_logging.model;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
+import java.sql.SQLType;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
@@ -48,7 +51,7 @@ public class AuditEvent {
 
     // Flexible data
     @Column(columnDefinition = "jsonb")
-    @Convert(converter = JsonConverter.class)
+    @JdbcTypeCode(SqlTypes.JSON)
     private Map<String, Object> payload;
 
 }
