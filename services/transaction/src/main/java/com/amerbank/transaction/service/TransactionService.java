@@ -1,5 +1,6 @@
 package com.amerbank.transaction.service;
 
+import com.amerbank.transaction.dto.audit.AuditEventMessage;
 import com.amerbank.transaction.dto.request.DepositTransactionRequest;
 import com.amerbank.transaction.dto.request.PaymentTransactionRequest;
 import com.amerbank.transaction.dto.request.RefundTransactionRequest;
@@ -10,9 +11,12 @@ import com.amerbank.transaction.model.TransactionStatus;
 import com.amerbank.transaction.model.TransactionType;
 import com.amerbank.transaction.repository.TransactionRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -38,17 +42,22 @@ public class TransactionService {
     private final TransactionMapper transactionMapper;
     private final AccountServiceClient accountServiceClient;
     private final IdempotencyService idempotencyService;
+    private final KafkaTemplate<String, AuditEventMessage> kafkaTemplate;
+    private final String serviceName = "transaction-service";
+    private final String entityType = "TRANSACTION";
+    private final String kafkaTopic = "audit.transactions";
 
     public TransactionService(
             TransactionRepository transactionRepository,
             TransactionMapper transactionMapper,
             AccountServiceClient accountServiceClient,
-            IdempotencyService idempotencyService
+            IdempotencyService idempotencyService, KafkaTemplate<String, AuditEventMessage> kafkaTemplate
     ) {
         this.transactionRepository = transactionRepository;
         this.transactionMapper = transactionMapper;
         this.accountServiceClient = accountServiceClient;
         this.idempotencyService = idempotencyService;
+        this.kafkaTemplate = kafkaTemplate;
     }
 
     /**
@@ -136,7 +145,7 @@ public class TransactionService {
      * Retrieves all transactions between two specific accounts and returns them as DTOs.
      *
      * @param fromAccount the source account number
-     * @param toAccount the destination account number
+     * @param toAccount   the destination account number
      * @return a list of transaction response DTOs
      */
     public List<TransactionResponse> getTransactionResponsesByFromAndToAccountNumber(String fromAccount, String toAccount) {
@@ -176,7 +185,7 @@ public class TransactionService {
      * Retrieves all transactions associated with an account owned by the specified customer.
      * This includes both transactions where the account is the source or destination.
      *
-     * @param customerId the ID of the customer requesting their transactions
+     * @param customerId    the ID of the customer requesting their transactions
      * @param accountNumber the account number to query transactions for
      * @return a list of all transactions involving the specified account
      * @throws UnauthorizedAccountAccessException if the account does not belong to the customer
@@ -192,7 +201,7 @@ public class TransactionService {
     /**
      * Retrieves all transactions originating from an account owned by the specified customer.
      *
-     * @param customerId the ID of the customer requesting their transactions
+     * @param customerId        the ID of the customer requesting their transactions
      * @param fromAccountNumber the source account number to query transactions for
      * @return a list of transactions originating from the specified account
      * @throws UnauthorizedAccountAccessException if the account does not belong to the customer
@@ -207,7 +216,7 @@ public class TransactionService {
     /**
      * Retrieves all transactions received by an account owned by the specified customer.
      *
-     * @param customerId the ID of the customer requesting their transactions
+     * @param customerId      the ID of the customer requesting their transactions
      * @param toAccountNumber the destination account number to query transactions for
      * @return a list of transactions received by the specified account
      * @throws UnauthorizedAccountAccessException if the account does not belong to the customer
@@ -223,9 +232,9 @@ public class TransactionService {
      * Retrieves all transactions between two specific accounts where the source account
      * is owned by the specified customer.
      *
-     * @param customerId the ID of the customer requesting their transactions
+     * @param customerId        the ID of the customer requesting their transactions
      * @param fromAccountNumber the source account number (must be owned by the customer)
-     * @param toAccountNumber the destination account number
+     * @param toAccountNumber   the destination account number
      * @return a list of transactions from the source to the destination account
      * @throws UnauthorizedAccountAccessException if the source account does not belong to the customer
      */
@@ -240,9 +249,9 @@ public class TransactionService {
      * Retrieves all transactions with a specific status for an account owned by the specified customer.
      * Only transactions originating from the account are included.
      *
-     * @param customerId the ID of the customer requesting their transactions
+     * @param customerId    the ID of the customer requesting their transactions
      * @param accountNumber the account number to query transactions for
-     * @param status the transaction status to filter by
+     * @param status        the transaction status to filter by
      * @return a list of transactions matching the specified status
      * @throws UnauthorizedAccountAccessException if the account does not belong to the customer
      */
@@ -257,9 +266,9 @@ public class TransactionService {
      * Retrieves all transactions of a specific type for an account owned by the specified customer.
      * Only transactions originating from the account are included.
      *
-     * @param customerId the ID of the customer requesting their transactions
+     * @param customerId    the ID of the customer requesting their transactions
      * @param accountNumber the account number to query transactions for
-     * @param type the transaction type to filter by
+     * @param type          the transaction type to filter by
      * @return a list of transactions matching the specified type
      * @throws UnauthorizedAccountAccessException if the account does not belong to the customer
      */
@@ -274,7 +283,7 @@ public class TransactionService {
      * Retrieves all transactions associated with an account owned by the specified customer,
      * returning them as DTOs.
      *
-     * @param customerId the ID of the customer requesting their transactions
+     * @param customerId    the ID of the customer requesting their transactions
      * @param accountNumber the account number to query transactions for
      * @return a list of transaction response DTOs
      * @throws UnauthorizedAccountAccessException if the account does not belong to the customer
@@ -293,7 +302,7 @@ public class TransactionService {
      * Retrieves all transactions originating from an account owned by the specified customer,
      * returning them as DTOs.
      *
-     * @param customerId the ID of the customer requesting their transactions
+     * @param customerId        the ID of the customer requesting their transactions
      * @param fromAccountNumber the source account number to query transactions for
      * @return a list of transaction response DTOs
      * @throws UnauthorizedAccountAccessException if the account does not belong to the customer
@@ -312,7 +321,7 @@ public class TransactionService {
      * Retrieves all transactions received by an account owned by the specified customer,
      * returning them as DTOs.
      *
-     * @param customerId the ID of the customer requesting their transactions
+     * @param customerId      the ID of the customer requesting their transactions
      * @param toAccountNumber the destination account number to query transactions for
      * @return a list of transaction response DTOs
      * @throws UnauthorizedAccountAccessException if the account does not belong to the customer
@@ -331,9 +340,9 @@ public class TransactionService {
      * Retrieves all transactions between two specific accounts where the source account
      * is owned by the specified customer, returning them as DTOs.
      *
-     * @param customerId the ID of the customer requesting their transactions
+     * @param customerId        the ID of the customer requesting their transactions
      * @param fromAccountNumber the source account number (must be owned by the customer)
-     * @param toAccountNumber the destination account number
+     * @param toAccountNumber   the destination account number
      * @return a list of transaction response DTOs
      * @throws UnauthorizedAccountAccessException if the source account does not belong to the customer
      */
@@ -351,9 +360,9 @@ public class TransactionService {
      * Retrieves all transactions with a specific status for an account owned by the specified customer,
      * returning them as DTOs.
      *
-     * @param customerId the ID of the customer requesting their transactions
+     * @param customerId    the ID of the customer requesting their transactions
      * @param accountNumber the account number to query transactions for
-     * @param status the transaction status to filter by
+     * @param status        the transaction status to filter by
      * @return a list of transaction response DTOs
      * @throws UnauthorizedAccountAccessException if the account does not belong to the customer
      */
@@ -371,9 +380,9 @@ public class TransactionService {
      * Retrieves all transactions of a specific type for an account owned by the specified customer,
      * returning them as DTOs.
      *
-     * @param customerId the ID of the customer requesting their transactions
+     * @param customerId    the ID of the customer requesting their transactions
      * @param accountNumber the account number to query transactions for
-     * @param type the transaction type to filter by
+     * @param type          the transaction type to filter by
      * @return a list of transaction response DTOs
      * @throws UnauthorizedAccountAccessException if the account does not belong to the customer
      */
@@ -387,17 +396,43 @@ public class TransactionService {
                 .toList();
     }
 
+
+    public AuditEventMessage buildAuditMessage(String eventType,
+                                               Long actorId, UUID entityId,
+                                               String status, String correlationId,
+                                               TransactionResponse response) {
+        Map<String, Object> payload = Map.of(
+                "amount", response.amount(),
+                "fromAccount", response.fromAccountNumber(),
+                "toAccount", response.toAccountNumber(),
+                "type", response.type().name()
+        );
+
+        return new AuditEventMessage(
+                UUID.randomUUID(),
+                eventType,
+                Instant.now(),
+                serviceName,
+                String.valueOf(actorId),
+                String.valueOf(entityId),
+                entityType,
+                status,
+                correlationId,
+                payload
+        );
+    }
+
     /**
      * Creates a deposit transaction and updates the account balance.
      *
      * <p>This operation is idempotent - submitting the same request with the same idempotency key
      * will return the original transaction response without creating a duplicate.</p>
      *
-     * @param customerId the ID of the customer making the deposit
+     * @param customerId     the ID of the customer making the deposit
      * @param idempotencyKey a unique key to ensure idempotent processing
-     * @param request the deposit transaction request containing account and amount details
+     * @param request        the deposit transaction request containing account and amount details
      * @return the created transaction as a response DTO
-     * @throws DepositFailedException if the account service rejects the deposit operation
+     * @throws DepositFailedException             if the account service rejects the deposit operation
      * @throws AccountServiceUnavailableException if the account service is unreachable
      */
     public TransactionResponse createDepositTransaction(
@@ -408,12 +443,18 @@ public class TransactionService {
         log.info("Creating deposit transaction - customerId: {}, toAccount: {}, amount: {}, idempotencyKey: {}",
                 customerId, request.toAccountNumber(), request.amount(), idempotencyKey);
 
-        return idempotencyService.execute(
+        TransactionResponse response =  idempotencyService.execute(
                 idempotencyKey,
                 () -> transactionMapper.toTransaction(request),
                 tx -> accountServiceClient.deposit(customerId, request.toAccountNumber(), request.amount()),
                 transactionMapper::toResponse
         );
+        AuditEventMessage message = buildAuditMessage("DEPOSIT_COMPLETED",
+                customerId,
+                response.id(), response.status().name(),
+                "TODO", response);
+        kafkaTemplate.send(kafkaTopic, message);
+        return  response;
     }
 
     /**
@@ -422,11 +463,11 @@ public class TransactionService {
      * <p>This operation is idempotent - submitting the same request with the same idempotency key
      * will return the original transaction response without creating a duplicate.</p>
      *
-     * @param customerId the ID of the customer initiating the payment
+     * @param customerId     the ID of the customer initiating the payment
      * @param idempotencyKey a unique key to ensure idempotent processing
-     * @param request the payment transaction request containing source, destination, and amount
+     * @param request        the payment transaction request containing source, destination, and amount
      * @return the created transaction as a response DTO
-     * @throws PaymentFailedException if the account service rejects the payment operation
+     * @throws PaymentFailedException             if the account service rejects the payment operation
      * @throws AccountServiceUnavailableException if the account service is unreachable
      */
     public TransactionResponse createPaymentTransaction(
@@ -437,7 +478,7 @@ public class TransactionService {
         log.info("Creating payment transaction - customerId: {}, fromAccount: {}, toAccount: {}, amount: {}, idempotencyKey: {}",
                 customerId, request.fromAccountNumber(), request.toAccountNumber(), request.amount(), idempotencyKey);
 
-        return idempotencyService.execute(
+        TransactionResponse response = idempotencyService.execute(
                 idempotencyKey,
                 () -> transactionMapper.toTransaction(request),
                 tx -> accountServiceClient.payment(
@@ -448,6 +489,12 @@ public class TransactionService {
                 ),
                 transactionMapper::toResponse
         );
+        AuditEventMessage message = buildAuditMessage("PAYMENT_COMPLETED",
+                customerId,
+                response.id(), response.status().name(),
+                "TODO", response);
+        kafkaTemplate.send(kafkaTopic, message);
+        return response;
     }
 
     /**
@@ -460,14 +507,14 @@ public class TransactionService {
      * <p>This operation is idempotent - submitting the same request with the same idempotency key
      * will return the original refund transaction response without creating a duplicate.</p>
      *
-     * @param customerId the ID of the customer requesting the refund
+     * @param customerId     the ID of the customer requesting the refund
      * @param idempotencyKey a unique key to ensure idempotent processing
-     * @param request the refund transaction request containing the original transaction ID
+     * @param request        the refund transaction request containing the original transaction ID
      * @return the created refund transaction as a response DTO
-     * @throws TransactionNotFoundException if the original transaction does not exist
+     * @throws TransactionNotFoundException        if the original transaction does not exist
      * @throws TransactionAlreadyRefundedException if the original transaction has already been reversed
-     * @throws RefundFailedException if the account service rejects the refund operation
-     * @throws AccountServiceUnavailableException if the account service is unreachable
+     * @throws RefundFailedException               if the account service rejects the refund operation
+     * @throws AccountServiceUnavailableException  if the account service is unreachable
      */
     public TransactionResponse createRefundTransaction(
             Long customerId,
@@ -483,7 +530,7 @@ public class TransactionService {
             throw new TransactionAlreadyRefundedException("Transaction already refunded");
         }
 
-        return idempotencyService.execute(
+        TransactionResponse response =  idempotencyService.execute(
                 idempotencyKey,
                 () -> {
                     Transaction tx = new Transaction();
@@ -505,6 +552,12 @@ public class TransactionService {
                 },
                 transactionMapper::toResponse
         );
+        AuditEventMessage message = buildAuditMessage("REFUND_COMPLETED",
+                customerId,
+                response.id(), response.status().name(),
+                "TODO", response);
+        kafkaTemplate.send(kafkaTopic, message);
 
+        return response;
     }
 }
