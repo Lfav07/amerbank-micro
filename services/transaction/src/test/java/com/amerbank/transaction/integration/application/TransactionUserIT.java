@@ -1,5 +1,6 @@
 package com.amerbank.transaction.integration.application;
 
+import com.amerbank.transaction.dto.audit.AuditEventMessage;
 import com.amerbank.transaction.dto.request.DepositTransactionRequest;
 import com.amerbank.transaction.dto.request.PaymentTransactionRequest;
 import com.amerbank.transaction.dto.request.RefundTransactionRequest;
@@ -19,6 +20,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -62,6 +64,9 @@ public class TransactionUserIT {
 
     @MockitoBean
     private AccountServiceClient accountServiceClient;
+
+    @MockitoBean
+    private KafkaTemplate<String, AuditEventMessage> kafkaTemplate;
 
     @Autowired
     private TestJwtFactory testJwtFactory;
