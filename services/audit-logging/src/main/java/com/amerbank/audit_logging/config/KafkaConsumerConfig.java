@@ -4,6 +4,7 @@ import com.amerbank.audit_logging.dto.AuditEventMessage;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
@@ -25,20 +26,19 @@ public class KafkaConsumerConfig {
 
     @Bean
     KafkaListenerContainerFactory<ConcurrentMessageListenerContainer<String, AuditEventMessage>>
-    kafkaListenerContainerFactory(DefaultErrorHandler errorHandler) {
+    kafkaListenerContainerFactory(ConsumerFactory<String, AuditEventMessage> consumerFactory, DefaultErrorHandler errorHandler) {
         ConcurrentKafkaListenerContainerFactory<String, AuditEventMessage> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(consumerFactory());
+        factory.setConsumerFactory(consumerFactory);
         factory.setConcurrency(8);
-
         factory.setCommonErrorHandler(errorHandler);
         factory.getContainerProperties().setPollTimeout(3000);
         return factory;
     }
 
     @Bean
-    public ConsumerFactory<String, AuditEventMessage> consumerFactory() {
-        return new DefaultKafkaConsumerFactory<>(consumerConfigs());
+    public ConsumerFactory<String, AuditEventMessage> consumerFactory(KafkaProperties kafkaProperties) {
+        return new DefaultKafkaConsumerFactory<>(kafkaProperties.buildConsumerProperties(null));
     }
     @Bean
     public DefaultErrorHandler errorHandler(
@@ -69,13 +69,6 @@ public class KafkaConsumerConfig {
                     return new TopicPartition(topic, record.partition());
                 }
         );
-    }
-
-    @Bean
-    public Map<String, Object> consumerConfigs() {
-        Map<String, Object> props = new HashMap<>();
-        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, AuditEventMessage.class.getName());
-        return props;
     }
 
 }
