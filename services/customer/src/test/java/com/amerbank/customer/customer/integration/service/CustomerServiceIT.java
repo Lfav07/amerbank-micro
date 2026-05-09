@@ -26,7 +26,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 
 @SpringBootTest(properties = "spring.cloud.config.enabled=false")
-@Testcontainers
 @Transactional
 @ActiveProfiles("test")
 public class CustomerServiceIT extends AbstractIntegrationTest {

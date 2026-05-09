@@ -25,7 +25,6 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest(properties = "spring.cloud.config.enabled=false")
-@Testcontainers
 @ActiveProfiles("test")
 @ImportAutoConfiguration(FlywayAutoConfiguration.class)
 public class CustomerRepositoryIT extends AbstractIntegrationTest {

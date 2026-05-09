@@ -32,7 +32,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest(properties = "spring.cloud.config.enabled=false",
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
-@Testcontainers
 @ActiveProfiles("test")
 public class CustomerAdminIT extends AbstractIntegrationTest {
 

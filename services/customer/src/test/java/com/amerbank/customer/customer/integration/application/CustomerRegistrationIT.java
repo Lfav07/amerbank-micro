@@ -28,7 +28,6 @@ import java.time.LocalDate;
 @SpringBootTest(properties = "spring.cloud.config.enabled=false",
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
-@Testcontainers
 @ActiveProfiles("test")
 public class CustomerRegistrationIT extends AbstractIntegrationTest {
 
