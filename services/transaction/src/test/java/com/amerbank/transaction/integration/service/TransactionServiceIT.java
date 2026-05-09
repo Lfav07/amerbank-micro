@@ -9,6 +9,7 @@ import com.amerbank.transaction.exception.*;
 import com.amerbank.transaction.model.Transaction;
 import com.amerbank.transaction.model.TransactionStatus;
 import com.amerbank.transaction.model.TransactionType;
+import com.amerbank.transaction.persistence.AbstractIntegrationTest;
 import com.amerbank.transaction.repository.TransactionRepository;
 import com.amerbank.transaction.service.AccountServiceClient;
 import com.amerbank.transaction.service.TransactionService;
@@ -36,23 +37,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest(properties = "spring.cloud.config.enabled=false")
-@Testcontainers
 @Transactional
 @ActiveProfiles("test")
-public class TransactionServiceIT {
+public class TransactionServiceIT extends AbstractIntegrationTest {
 
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
-
-    @DynamicPropertySource
-    static void overrideProps(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-    }
 
     @MockitoBean
     private AccountServiceClient accountServiceClient;

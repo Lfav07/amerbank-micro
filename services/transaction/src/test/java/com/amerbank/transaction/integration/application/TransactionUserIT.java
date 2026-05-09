@@ -8,6 +8,7 @@ import com.amerbank.transaction.dto.response.TransactionResponse;
 import com.amerbank.transaction.model.Transaction;
 import com.amerbank.transaction.model.TransactionStatus;
 import com.amerbank.transaction.model.TransactionType;
+import com.amerbank.transaction.persistence.AbstractIntegrationTest;
 import com.amerbank.transaction.repository.TransactionRepository;
 import com.amerbank.transaction.service.AccountServiceClient;
 import com.amerbank.transaction.util.TestJwtFactory;
@@ -41,22 +42,8 @@ import static org.mockito.Mockito.when;
 @SpringBootTest(properties = "spring.cloud.config.enabled=false",
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
-@Testcontainers
 @ActiveProfiles("test")
-public class TransactionUserIT {
-
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
-
-    @DynamicPropertySource
-    static void overrideProps(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-    }
+public class TransactionUserIT extends AbstractIntegrationTest {
 
     @TestConfiguration
     static class JwtTestConfig extends TestJwtFactory {
