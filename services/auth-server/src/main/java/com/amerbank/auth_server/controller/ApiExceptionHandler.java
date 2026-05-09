@@ -1,5 +1,6 @@
 package com.amerbank.auth_server.controller;
 
+import com.amerbank.auth_server.audit.AuditEventPublisher;
 import com.amerbank.auth_server.dto.response.ErrorResponse;
 import com.amerbank.auth_server.dto.response.ValidationErrorResponse;
 import com.amerbank.auth_server.exception.CustomerRegistrationFailedException;
@@ -7,6 +8,7 @@ import com.amerbank.auth_server.exception.CustomerServiceUnavailableException;
 import com.amerbank.auth_server.exception.EmailAlreadyTakenException;
 import com.amerbank.auth_server.exception.RegistrationFailedException;
 import com.amerbank.auth_server.exception.UserNotFoundException;
+import com.amerbank.auth_server.security.JwtUserPrincipal;
 import com.amerbank.auth_server.util.TraceIdUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -33,6 +36,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ApiExceptionHandler {
     private final TraceIdUtil traceIdUtil;
+    private final AuditEventPublisher auditEventPublisher;
 
     // ============================================================
     // ================ 404 NOT_FOUND ============================
@@ -96,6 +100,10 @@ public class ApiExceptionHandler {
         String traceId = getTraceId(request);
         String path = extractPath(request);
 
+        if (ex instanceof BadCredentialsException) {
+            auditEventPublisher.publishLoginFailed();
+        }
+
         log.warn("Unauthorized access - TraceId: {}, Message: {}", traceId, ex.getMessage());
 
         String message = ex instanceof BadCredentialsException
@@ -123,6 +131,7 @@ public class ApiExceptionHandler {
             WebRequest request) {
         String traceId = getTraceId(request);
         String path = extractPath(request);
+        auditEventPublisher.publishAccessDenied(extractActorId(request), path);
 
         log.warn("Access denied - TraceId: {}, Message: {}", traceId, ex.getMessage());
 
@@ -389,5 +398,17 @@ public class ApiExceptionHandler {
 
     private String extractPath(WebRequest request) {
         return request.getDescription(false).replace("uri=", "");
+    }
+
+    private Long extractActorId(WebRequest request) {
+        Object principal = SecurityContextHolder.getContext().getAuthentication() == null
+                ? null
+                : SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if (principal instanceof JwtUserPrincipal jwtUserPrincipal) {
+            return jwtUserPrincipal.userId();
+        }
+
+        return null;
     }
 }

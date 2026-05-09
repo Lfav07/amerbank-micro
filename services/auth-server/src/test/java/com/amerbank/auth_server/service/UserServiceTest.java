@@ -1,5 +1,6 @@
 package com.amerbank.auth_server.service;
 
+import com.amerbank.auth_server.audit.AuditEventPublisher;
 import com.amerbank.auth_server.dto.request.*;
 import com.amerbank.auth_server.dto.response.AuthenticationResponse;
 import com.amerbank.auth_server.dto.response.CustomerRegistrationResponse;
@@ -44,6 +45,8 @@ class UserServiceTest {
     private CustomerServiceClient customerServiceClient;
     @Mock
     private JwtService jwtService;
+    @Mock
+    private AuditEventPublisher auditEventPublisher;
 
     @Spy
     private final UserMapper mapper = new UserMapper();
@@ -157,6 +160,7 @@ class UserServiceTest {
                         req.userId().equals(1L) &&
                         req.dateOfBirth().equals(dateOfBirth)
         ));
+        verify(auditEventPublisher).publishUserRegistered(updatedUser);
     }
 
     @Test
@@ -387,6 +391,7 @@ class UserServiceTest {
                 .authenticate(any(UsernamePasswordAuthenticationToken.class));
         verify(jwtService)
                 .generateToken(user, customerId);
+        verify(auditEventPublisher).publishLoginSuccess(user);
     }
 
     @Test
@@ -434,6 +439,7 @@ class UserServiceTest {
                 .authenticate(any(UsernamePasswordAuthenticationToken.class));
         verify(jwtService)
                 .generateAdminToken(user);
+        verify(auditEventPublisher).publishLoginSuccess(user);
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.amerbank.auth_server.integration.service;
 
+import com.amerbank.auth_server.audit.AuditEventPublisher;
 import com.amerbank.auth_server.dto.request.*;
 import com.amerbank.auth_server.dto.response.AuthenticationResponse;
 import com.amerbank.auth_server.dto.response.CustomerRegistrationResponse;
@@ -55,6 +56,9 @@ public class UserServiceIT {
 
     @MockitoBean
     private CustomerServiceClient customerServiceClient;
+
+    @MockitoBean
+    private AuditEventPublisher auditEventPublisher;
 
     @Autowired
     private EntityManager entityManager;

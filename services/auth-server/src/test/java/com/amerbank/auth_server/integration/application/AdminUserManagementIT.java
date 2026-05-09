@@ -1,5 +1,6 @@
 package com.amerbank.auth_server.integration.application;
 
+import com.amerbank.auth_server.audit.AuditEventPublisher;
 import com.amerbank.auth_server.dto.request.*;
 import com.amerbank.auth_server.dto.response.CustomerRegistrationResponse;
 import com.amerbank.auth_server.dto.response.UserResponse;
@@ -64,6 +65,9 @@ public class AdminUserManagementIT {
 
     @Autowired
     private TestRestTemplate restTemplate;
+
+    @MockitoBean
+    private AuditEventPublisher auditEventPublisher;
 
     @Autowired
     private UserRepository userRepository;
