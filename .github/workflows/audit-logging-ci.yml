@@ -1,0 +1,42 @@
+name: audit-logging Microservice CI
+
+on:
+  push:
+    branches:
+      - main
+      - feature/**
+    paths:
+      - 'services/audit-logging/**'
+      - '.github/workflows/**'
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'services/audit-logging/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            services/audit-logging
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'corretto'
+          java-version: '21'
+          cache: 'maven'
+
+      - name: Make mvnw executable
+        working-directory: 'services/audit-logging'
+        run: chmod +x mvnw
+
+      - name: Build, test and package
+        working-directory: 'services/audit-logging'
+        run: ./mvnw clean verify
