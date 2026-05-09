@@ -3,6 +3,7 @@ package com.amerbank.account.integration.application;
 import com.amerbank.account.dto.AccountInfo;
 import com.amerbank.account.dto.request.AccountRequest;
 import com.amerbank.account.model.AccountType;
+import com.amerbank.account.persistence.AbstractIntegrationTest;
 import com.amerbank.account.repository.AccountRepository;
 import com.amerbank.account.util.TestJwtFactory;
 import com.redis.testcontainers.RedisContainer;
@@ -33,21 +34,14 @@ import static org.junit.jupiter.api.Assertions.*;
 )
 @Testcontainers
 @ActiveProfiles("test")
-public class AccountRegistrationIT {
+public class AccountRegistrationIT extends AbstractIntegrationTest {
 
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
+
     @Container
     static RedisContainer redisContainer = new RedisContainer("redis:6.2.6").withExposedPorts(6379);
 
     @DynamicPropertySource
     static void overrideProps(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
         registry.add("spring.data.redis.host", redisContainer::getHost);
         registry.add("spring.data.redis.port", () -> redisContainer.getMappedPort(6379));
     }
