@@ -1,0 +1,27 @@
+spring:
+  cloud:
+    config:
+      enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    locations: classpath:db/migration/audit
+  kafka:
+    consumer:
+      group-id: audit-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.use.type.headers: false
+        spring.json.value.default.type: com.amerbank.audit_logging.dto.AuditEventMessage
+        spring.json.trusted.packages: com.amerbank.*
+
+eureka:
+  client:
+    enabled: false
+
+jwt:
+  secret: "testsecret123456789test123456789secret"
