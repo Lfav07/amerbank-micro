@@ -2,6 +2,7 @@ package com.amerbank.auth_server.integration.repository;
 
 import com.amerbank.auth_server.dto.response.Role;
 import com.amerbank.auth_server.model.User;
+import com.amerbank.auth_server.persistence.AbstractIntegrationTest;
 import com.amerbank.auth_server.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,23 +25,10 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest(properties = "spring.cloud.config.enabled=false")
-@Testcontainers
 @ActiveProfiles("test")
 @ImportAutoConfiguration(FlywayAutoConfiguration.class)
-class UserRepositoryIT {
+class UserRepositoryIT extends AbstractIntegrationTest {
 
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
-
-    @DynamicPropertySource
-    static void overrideProps(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-    }
 
     @Autowired
     private UserRepository userRepository;
