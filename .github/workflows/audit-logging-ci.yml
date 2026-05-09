@@ -1,4 +1,4 @@
-name: audit-logging Microservice CI
+name: Audit Microservice CI
 
 on:
   push:
