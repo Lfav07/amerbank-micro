@@ -1,4 +1,4 @@
-name: Audit Microservice CI
+name: Audit Service CI
 
 on:
   push:
