@@ -4,6 +4,7 @@ import com.amerbank.customer.customer.dto.request.CustomerRegistrationRequest;
 import com.amerbank.customer.customer.dto.response.CustomerRegistrationResponse;
 import com.amerbank.customer.customer.dto.response.CustomerResponse;
 import com.amerbank.customer.customer.dto.request.CustomerUpdateRequest;
+import com.amerbank.customer.customer.persistence.AbstractIntegrationTest;
 import com.amerbank.customer.customer.repository.CustomerRepository;
 import com.amerbank.customer.customer.util.TestJwtFactory;
 import org.junit.jupiter.api.AfterEach;
@@ -33,19 +34,7 @@ import static org.junit.jupiter.api.Assertions.*;
 )
 @Testcontainers
 @ActiveProfiles("test")
-public class CustomerAdminIT {
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
-
-    @DynamicPropertySource
-    static void overrideProps(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-    }
+public class CustomerAdminIT extends AbstractIntegrationTest {
 
     @TestConfiguration
     static class JwtTestConfig extends TestJwtFactory {

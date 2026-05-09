@@ -7,20 +7,16 @@ import com.amerbank.customer.customer.dto.response.CustomerRegistrationResponse;
 import com.amerbank.customer.customer.dto.response.CustomerResponse;
 import com.amerbank.customer.customer.exception.*;
 import com.amerbank.customer.customer.model.Customer;
+import com.amerbank.customer.customer.persistence.AbstractIntegrationTest;
 import com.amerbank.customer.customer.repository.CustomerRepository;
 import com.amerbank.customer.customer.service.CustomerService;
-import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.annotation.Transactional;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.LocalDate;
@@ -33,23 +29,9 @@ import static org.junit.jupiter.api.Assertions.*;
 @Testcontainers
 @Transactional
 @ActiveProfiles("test")
-public class CustomerServiceIT {
+public class CustomerServiceIT extends AbstractIntegrationTest {
 
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
 
-    @DynamicPropertySource
-    static void overrideProps(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-    }
-
-    @Autowired
-    private EntityManager entityManager;
 
     @Autowired
     private CustomerService customerService;
