@@ -67,6 +67,9 @@ docker build -t config-server:latest ./services/config-server
 # Discovery Server
 docker build -t discovery:latest ./services/discovery
 
+# Audit Service
+docker build -t audit-logging:latest ./services/audit-logging
+
 # Gateway
 docker build -t gateway:latest ./services/gateway
 
@@ -90,6 +93,9 @@ Apply manifests in the following order:
 ```bash
 # PostgreSQL
 kubectl apply -f k8s/postgres/
+
+# Kafka
+kubectl apply -f k8s/kafka/
 
 # Redis
 kubectl apply -f k8s/redis/
@@ -150,7 +156,7 @@ http://api.local
 |------|-----------|---------|
 | 1 | Namespace | `kubectl create namespace amerbank` |
 | 2 | Build images | `docker build -t <image>:latest ./services/<service>` |
-| 3 | Deploy infrastructure | `kubectl apply -f k8s/postgres/ && kubectl apply -f k8s/redis/` |
+| 3 | Deploy infrastructure | `kubectl apply -f k8s/postgres/ && kubectl apply -f k8s/kafka/ && kubectl apply -f k8s/redis/` |
 | 4 | Deploy all services | `kubectl apply -f k8s/ -R` |
 
 ## Stopping the Cluster

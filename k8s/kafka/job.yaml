@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kafka-init
+  namespace: amerbank
+spec:
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        app: kafka-init
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: kafka-init
+          image: confluentinc/cp-kafka:7.6.1
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/bash", "/scripts/create-topics.sh"]
+          env:
+            - name: KAFKA_BROKER
+              value: "kafka:29092"
+          volumeMounts:
+            - name: kafka-init-script
+              mountPath: /scripts
+      volumes:
+        - name: kafka-init-script
+          configMap:
+            name: kafka-init-script
+            defaultMode: 0755
