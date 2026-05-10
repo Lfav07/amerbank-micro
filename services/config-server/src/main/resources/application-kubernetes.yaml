@@ -1,11 +1,11 @@
 server:
   port: 8080
-  tomcat:
-    connection-timeout: 2s
-    keep-alive-timeout: 15s
-    threads:
-      max: 50
-      min-spare: 5
+tomcat:
+  connection-timeout: 2s
+  keep-alive-timeout: 15s
+  threads:
+     max: 50
+     min-spare: 5
 
 spring:
   application:
@@ -15,7 +15,7 @@ spring:
       server:
         git:
           uri: https://github.com/Lfav07/amerbank-config.git
-          default-label: main
+          default-label: feature/audit-logging
           timeout: 30
           search-paths: configurations
 
