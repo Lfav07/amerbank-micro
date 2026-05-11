@@ -19,6 +19,7 @@ graph TD
     Gateway -->|Route /customer/**| customer-service
     Gateway -->|Route /account/**| account-service
     Gateway -->|Route /transaction/**| transaction-service
+    Gateway --> |Route /audit/**| audit-logging
     Gateway -->|Service Discovery| discovery-server
 ```
 
@@ -147,7 +148,9 @@ gateway:
 | `/customer/**`    | customer-service    | Customer management      |
 | `/account/**`     | account-service     | Account management       |
 | `/transaction/**` | transaction-service | Transaction processing   |
+| `/audit/**`       | audit-logging       | Audit Query API          |
 | `/actuator/**`    | gateway             | Health and monitoring    |
+
 
 ## Health Check
 
@@ -214,6 +217,7 @@ curl -X POST http://localhost:8080/transaction/deposit \
 - **auth-server** (port 8081) - Authentication and authorization
 - **customer-service** (port 8082) - Customer profile management
 - **account-service** (port 8083) - Account management
+- **audit-logging** (port 8085) - Audit Query API
 - **transaction-service** (port 8084) - Transaction handling
 - **discovery-service** (port 8761) - Service discovery
 - **config-server** (port 8888) - Centralized configuration
