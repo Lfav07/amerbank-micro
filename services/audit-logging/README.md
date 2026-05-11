@@ -3,7 +3,7 @@
 [![Java](https://img.shields.io/badge/Java-21-blue)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.13-brightgreen)](https://spring.io/projects/spring-boot)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-blue)](https://www.postgresql.org/)
-[![Apache Kafka](https://img.shields.io/badge/Apache%20Kafka-3.7+-black)](https://kafka.apache.org/)
+[![Apache Kafka](https://img.shields.io/badge/Apache%20Kafka-000?style=for-the-badge&logo=apachekafka)](https://kafka.apache.org/)
 
 Audit and logging management microservice for the Amerbank banking platform.
 
