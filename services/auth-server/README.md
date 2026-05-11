@@ -19,6 +19,7 @@ graph TD
     Gateway --> auth-server
     auth-server <--> UsersDB[(Users DB)]
     auth-server -->|Customer <br> Registration| customer
+    auth-server -->|"audit.auth"| audit
     auth-server --> discovery-server
     auth-server --> config-server    
 ```
@@ -46,6 +47,7 @@ authentication model.
 **Auth Server is used by:**
 
 - **customer-service** - for user and customer registration integration
+- **audit-logging** - for audit event consumption
 
 ## Features
 
@@ -282,6 +284,7 @@ src/main/java/com/amerbank/auth_server/
 - **customer-service** - Customer profile management
 - **account-service** - Bank account management
 - **transaction-service** - Transaction handling
+- **audit-logging** - Audit event consumption
 - **gateway** - API Gateway
 - **discovery** - Eureka Service Discovery
 - **config-server** - Centralized configuration

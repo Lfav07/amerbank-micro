@@ -3,6 +3,7 @@
 [![Java](https://img.shields.io/badge/Java-21-blue)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.4-brightgreen)](https://spring.io/projects/spring-boot)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-blue)](https://www.postgresql.org/)
+[![Apache Kafka](https://img.shields.io/badge/Apache%20Kafka-000?style=for-the-badge&logo=apachekafka)](https://kafka.apache.org/)
 
 Transaction management microservice for the Amerbank banking platform.
 
@@ -19,6 +20,7 @@ graph TD
     Gateway --> transaction;
     transaction <--> TransactionsDB[(Transactions DB)]
     transaction -->|Internal API| account;
+    transaction -->|"audit.transactions"| audit
     transaction --> config-server
     transaction --> discovery-server
 ```
@@ -39,6 +41,7 @@ coordinating with the account-service for balance updates.
 **Transaction Service depends on:**
 
 - **account-service**: for account ownership verification and balance operations
+- **audit-logging**: for audit event production
 
 ## Features
 
@@ -344,6 +347,7 @@ src/main/java/com/amerbank/transaction/
 - **auth-server** (port 8081) - Authentication and authorization
 - **customer-service** (port 8082) - Customer profile management
 - **account-service** (port 8083) - Account management and balance operations
+- **audit-logging** (port 8085) - Audit event ingestion
 - **gateway** (port 8080) - API Gateway
 - **discovery** (port 8761) - Eureka Service Discovery
 - **config-server** - Centralized configuration

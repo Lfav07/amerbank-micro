@@ -21,6 +21,7 @@ graph TD
         customer-service
         account-service
         transaction-service
+        audit-logging
         discovery-service
     end
 
@@ -31,6 +32,7 @@ graph TD
     customer-service -->|Fetch config| config-server
     account-service -->|Fetch config| config-server
     transaction-service -->|Fetch config| config-server
+    audit-logging -->|Fetch config| config-server
 ```
 
 This diagram shows how all microservices fetch their configuration from the Config Server,
@@ -126,4 +128,5 @@ in the repository.
 - **customer-service** (port 8082) - Customer profile management
 - **account-service** (port 8083) - Account management
 - **transaction-service** (port 8084) - Transaction handling
+- **audit-logging** (port 8085) - Audit event management
 - **discovery-service** (port 8761) - Service discovery
