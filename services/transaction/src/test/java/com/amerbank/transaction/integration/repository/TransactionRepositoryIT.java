@@ -3,6 +3,7 @@ package com.amerbank.transaction.integration.repository;
 import com.amerbank.transaction.model.Transaction;
 import com.amerbank.transaction.model.TransactionStatus;
 import com.amerbank.transaction.model.TransactionType;
+import com.amerbank.transaction.persistence.AbstractIntegrationTest;
 import com.amerbank.transaction.repository.TransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,23 +29,10 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest(properties = "spring.cloud.config.enabled=false")
-@Testcontainers
 @ActiveProfiles("test")
 @ImportAutoConfiguration(FlywayAutoConfiguration.class)
-public class TransactionRepositoryIT {
+public class TransactionRepositoryIT extends AbstractIntegrationTest {
 
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
-
-    @DynamicPropertySource
-    static void overrideProps(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-    }
 
     @Autowired
     private TransactionRepository transactionRepository;

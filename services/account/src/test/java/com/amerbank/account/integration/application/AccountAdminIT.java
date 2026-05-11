@@ -1,11 +1,12 @@
 package com.amerbank.account.integration.application;
 
-import com.amerbank.account.dto.AccountResponse;
-import com.amerbank.account.dto.AccountUpdateStatusRequest;
-import com.amerbank.account.dto.AccountUpdateTypeRequest;
+import com.amerbank.account.dto.response.AccountResponse;
+import com.amerbank.account.dto.request.AccountUpdateStatusRequest;
+import com.amerbank.account.dto.request.AccountUpdateTypeRequest;
 import com.amerbank.account.model.Account;
 import com.amerbank.account.model.AccountStatus;
 import com.amerbank.account.model.AccountType;
+import com.amerbank.account.persistence.AbstractIntegrationTest;
 import com.amerbank.account.repository.AccountRepository;
 import com.amerbank.account.util.TestJwtFactory;
 import com.redis.testcontainers.RedisContainer;
@@ -14,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.*;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -24,7 +24,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -33,13 +32,8 @@ import static org.junit.jupiter.api.Assertions.*;
 )
 @Testcontainers
 @ActiveProfiles("test")
-public class AccountAdminIT {
+public class AccountAdminIT extends AbstractIntegrationTest {
 
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
     @Container
     static RedisContainer redisContainer = new RedisContainer("redis:6.2.6").withExposedPorts(6379);
 
@@ -47,10 +41,6 @@ public class AccountAdminIT {
 
     @DynamicPropertySource
     static void overrideProps(DynamicPropertyRegistry registry) {
-
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
         registry.add("spring.data.redis.host", redisContainer::getHost);
         registry.add("spring.data.redis.port", () -> redisContainer.getMappedPort(6379));
     }
@@ -517,9 +507,8 @@ public class AccountAdminIT {
                 }
 
                 @Test
-                @DisplayName("Should return no content when account not found")
-                void shouldReturnNoContentWhenAccountNotFound() {
-                    Long customerId = 12L;
+                @DisplayName("Should return not found when account not found")
+                void shouldReturnNotFoundWhenAccountNotFound() {
                     String endpoint = "/account/admin/ACCT9999999999";
 
                     HttpHeaders headers = new HttpHeaders();
@@ -533,7 +522,7 @@ public class AccountAdminIT {
                             String.class
                     );
 
-                    assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+                    assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
                 }
             }
 

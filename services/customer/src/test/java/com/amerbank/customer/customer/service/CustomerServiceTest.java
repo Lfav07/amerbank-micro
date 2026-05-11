@@ -2,6 +2,11 @@ package com.amerbank.customer.customer.service;
 
 import com.amerbank.customer.customer.config.CustomerProperties;
 import com.amerbank.customer.customer.dto.*;
+import com.amerbank.customer.customer.dto.request.CustomerRegistrationRequest;
+import com.amerbank.customer.customer.dto.request.CustomerUpdateRequest;
+import com.amerbank.customer.customer.dto.response.CustomerRegistrationResponse;
+import com.amerbank.customer.customer.dto.response.CustomerResponse;
+import com.amerbank.customer.customer.dto.response.UserResponse;
 import com.amerbank.customer.customer.exception.*;
 import com.amerbank.customer.customer.model.Customer;
 import com.amerbank.customer.customer.repository.CustomerRepository;
@@ -15,12 +20,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;

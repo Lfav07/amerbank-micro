@@ -1,6 +1,11 @@
 package com.amerbank.auth_server.service;
 
-import com.amerbank.auth_server.dto.*;
+import com.amerbank.auth_server.audit.AuditEventPublisher;
+import com.amerbank.auth_server.dto.request.*;
+import com.amerbank.auth_server.dto.response.AuthenticationResponse;
+import com.amerbank.auth_server.dto.response.CustomerRegistrationResponse;
+import com.amerbank.auth_server.dto.response.Role;
+import com.amerbank.auth_server.dto.response.UserResponse;
 import com.amerbank.auth_server.exception.*;
 import com.amerbank.auth_server.model.User;
 import com.amerbank.auth_server.repository.UserRepository;
@@ -34,6 +39,7 @@ public class UserService {
     private final CustomerServiceClient customerServiceClient;
     private final JwtService jwtService;
     private final UserMapper mapper;
+    private final AuditEventPublisher auditEventPublisher;
 
 
     // -------------------------------------------------------------------------
@@ -90,6 +96,7 @@ public class UserService {
             log.info("User successfully registered with id={} and customerId={}",
                     updatedUser.getId(), customerId);
 
+            auditEventPublisher.publishUserRegistered(updatedUser);
             return mapper.toResponse(updatedUser);
 
         } catch (CustomerServiceUnavailableException ex) {
@@ -253,6 +260,7 @@ public class UserService {
 
         Long customerId = user.getCustomerId();
         String token = jwtService.generateToken(user, customerId);
+        auditEventPublisher.publishLoginSuccess(user);
         log.info("User account logged in successfully");
         return new AuthenticationResponse(token);
     }
@@ -283,6 +291,7 @@ public class UserService {
         }
 
         String token = jwtService.generateAdminToken(user);
+        auditEventPublisher.publishLoginSuccess(user);
         log.info("Admin account logged in successfully");
         return new AuthenticationResponse(token);
     }

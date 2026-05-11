@@ -1,7 +1,7 @@
 package com.amerbank.customer.customer.controller;
 
-import com.amerbank.customer.customer.dto.ErrorResponse;
-import com.amerbank.customer.customer.dto.ValidationErrorResponse;
+import com.amerbank.customer.customer.dto.response.ErrorResponse;
+import com.amerbank.customer.customer.dto.response.ValidationErrorResponse;
 import com.amerbank.customer.customer.exception.AuthServiceUnavailableException;
 import com.amerbank.customer.customer.exception.CustomerAlreadyExistsException;
 import com.amerbank.customer.customer.exception.CustomerNotFoundException;
@@ -33,7 +33,6 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 

@@ -1,11 +1,12 @@
 package com.amerbank.account.integration.application;
 
 import com.amerbank.account.dto.AccountInfo;
-import com.amerbank.account.dto.AccountRequest;
-import com.amerbank.account.dto.AccountResponse;
+import com.amerbank.account.dto.request.AccountRequest;
 import com.amerbank.account.model.AccountType;
+import com.amerbank.account.persistence.AbstractIntegrationTest;
 import com.amerbank.account.repository.AccountRepository;
 import com.amerbank.account.util.TestJwtFactory;
+import com.redis.testcontainers.RedisContainer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -14,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.*;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -34,19 +34,16 @@ import static org.junit.jupiter.api.Assertions.*;
 )
 @Testcontainers
 @ActiveProfiles("test")
-public class AccountRegistrationIT {
+public class AccountRegistrationIT extends AbstractIntegrationTest {
+
 
     @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
+    static RedisContainer redisContainer = new RedisContainer("redis:6.2.6").withExposedPorts(6379);
 
     @DynamicPropertySource
     static void overrideProps(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.data.redis.host", redisContainer::getHost);
+        registry.add("spring.data.redis.port", () -> redisContainer.getMappedPort(6379));
     }
 
     @TestConfiguration
@@ -252,7 +249,7 @@ public class AccountRegistrationIT {
                     AccountInfo[].class
             );
 
-            assertEquals(HttpStatus.CREATED, response.getStatusCode());
+            assertEquals(HttpStatus.OK, response.getStatusCode());
             assertNotNull(response.getBody());
             assertEquals(1, response.getBody().length);
             assertEquals("ACCT0000000001", response.getBody()[0].accountNumber());
@@ -276,7 +273,7 @@ public class AccountRegistrationIT {
                     AccountInfo[].class
             );
 
-            assertEquals(HttpStatus.CREATED, response.getStatusCode());
+            assertEquals(HttpStatus.OK, response.getStatusCode());
             assertNotNull(response.getBody());
             assertEquals(0, response.getBody().length);
         }
@@ -308,7 +305,7 @@ public class AccountRegistrationIT {
                     AccountInfo.class
             );
 
-            assertEquals(HttpStatus.CREATED, response.getStatusCode());
+            assertEquals(HttpStatus.OK, response.getStatusCode());
             assertNotNull(response.getBody());
             assertEquals(AccountType.SAVINGS, response.getBody().type());
         }

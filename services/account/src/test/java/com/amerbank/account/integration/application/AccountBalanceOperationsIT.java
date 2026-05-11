@@ -4,6 +4,7 @@ import com.amerbank.account.dto.AccountBalanceInfo;
 import com.amerbank.account.model.Account;
 import com.amerbank.account.model.AccountStatus;
 import com.amerbank.account.model.AccountType;
+import com.amerbank.account.persistence.AbstractIntegrationTest;
 import com.amerbank.account.repository.AccountRepository;
 import com.amerbank.account.util.TestJwtFactory;
 import org.junit.jupiter.api.AfterEach;
@@ -31,22 +32,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest(properties = "spring.cloud.config.enabled=false",
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
-@Testcontainers
 @ActiveProfiles("test")
-public class AccountBalanceOperationsIT {
-
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
-
-    @DynamicPropertySource
-    static void overrideProps(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-    }
+public class AccountBalanceOperationsIT extends AbstractIntegrationTest {
 
     @TestConfiguration
     static class JwtTestConfig extends TestJwtFactory {

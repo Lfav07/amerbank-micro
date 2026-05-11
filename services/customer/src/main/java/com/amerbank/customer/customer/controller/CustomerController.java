@@ -1,7 +1,7 @@
 package com.amerbank.customer.customer.controller;
 
 import com.amerbank.customer.customer.dto.CustomerInfo;
-import com.amerbank.customer.customer.dto.ErrorResponse;
+import com.amerbank.customer.customer.dto.response.ErrorResponse;
 import com.amerbank.customer.customer.security.JwtUserPrincipal;
 import com.amerbank.customer.customer.service.CustomerService;
 import io.swagger.v3.oas.annotations.Operation;

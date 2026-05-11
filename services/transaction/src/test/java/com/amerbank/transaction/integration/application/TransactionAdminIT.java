@@ -1,8 +1,10 @@
 package com.amerbank.transaction.integration.application;
 
-import com.amerbank.transaction.dto.*;
+import com.amerbank.transaction.dto.response.ErrorResponse;
+import com.amerbank.transaction.dto.response.TransactionResponse;
 import com.amerbank.transaction.model.TransactionStatus;
 import com.amerbank.transaction.model.TransactionType;
+import com.amerbank.transaction.persistence.AbstractIntegrationTest;
 import com.amerbank.transaction.repository.TransactionRepository;
 import com.amerbank.transaction.service.AccountServiceClient;
 import com.amerbank.transaction.util.TestJwtFactory;
@@ -33,22 +35,9 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest(properties = "spring.cloud.config.enabled=false",
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
-@Testcontainers
 @ActiveProfiles("test")
-public class TransactionAdminIT {
+public class TransactionAdminIT extends AbstractIntegrationTest {
 
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
-
-    @DynamicPropertySource
-    static void overrideProps(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-    }
 
     @TestConfiguration
     static class JwtTestConfig extends TestJwtFactory {

@@ -1,6 +1,10 @@
 package com.amerbank.account.controller;
 
 import com.amerbank.account.dto.*;
+import com.amerbank.account.dto.request.AccountRequest;
+import com.amerbank.account.dto.request.MyAccountOwnedRequest;
+import com.amerbank.account.dto.response.ErrorResponse;
+import com.amerbank.account.dto.response.ValidationErrorResponse;
 import com.amerbank.account.model.AccountType;
 import com.amerbank.account.security.JwtUserPrincipal;
 import com.amerbank.account.service.AccountService;

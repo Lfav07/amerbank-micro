@@ -1,64 +1,68 @@
 package com.amerbank.auth_server.integration.application;
 
-import com.amerbank.auth_server.dto.Role;
-import com.amerbank.auth_server.dto.UserRegisterRequest;
-import com.amerbank.auth_server.dto.UserResponse;
+import com.amerbank.auth_server.audit.AuditEventPublisher;
+import com.amerbank.auth_server.dto.request.AdminRegisterRequest;
+import com.amerbank.auth_server.dto.request.CustomerRegistrationRequest;
+import com.amerbank.auth_server.dto.request.UserRegisterRequest;
+import com.amerbank.auth_server.dto.response.CustomerRegistrationResponse;
+import com.amerbank.auth_server.dto.response.ErrorResponse;
+import com.amerbank.auth_server.dto.response.Role;
+import com.amerbank.auth_server.dto.response.UserResponse;
+import com.amerbank.auth_server.dto.response.ValidationErrorResponse;
+import com.amerbank.auth_server.exception.CustomerRegistrationFailedException;
 import com.amerbank.auth_server.model.User;
+import com.amerbank.auth_server.persistence.AbstractIntegrationTest;
 import com.amerbank.auth_server.repository.UserRepository;
-import com.amerbank.auth_server.security.JwtService;
-import com.amerbank.auth_server.util.TestJwtFactory;
+import com.amerbank.auth_server.service.CustomerServiceClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.Import;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-
 import java.time.LocalDate;
-import java.util.Collections;
 import java.util.Optional;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest(properties = "spring.cloud.config.enabled=false",
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
-@Testcontainers
 @ActiveProfiles("test")
-public class UserRegistrationIT {
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
+public class UserRegistrationIT extends AbstractIntegrationTest {
 
-    @DynamicPropertySource
-    static void overrideProps(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-    }
 
-    @TestConfiguration
-    static class JwtTestConfig extends TestJwtFactory {
-    }
-
-    @Autowired
-    private TestJwtFactory testJwtFactory;
+    @MockitoBean
+    private CustomerServiceClient customerServiceClient;
+    @MockitoBean
+    private AuditEventPublisher auditEventPublisher;
 
     @Autowired
     private TestRestTemplate restTemplate;
@@ -66,36 +70,33 @@ public class UserRegistrationIT {
     @Autowired
     private UserRepository userRepository;
 
+    @AfterEach
+    void clearDatabase() {
+        userRepository.deleteAllInBatch();
+    }
 
     @Nested
     @DisplayName("User registration")
     class UserRegistration {
-
-        @AfterEach
-        void clearDatabase() {
-            userRepository.deleteAllInBatch();
-
-        }
 
         @Test
         @DisplayName("Should register user successfully")
         void shouldRegisterUser() {
             String email = "test@email.com";
             String password = "testPassword";
-            String endpoint = "/auth/internal/register";
+            String endpoint = "/auth/register";
             String firstName = "Tester";
             String lastName = "Test";
-            LocalDate dateOfBirth = LocalDate.now();
+            LocalDate dateOfBirth = LocalDate.of(1990, 1, 1);
             UserRegisterRequest request = new UserRegisterRequest(email, password, firstName, lastName, dateOfBirth);
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setBearerAuth(testJwtFactory.generateServiceToken());
-            HttpEntity<UserRegisterRequest> entity = new HttpEntity<>(request, headers);
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenReturn(new CustomerRegistrationResponse(100L));
 
             ResponseEntity<UserResponse> response = restTemplate.exchange(
                     endpoint,
                     HttpMethod.POST,
-                    entity,
+                    new HttpEntity<>(request),
                     UserResponse.class
             );
 
@@ -103,24 +104,41 @@ public class UserRegistrationIT {
             assertNotNull(response.getBody());
             UserResponse body = response.getBody();
             assertNotNull(body.id());
+            assertEquals(100L, body.customerId());
             assertEquals(email.toLowerCase(), body.email());
+
+            Optional<User> savedUser = userRepository.findById(body.id());
+            assertTrue(savedUser.isPresent());
+            assertEquals(100L, savedUser.get().getCustomerId());
+            assertTrue(savedUser.get().getRoles().contains(Role.ROLE_USER));
+
+            ArgumentCaptor<CustomerRegistrationRequest> captor =
+                    ArgumentCaptor.forClass(CustomerRegistrationRequest.class);
+            verify(customerServiceClient).registerCustomer(captor.capture());
+
+            CustomerRegistrationRequest outboundRequest = captor.getValue();
+            assertEquals(firstName, outboundRequest.firstName());
+            assertEquals(lastName, outboundRequest.lastName());
+            assertEquals(dateOfBirth, outboundRequest.dateOfBirth());
+            assertNotNull(outboundRequest.userId());
+            assertEquals(body.id(), outboundRequest.userId());
         }
 
         @Test
         @DisplayName("Should throw EmailAlreadyTaken when two concurrent registrations happen")
         void shouldThrowEmailAlreadyTakenOnConcurrentRequests() throws Exception {
-            String endpoint = "/auth/internal/register";
+            String endpoint = "/auth/register";
             String email = "race@email.com";
             String password = "testPassword";
             String firstName = "Tester";
             String lastName = "Test";
-            LocalDate dateOfBirth = LocalDate.now();
+            LocalDate dateOfBirth = LocalDate.of(1990, 1, 1);
             UserRegisterRequest request = new UserRegisterRequest(email, password, firstName, lastName, dateOfBirth);
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setBearerAuth(testJwtFactory.generateServiceToken());
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenReturn(new CustomerRegistrationResponse(100L));
 
-            HttpEntity<UserRegisterRequest> entity = new HttpEntity<>(request, headers);
+            HttpEntity<UserRegisterRequest> entity = new HttpEntity<>(request);
 
             ExecutorService executor = Executors.newFixedThreadPool(2);
             CountDownLatch ready = new CountDownLatch(2);
@@ -130,13 +148,9 @@ public class UserRegistrationIT {
                 ready.countDown();
                 start.await();
 
-                try {
-                    ResponseEntity<UserResponse> response =
-                            restTemplate.exchange(endpoint, HttpMethod.POST, entity, UserResponse.class);
-                    return HttpStatus.valueOf(response.getStatusCode().value());
-                } catch (HttpClientErrorException ex) {
-                    return HttpStatus.valueOf(ex.getStatusCode().value());
-                }
+                ResponseEntity<String> response =
+                        restTemplate.exchange(endpoint, HttpMethod.POST, entity, String.class);
+                return (HttpStatus) response.getStatusCode();
             };
 
             Future<HttpStatus> f1 = executor.submit(task);
@@ -150,71 +164,73 @@ public class UserRegistrationIT {
 
             executor.shutdown();
 
-            // One must be CREATED, the other CONFLICT
             assertTrue(
                     (status1 == HttpStatus.CREATED && status2 == HttpStatus.CONFLICT) ||
                             (status2 == HttpStatus.CREATED && status1 == HttpStatus.CONFLICT)
             );
         }
 
-
         @Test
         @DisplayName("Should not register user when email is already taken")
         void shouldNotRegisterUserWhenEmailTaken() {
             String email = "testTaken@email.com";
             String password = "testPassword";
-            String endpoint = "/auth/internal/register";
+            String endpoint = "/auth/register";
             String firstName = "Tester";
             String lastName = "Test";
-            LocalDate dateOfBirth = LocalDate.now();
+            LocalDate dateOfBirth = LocalDate.of(1990, 1, 1);
             UserRegisterRequest request = new UserRegisterRequest(email, password, firstName, lastName, dateOfBirth);
-            HttpHeaders headers = new HttpHeaders();
-            headers.setBearerAuth(testJwtFactory.generateServiceToken());
-            HttpEntity<UserRegisterRequest> entity = new HttpEntity<>(request, headers);
+
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenReturn(new CustomerRegistrationResponse(100L));
 
             restTemplate.exchange(
                     endpoint,
                     HttpMethod.POST,
-                    entity,
+                    new HttpEntity<>(request),
                     UserResponse.class
             );
 
-            ResponseEntity<UserResponse> response = restTemplate.exchange(
+            ResponseEntity<ErrorResponse> response = restTemplate.exchange(
                     endpoint,
                     HttpMethod.POST,
-                    entity,
-                    UserResponse.class
+                    new HttpEntity<>(request),
+                    ErrorResponse.class
             );
+
             assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
             assertNotNull(response.getBody());
-            assertNull(response.getBody().id());
-            assertNull(response.getBody().email());
+            assertEquals("Email already taken", response.getBody().getMessage());
+            verify(customerServiceClient, times(1)).registerCustomer(any(CustomerRegistrationRequest.class));
         }
 
         @Test
-        @DisplayName("Should not register user when jwt provided is invalid")
-        void shouldNotRegisterUserWhenInvalidJwt() {
-            String email = "test@email.com";
-            String password = "testPassword";
-            String endpoint = "/auth/internal/register";
-            String fakeToken = "FakeToken";
-            String firstName = "Tester";
-            String lastName = "Test";
-            LocalDate dateOfBirth = LocalDate.now();
-            UserRegisterRequest request = new UserRegisterRequest(email, password, firstName, lastName, dateOfBirth);
-            HttpHeaders headers = new HttpHeaders();
-            headers.setBearerAuth(fakeToken);
-            HttpEntity<UserRegisterRequest> entity = new HttpEntity<>(request, headers);
+        @DisplayName("Should roll back user when customer registration fails")
+        void shouldRollbackUserWhenCustomerRegistrationFails() {
+            String email = "rollback@email.com";
+            String endpoint = "/auth/register";
+            UserRegisterRequest request = new UserRegisterRequest(
+                    email,
+                    "testPassword",
+                    "Tester",
+                    "Rollback",
+                    LocalDate.of(1990, 1, 1)
+            );
 
-            ResponseEntity<UserResponse> response = restTemplate.exchange(
+            when(customerServiceClient.registerCustomer(any(CustomerRegistrationRequest.class)))
+                    .thenThrow(new CustomerRegistrationFailedException("customer registration failed"));
+
+            ResponseEntity<ErrorResponse> response = restTemplate.exchange(
                     endpoint,
                     HttpMethod.POST,
-                    entity,
-                    UserResponse.class
+                    new HttpEntity<>(request),
+                    ErrorResponse.class
             );
-            assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-            assertNotNull(response);
-            assertNull(response.getBody());
+
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("Failed to register customer", response.getBody().getMessage());
+            assertFalse(userRepository.existsByEmailIgnoreCase(email));
         }
 
         @Test
@@ -222,25 +238,24 @@ public class UserRegistrationIT {
         void shouldNotRegisterUserWhenInvalidPassword() {
             String email = "test@email.com";
             String password = "123";
-            String endpoint = "/auth/internal/register";
+            String endpoint = "/auth/register";
             String firstName = "Tester";
             String lastName = "Test";
-            LocalDate dateOfBirth = LocalDate.now();
+            LocalDate dateOfBirth = LocalDate.of(1990, 1, 1);
             UserRegisterRequest request = new UserRegisterRequest(email, password, firstName, lastName, dateOfBirth);
-            HttpHeaders headers = new HttpHeaders();
-            headers.setBearerAuth(testJwtFactory.generateServiceToken());
-            HttpEntity<UserRegisterRequest> entity = new HttpEntity<>(request, headers);
 
-            ResponseEntity<UserResponse> response = restTemplate.exchange(
+            ResponseEntity<ValidationErrorResponse> response = restTemplate.exchange(
                     endpoint,
                     HttpMethod.POST,
-                    entity,
-                    UserResponse.class
+                    new HttpEntity<>(request),
+                    ValidationErrorResponse.class
             );
+
             assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
             assertNotNull(response.getBody());
-            assertNull(response.getBody().id());
-            assertNull(response.getBody().email());
+            assertEquals("Validation failed", response.getBody().getMessage());
+            assertEquals("Password too short", response.getBody().getErrors().get("password"));
+            assertNull(userRepository.findByEmailIgnoreCase(email).orElse(null));
         }
 
     }
@@ -256,11 +271,8 @@ public class UserRegistrationIT {
             String email = "test@admin.com";
             String password = "testPassword";
             String endpoint = "/auth/admin/register";
-            String firstName = "Tester";
-            String lastName = "Test";
-            LocalDate dateOfBirth = LocalDate.now();
-            UserRegisterRequest request = new UserRegisterRequest(email, password, firstName, lastName, dateOfBirth);
-            HttpEntity<UserRegisterRequest> entity = new HttpEntity<>(request);
+            AdminRegisterRequest request = new AdminRegisterRequest(email, password);
+            HttpEntity<AdminRegisterRequest> entity = new HttpEntity<>(request);
             ResponseEntity<UserResponse> response = restTemplate.exchange(
                     endpoint,
                     HttpMethod.POST,
@@ -284,11 +296,8 @@ public class UserRegistrationIT {
             String email = "testAdminTaken@email.com";
             String password = "testPassword";
             String endpoint = "/auth/admin/register";
-            String firstName = "Tester";
-            String lastName = "Test";
-            LocalDate dateOfBirth = LocalDate.now();
-            UserRegisterRequest request = new UserRegisterRequest(email, password, firstName, lastName, dateOfBirth);
-            HttpEntity<UserRegisterRequest> entity = new HttpEntity<>(request);
+            AdminRegisterRequest request = new AdminRegisterRequest(email, password);
+            HttpEntity<AdminRegisterRequest> entity = new HttpEntity<>(request);
 
             restTemplate.exchange(
                     endpoint,
@@ -297,16 +306,15 @@ public class UserRegistrationIT {
                     UserResponse.class
             );
 
-            ResponseEntity<UserResponse> response = restTemplate.exchange(
+            ResponseEntity<ErrorResponse> response = restTemplate.exchange(
                     endpoint,
                     HttpMethod.POST,
                     entity,
-                    UserResponse.class
+                    ErrorResponse.class
             );
             assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
             assertNotNull(response.getBody());
-            assertNull(response.getBody().id());
-            assertNull(response.getBody().email());
+            assertEquals("Email already taken", response.getBody().getMessage());
         }
 
     }

@@ -1,9 +1,14 @@
 package com.amerbank.transaction.integration.application;
 
-import com.amerbank.transaction.dto.*;
+import com.amerbank.transaction.dto.audit.AuditEventMessage;
+import com.amerbank.transaction.dto.request.DepositTransactionRequest;
+import com.amerbank.transaction.dto.request.PaymentTransactionRequest;
+import com.amerbank.transaction.dto.request.RefundTransactionRequest;
+import com.amerbank.transaction.dto.response.TransactionResponse;
 import com.amerbank.transaction.model.Transaction;
 import com.amerbank.transaction.model.TransactionStatus;
 import com.amerbank.transaction.model.TransactionType;
+import com.amerbank.transaction.persistence.AbstractIntegrationTest;
 import com.amerbank.transaction.repository.TransactionRepository;
 import com.amerbank.transaction.service.AccountServiceClient;
 import com.amerbank.transaction.util.TestJwtFactory;
@@ -16,6 +21,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -31,28 +37,13 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest(properties = "spring.cloud.config.enabled=false",
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
-@Testcontainers
 @ActiveProfiles("test")
-public class TransactionUserIT {
-
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
-
-    @DynamicPropertySource
-    static void overrideProps(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-    }
+public class TransactionUserIT extends AbstractIntegrationTest {
 
     @TestConfiguration
     static class JwtTestConfig extends TestJwtFactory {
@@ -60,6 +51,9 @@ public class TransactionUserIT {
 
     @MockitoBean
     private AccountServiceClient accountServiceClient;
+
+    @MockitoBean
+    private KafkaTemplate<String, AuditEventMessage> kafkaTemplate;
 
     @Autowired
     private TestJwtFactory testJwtFactory;

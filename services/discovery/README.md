@@ -19,6 +19,7 @@ graph TD
         customer-service
         account-service
         transaction-service
+        audit-logging
     end
 
     gateway -->|Register / Discover| discovery-server
@@ -26,6 +27,7 @@ graph TD
     customer-service -->|Register / Discover| discovery-server
     account-service -->|Register / Discover| discovery-server
     transaction-service -->|Register / Discover| discovery-server
+    audit-logging -->|Register / Discover| discovery-server
 ```
 
 This diagram shows how all microservices register with and discover each other through the
@@ -112,7 +114,8 @@ The dashboard shows:
 - **auth-server** (port 8081) - Authentication and authorization
 - **customer-service** (port 8082) - Customer profile management
 - **account-service** (port 8083) - Account management and balance operations
-- **gateway** (port 8080) - API Gateway
 - **transaction-service** (port 8084) - Transaction handling
+- **audit-logging** (port 8085) - Audit event management
+- **gateway** (port 8080) - API Gateway
 - **config-server** - Centralized configuration
 

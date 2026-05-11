@@ -1,12 +1,15 @@
 package com.amerbank.auth_server.integration.application;
 
-import com.amerbank.auth_server.dto.*;
+import com.amerbank.auth_server.audit.AuditEventPublisher;
+import com.amerbank.auth_server.dto.request.*;
+import com.amerbank.auth_server.dto.response.CustomerRegistrationResponse;
+import com.amerbank.auth_server.dto.response.UserResponse;
+import com.amerbank.auth_server.persistence.AbstractIntegrationTest;
 import com.amerbank.auth_server.repository.UserRepository;
 import com.amerbank.auth_server.security.JwtService;
 import com.amerbank.auth_server.service.CustomerServiceClient;
 import com.amerbank.auth_server.util.TestJwtFactory;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -34,22 +37,8 @@ import static org.mockito.Mockito.when;
 @SpringBootTest(properties = "spring.cloud.config.enabled=false",
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
-@Testcontainers
 @ActiveProfiles("test")
-public class AdminUserManagementIT {
-
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
-
-    @DynamicPropertySource
-    static void overrideProps(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-    }
+public class AdminUserManagementIT extends AbstractIntegrationTest {
 
     @TestConfiguration
     static class JwtTestConfig extends TestJwtFactory {
@@ -63,6 +52,9 @@ public class AdminUserManagementIT {
 
     @Autowired
     private TestRestTemplate restTemplate;
+
+    @MockitoBean
+    private AuditEventPublisher auditEventPublisher;
 
     @Autowired
     private UserRepository userRepository;

@@ -1,6 +1,13 @@
 package com.amerbank.auth_server.controller;
 
-import com.amerbank.auth_server.dto.*;
+import com.amerbank.auth_server.dto.request.AdminEmailUpdateRequest;
+import com.amerbank.auth_server.dto.request.AdminPasswordUpdateRequest;
+import com.amerbank.auth_server.dto.request.AdminRegisterRequest;
+import com.amerbank.auth_server.dto.request.UserLoginRequest;
+import com.amerbank.auth_server.dto.response.AuthenticationResponse;
+import com.amerbank.auth_server.dto.response.ErrorResponse;
+import com.amerbank.auth_server.dto.response.UserResponse;
+import com.amerbank.auth_server.dto.response.ValidationErrorResponse;
 import com.amerbank.auth_server.security.JwtUserPrincipal;
 import com.amerbank.auth_server.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;

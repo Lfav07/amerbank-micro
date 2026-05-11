@@ -1,16 +1,15 @@
 package com.amerbank.transaction.service;
 
 import com.amerbank.transaction.config.TransactionProperties;
-import com.amerbank.transaction.dto.ServiceAccountOwnedRequest;
-import com.amerbank.transaction.dto.ServiceDepositBalanceRequest;
-import com.amerbank.transaction.dto.ServicePaymentRequest;
-import com.amerbank.transaction.dto.ServiceRefundBalanceRequest;
+import com.amerbank.transaction.dto.request.ServiceAccountOwnedRequest;
+import com.amerbank.transaction.dto.request.ServiceDepositBalanceRequest;
+import com.amerbank.transaction.dto.request.ServicePaymentRequest;
+import com.amerbank.transaction.dto.request.ServiceRefundBalanceRequest;
 import com.amerbank.transaction.exception.AccountServiceUnavailableException;
 import com.amerbank.transaction.exception.DepositFailedException;
 import com.amerbank.transaction.exception.PaymentFailedException;
 import com.amerbank.transaction.exception.RefundFailedException;
 import com.amerbank.transaction.security.JwtService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;

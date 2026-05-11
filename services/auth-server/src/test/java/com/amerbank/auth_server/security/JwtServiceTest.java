@@ -1,7 +1,7 @@
 package com.amerbank.auth_server.security;
 
 import com.amerbank.auth_server.config.JwtProperties;
-import com.amerbank.auth_server.dto.Role;
+import com.amerbank.auth_server.dto.response.Role;
 import com.amerbank.auth_server.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;

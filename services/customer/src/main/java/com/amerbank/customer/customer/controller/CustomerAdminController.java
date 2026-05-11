@@ -1,9 +1,9 @@
 package com.amerbank.customer.customer.controller;
 
-import com.amerbank.customer.customer.dto.CustomerResponse;
-import com.amerbank.customer.customer.dto.CustomerUpdateRequest;
-import com.amerbank.customer.customer.dto.ErrorResponse;
-import com.amerbank.customer.customer.dto.ValidationErrorResponse;
+import com.amerbank.customer.customer.dto.response.CustomerResponse;
+import com.amerbank.customer.customer.dto.request.CustomerUpdateRequest;
+import com.amerbank.customer.customer.dto.response.ErrorResponse;
+import com.amerbank.customer.customer.dto.response.ValidationErrorResponse;
 import com.amerbank.customer.customer.service.CustomerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;

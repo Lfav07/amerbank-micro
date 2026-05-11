@@ -2,14 +2,13 @@ package com.amerbank.account.service;
 
 import com.amerbank.account.config.AccountProperties;
 import com.amerbank.account.dto.*;
+import com.amerbank.account.dto.request.*;
+import com.amerbank.account.dto.response.AccountResponse;
 import com.amerbank.account.exception.*;
 import com.amerbank.account.model.Account;
 import com.amerbank.account.model.AccountStatus;
 import com.amerbank.account.model.AccountType;
 import com.amerbank.account.repository.AccountRepository;
-import com.amerbank.account.dto.DepositBalanceRequest;
-import com.amerbank.account.dto.PaymentBalanceRequest;
-import com.amerbank.account.dto.RefundBalanceRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.cache.annotation.CacheEvict;

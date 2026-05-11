@@ -53,6 +53,13 @@ spec:
               cpu: "500m"
               memory: "1Gi"
 
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8761
+            periodSeconds: 5
+            failureThreshold: 30
+
           readinessProbe:
             httpGet:
               path: /actuator/health

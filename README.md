@@ -6,6 +6,7 @@
 ![Kubernetes](https://img.shields.io/badge/kubernetes-%23326ce5.svg?style=for-the-badge&logo=kubernetes&logoColor=white)
 ![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)
 ![Redis](https://img.shields.io/badge/redis-%23DD0031.svg?style=for-the-badge&logo=redis&logoColor=white)
+[![Apache Kafka](https://img.shields.io/badge/Apache%20Kafka-000?style=for-the-badge&logo=apachekafka)](https://kafka.apache.org/)
 
 ## Amerbank is an open-source online banking system built with Java 21 and Spring Boot 3, following a microservices architecture.
 
@@ -22,7 +23,7 @@ JWT-based authentication, service discovery, centralized configuration, and inte
 ```bash
 git clone https://github.com/Lfav07/amerbank-micro
 cd amerbank-micro
-docker-compose up --build
+docker compose up --build
 ```
 
 
@@ -51,6 +52,7 @@ Amerbank follows a microservices architecture where each service is responsible 
 Key components include:
 
 - API Gateway - single entry point for all client requests
+- Audit Service - consumes and persists logs sent from other microservices
 - Auth Server - handles user and customer registration, authentication and JWT issuance
 - Account Service - manages bank accounts
 - Transaction Service — processes transfers and operations
@@ -98,6 +100,8 @@ graph TD
   Gateway --> customer
   Gateway --> account
   Gateway --> transaction
+  Gateway --> audit
+  audit --> AuditDB[(Audit DB Schema)]
   auth-server --> UsersDB[(Users DB Schema)]
   customer --> CustomersDB[(Customers DB Schema)]
   account --> AccountDB[(Accounts DB Schema)]
@@ -118,6 +122,7 @@ Some operations require communication between microservices to maintain data con
 
 - The Auth Server integrates with the Customer Service to create a customer profile during user registration.
 - The Transaction Service interacts with the Account Service to update balances after transactions.
+- Auth server and Transaction Service integrate with the Audit Service to send logs asynchronously via Kafka.
 
 These interactions are currently implemented using synchronous REST communication.
 
@@ -125,6 +130,8 @@ These interactions are currently implemented using synchronous REST communicatio
 graph TD
   auth-server -->|Integrated Customer Registration| customer
   transaction -->|Integrated Balance Updates| account
+  auth-server --> |Integrated Log Forwarding| audit
+  transaction --> |Integrated Log Forwarding| audit
 ```
 
 ##  Infrastructure Overview
@@ -134,6 +141,7 @@ The system relies on several infrastructure components to support configuration,
 - Config Server provides centralized configuration for all services
 - Discovery Server enables service registration and dynamic lookup
 - Redis is used by the account service for caching account data.
+- Kafka is used by the auth-server and transaction service for log processing.
 
 All services fetch configuration from the Config Server and register themselves with the Discovery Server.
 
@@ -145,17 +153,17 @@ graph LR
     customer
     account
     transaction
+    audit
   end
 
   subgraph Infrastructure
     config-server
     discovery-server
     Redis
+    Kafka
   end
-
-  Application --> config-server
-  Application --> discovery-server
-  account --> Redis
+  
+  
 ```
 
 ## Services
@@ -167,6 +175,9 @@ Acts as the single entry point for all client requests. Responsible for routing 
 ### Auth Server
 
 Handles user authentication, registration, and JWT token issuance.
+
+## Audit Service
+Responsible for consuming and persisting application logs, alongside log inspection through API endpoints.
 
 ### Config Server
 
@@ -211,6 +222,7 @@ Security features include:
 - Docker
 - Kubernetes
 - Flyway
+- Kafka
 - JUnit 5
 - Testcontainers
 - GitHub Actions
@@ -238,6 +250,14 @@ Security features include:
 - Java 21
 - PostgreSQL 15+ (Optional, Required for running locally without docker compose)
 
+#### Docker:
+
+Run the system using Docker
+
+```bash
+docker compose up --build
+```
+
 ### Environment Variables
 
 #### This section is optional if you are running with Docker compose. docker-compose.yml has preconfigured default values to bootstrap the application.
@@ -255,13 +275,6 @@ JWT_SECRET=your_256_bit_minimum_secret_key
 1. Clone the repository
 2. Configure environment variables
 
-#### Docker:
-
-Run the system using Docker
-
-```bash
-docker-compose up --build
-```
 
 #### Running Locally
 
@@ -287,6 +300,7 @@ Start the services manually by following the recommended order:
 * [Customer Service Swagger UI](http://localhost:8082/swagger-ui/index.html#/)
 * [Account Service  Swagger UI](http://localhost:8083/swagger-ui/index.html#/)
 * [Transaction Service Swagger UI](http://localhost:8084/swagger-ui/index.html#/)
+* [Audit Service Swagger UI](http://localhost:8085/swagger-ui/index.html#/)
 ### Postman Collection
 
 The application contains a ready-to-use postman collection exported as JSON, the following steps shows how to import it:
@@ -312,17 +326,16 @@ service.
 * [Config Server Documentation](./services/config-server/README.md)
 * [Discovery Server Documentation](./services/discovery/README.md)
 * [API Gateway Documentation](./services/gateway/README.md)
-* [Auth Server Documentation](/services/auth-server/README.md)
+* [Auth Server Documentation](./services/auth-server/README.md)
+* [Audit Service Documentation](./services/audit-logging/README.md)
 * [Customer Service Documentation](./services/customer/README.md)
 * [Account Service Documentation](./services/account/README.md)
 * [Transaction Service Documentation](./services/transaction/README.md)
 
 ##  Future Improvements
 
-- Implement distributed tracing
-- Introduce event-driven communication (Kafka)
-- Add rate limiting and Resilience at the API Gateway
-- Improve monitoring and logging
+- Improve distributed tracing
+- Add rate limiting and Resilience
 - Implement the loan microservice
 
 

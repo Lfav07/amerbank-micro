@@ -1,0 +1,12 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: audit-logging
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE}
+
+  config:
+   import: "optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888}"
+

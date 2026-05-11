@@ -1,8 +1,8 @@
 package com.amerbank.customer.customer.integration.application;
 
-import com.amerbank.customer.customer.dto.CustomerRegistrationRequest;
-import com.amerbank.customer.customer.dto.CustomerRegistrationResponse;
-import com.amerbank.customer.customer.model.Customer;
+import com.amerbank.customer.customer.dto.request.CustomerRegistrationRequest;
+import com.amerbank.customer.customer.dto.response.CustomerRegistrationResponse;
+import com.amerbank.customer.customer.persistence.AbstractIntegrationTest;
 import com.amerbank.customer.customer.repository.CustomerRepository;
 import com.amerbank.customer.customer.util.TestJwtFactory;
 import org.junit.jupiter.api.AfterEach;
@@ -28,21 +28,9 @@ import java.time.LocalDate;
 @SpringBootTest(properties = "spring.cloud.config.enabled=false",
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
-@Testcontainers
 @ActiveProfiles("test")
-public class CustomerRegistrationIT {
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
+public class CustomerRegistrationIT extends AbstractIntegrationTest {
 
-    @DynamicPropertySource
-    static void overrideProps(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-    }
     @TestConfiguration
     static class JwtTestConfig extends TestJwtFactory {
     }

@@ -3,6 +3,7 @@ package com.amerbank.account.integration.repository;
 import com.amerbank.account.model.Account;
 import com.amerbank.account.model.AccountStatus;
 import com.amerbank.account.model.AccountType;
+import com.amerbank.account.persistence.AbstractIntegrationTest;
 import com.amerbank.account.repository.AccountRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,23 +27,10 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest(properties = "spring.cloud.config.enabled=false")
-@Testcontainers
 @ActiveProfiles("test")
 @ImportAutoConfiguration(FlywayAutoConfiguration.class)
-public class AccountRepositoryIT {
+public class AccountRepositoryIT extends AbstractIntegrationTest {
 
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
-
-    @DynamicPropertySource
-    static void overrideProps(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-    }
 
     @Autowired
     private AccountRepository accountRepository;

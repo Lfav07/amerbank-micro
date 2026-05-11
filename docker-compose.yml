@@ -9,6 +9,8 @@ services:
       JWT_SECRET: ${JWT_SECRET:-vPaBwIshrmI92nA7kPnor1KmIwvyu9gjhApJfe9rnhn}
     restart: unless-stopped
     depends_on:
+      kafka:
+        condition: service_healthy
       config-server:
         condition: service_healthy
       discovery:
@@ -30,6 +32,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-vPaBwIshrmI92nA7kPnor1KmIwvyu9gjhApJfe9rnhn}
     restart: unless-stopped
     depends_on:
+
       config-server:
         condition: service_healthy
       discovery:
@@ -74,6 +77,8 @@ services:
       JWT_SECRET: ${JWT_SECRET:-vPaBwIshrmI92nA7kPnor1KmIwvyu9gjhApJfe9rnhn}
     restart: unless-stopped
     depends_on:
+      kafka:
+        condition: service_healthy
       config-server:
         condition: service_healthy
       discovery:
@@ -84,6 +89,30 @@ services:
       - backend
     ports:
       - "8084:8080"
+
+
+  audit-logging:
+    build: ./services/audit-logging
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      CONFIG_SERVER_URL: "http://config-server:8080"
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-vPaBwIshrmI92nA7kPnor1KmIwvyu9gjhApJfe9rnhn}
+    restart: unless-stopped
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - backend
+    ports:
+      - "8085:8080"
 
   config-server:
     build: ./services/config-server
@@ -136,6 +165,67 @@ services:
     networks:
       - backend
 
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    hostname: kafka
+    container_name: kafka
+    ports:
+      - "9092:9092"
+      - "9101:9101"
+    environment:
+
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+
+      # Listeners
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092,CONTROLLER://kafka:29093
+
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+
+
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+
+
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    healthcheck:
+      test: [ "CMD", "kafka-broker-api-versions", "--bootstrap-server", "kafka:29092" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - backend
+
+
+  kafka-init:
+    image: confluentinc/cp-kafka:7.6.1
+    depends_on:
+      kafka:
+        condition: service_healthy
+    volumes:
+      - ./create-topics.sh:/create-topics.sh
+    entrypoint: ["/bin/bash", "/create-topics.sh"]
+    restart: "no"
+    environment:
+      KAFKA_BROKER: "kafka:29092"
+    networks:
+      - backend
   redis:
     image: redis:7.2
     container_name: redis
@@ -169,6 +259,7 @@ services:
         - "5432:5432"
     volumes:
         - pg-data:/var/lib/postgresql/data
+        - ./init:/docker-entrypoint-initdb.d
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
     networks:
@@ -178,6 +269,7 @@ services:
 volumes:
   redis-data:
   pg-data:
+  kafka-data:
 
 networks:
   backend:

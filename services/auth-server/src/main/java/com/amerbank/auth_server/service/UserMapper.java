@@ -1,5 +1,5 @@
 package com.amerbank.auth_server.service;
-import com.amerbank.auth_server.dto.UserResponse;
+import com.amerbank.auth_server.dto.response.UserResponse;
 import com.amerbank.auth_server.model.User;
 import org.springframework.stereotype.Service;
 
