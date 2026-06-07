@@ -1,7 +1,5 @@
 #!/bin/bash
-set -e
-
-KAFKA_BROKER="${KAFKA_BROKER:-kafka:29092}"
+set -e KAFKA_BROKER="${KAFKA_BROKER:-kafka:29092}"
 
 echo "Waiting for Kafka broker at $KAFKA_BROKER..."
 until kafka-topics --bootstrap-server "$KAFKA_BROKER" --list > /dev/null 2>&1; do
