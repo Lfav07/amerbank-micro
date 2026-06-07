@@ -1,0 +1,11 @@
+# Shell scripts must always use LF
+*.sh text eol=lf
+
+# Docker-related files
+Dockerfile text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Windows scripts can use CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
