@@ -56,6 +56,7 @@ Key components include:
 - Auth Server - handles user and customer registration, authentication and JWT issuance
 - Account Service - manages bank accounts
 - Transaction Service — processes transfers and operations
+- Loan Service — manages loan lifecycle including application, approval, disbursement, and repayment
 - Config Server — centralized configuration management
 - Discovery Server — service registration and lookup
 ## Design Decisions
@@ -100,12 +101,14 @@ graph TD
   Gateway --> customer
   Gateway --> account
   Gateway --> transaction
+  Gateway --> loan
   Gateway --> audit
   audit --> AuditDB[(Audit DB Schema)]
   auth-server --> UsersDB[(Users DB Schema)]
   customer --> CustomersDB[(Customers DB Schema)]
   account --> AccountDB[(Accounts DB Schema)]
   transaction --> transactionDB[(Transactions DB Schema)]
+  loan --> LoanDB[(Loan DB Schema)]
 ```
 
 ##  Request Flow Example
@@ -122,6 +125,7 @@ Some operations require communication between microservices to maintain data con
 
 - The Auth Server integrates with the Customer Service to create a customer profile during user registration.
 - The Transaction Service interacts with the Account Service to update balances after transactions.
+- The Loan Service integrates with the Account Service for account ownership verification, fund disbursements, and repayment withdrawals.
 - Auth server and Transaction Service integrate with the Audit Service to send logs asynchronously via Kafka.
 
 These interactions are currently implemented using synchronous REST communication.
@@ -130,6 +134,7 @@ These interactions are currently implemented using synchronous REST communicatio
 graph TD
   auth-server -->|Integrated Customer Registration| customer
   transaction -->|Integrated Balance Updates| account
+  loan -->|Ownership Verification & Fund Operations| account
   auth-server --> |Integrated Log Forwarding| audit
   transaction --> |Integrated Log Forwarding| audit
 ```
@@ -153,6 +158,7 @@ graph LR
     customer
     account
     transaction
+    loan
     audit
   end
 
@@ -199,6 +205,10 @@ Responsible for managing bank accounts and balances.
 
 Processes financial transactions and ensures consistency.
 
+### Loan Service
+
+Manages the full loan lifecycle including application, approval, disbursement, and repayment tracking. Integrates with the Account Service for fund operations and supports multiple loan types with automatic amortization schedule generation.
+
 ## Security
 
 Authentication is implemented using JWT (JSON Web Tokens). The Auth Server is responsible for issuing tokens, which are
@@ -234,6 +244,10 @@ Security features include:
 - Account creation and management
 - Money transfers between accounts
 - Transaction history
+- Loan application and lifecycle management
+- Loan types: Personal, Home, Auto, Business
+- Automatic amortization schedule generation
+- Service-to-service internal endpoints for inter-microservice communication
 - Secure API access using JWT
 - Centralized configuration
 - CI/CD pipelines with GitHub Actions
@@ -290,6 +304,7 @@ Start the services manually by following the recommended order:
 5. Customer Service
 6. Account Service
 7. Transaction Service
+8. Loan Service
 
 ## API Testing
 
@@ -301,6 +316,7 @@ Start the services manually by following the recommended order:
 * [Account Service  Swagger UI](http://localhost:8083/swagger-ui/index.html#/)
 * [Transaction Service Swagger UI](http://localhost:8084/swagger-ui/index.html#/)
 * [Audit Service Swagger UI](http://localhost:8085/swagger-ui/index.html#/)
+* [Loan Service Swagger UI](http://localhost:8086/swagger-ui/index.html#/)
 ### Postman Collection
 
 The application contains a ready-to-use postman collection exported as JSON, the following steps shows how to import it:
@@ -331,12 +347,12 @@ service.
 * [Customer Service Documentation](./services/customer/README.md)
 * [Account Service Documentation](./services/account/README.md)
 * [Transaction Service Documentation](./services/transaction/README.md)
+* [Loan Service Documentation](./services/loan/README.md)
 
 ##  Future Improvements
 
 - Improve distributed tracing
 - Add rate limiting and Resilience
-- Implement the loan microservice
 
 
 
