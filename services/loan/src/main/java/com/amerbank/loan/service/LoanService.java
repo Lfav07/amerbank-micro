@@ -121,9 +121,11 @@ public class LoanService {
             throw new InsufficientRepaymentAmountException("Repayment amount must be at least the monthly payment");
         }
 
-        accountServiceClient.withdraw(customerId, loan.getAccountNumber(), request.amount());
+        BigDecimal actualAmount = request.amount().min(loan.getRemainingBalance());
 
-        processRepayment(request.loanNumber(), request.amount());
+        accountServiceClient.withdraw(customerId, loan.getAccountNumber(), actualAmount);
+
+        processRepayment(request.loanNumber(), actualAmount);
     }
 
     @Transactional
