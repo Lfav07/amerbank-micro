@@ -332,6 +332,8 @@ The collection includes requests for all available endpoints. Make sure the appl
 
 Amerbank can be deployed to Kubernetes using the manifests in the `k8s/` directory. This setup uses Minikube for local development.
 
+> **Note:** The Loan Service is not yet included in the Kubernetes setup.
+
 For detailed quickstart instructions, see [KUBERNETES.md](./KUBERNETES.md).
 
 # Detailed Service Documentation
