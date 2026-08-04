@@ -124,8 +124,6 @@ services:
       JWT_SECRET: ${JWT_SECRET:-vPaBwIshrmI92nA7kPnor1KmIwvyu9gjhApJfe9rnhn}
     restart: unless-stopped
     depends_on:
-      kafka:
-        condition: service_healthy
       config-server:
         condition: service_healthy
       discovery:
@@ -135,7 +133,7 @@ services:
     networks:
       - backend
     ports:
-      - "8086:8086"
+      - "8086:8080"
 
   config-server:
     build: ./services/config-server
