@@ -1,0 +1,42 @@
+name: Loan Service CI
+
+on:
+  push:
+    branches:
+      - main
+      - feature/**
+    paths:
+      - 'services/loan/**'
+      - '.github/workflows/**'
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'services/loan/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            services/loan
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'corretto'
+          java-version: '21'
+          cache: 'maven'
+
+      - name: Make mvnw executable
+        working-directory: 'services/loan'
+        run: chmod +x mvnw
+
+      - name: Build, test and package
+        working-directory: 'services/loan'
+        run: ./mvnw clean verify

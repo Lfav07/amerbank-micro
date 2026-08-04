@@ -68,7 +68,7 @@ All other requests are routed directly from the gateway to their respective serv
 
 ### Environment Variables
 
-Create a `.env` file or set these environment variables:
+Set these environment variables:
 
 ```bash
 DB_USERNAME=your_db_username

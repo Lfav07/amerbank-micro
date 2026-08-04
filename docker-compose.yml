@@ -114,6 +114,27 @@ services:
     ports:
       - "8085:8080"
 
+  loan:
+    build: ./services/loan
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      CONFIG_SERVER_URL: "http://config-server:8080"
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-vPaBwIshrmI92nA7kPnor1KmIwvyu9gjhApJfe9rnhn}
+    restart: unless-stopped
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend
+    ports:
+      - "8086:8080"
+
   config-server:
     build: ./services/config-server
     ports:

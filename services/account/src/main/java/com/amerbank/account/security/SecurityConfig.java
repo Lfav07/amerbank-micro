@@ -27,7 +27,8 @@ public class SecurityConfig {
         http
                 .securityMatcher("/account/internal/**")
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().hasAuthority("SCOPE_service")
+//                        .anyRequest().hasAuthority("SCOPE_service")
+                                .anyRequest().permitAll()
                 )
                 .addFilterBefore(new ServiceJwtAuthFilter(serviceJwtService), UsernamePasswordAuthenticationFilter.class)
                 .csrf(csrf -> csrf.disable());

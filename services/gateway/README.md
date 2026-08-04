@@ -68,7 +68,7 @@ This diagram shows how the Gateway routes requests to the appropriate microservi
 
 ### Environment Variables
 
-Create a `.env` file or set these environment variables:
+Set these environment variables:
 
 ```bash
 JWT_SECRET=your_256_bit_minimum_secret_key

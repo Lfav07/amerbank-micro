@@ -1,0 +1,35 @@
+spring:
+  cloud:
+    config:
+      enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: validate
+      show-sql: true
+  flyway:
+    schemas: loan
+    enabled: true
+    locations: classpath:db/migration/loan
+
+loan:
+  prefix: "LN"
+  body-digits: 10
+  upper-bound: 10000000000
+  max-attempts: 5
+  min-amount: 100.00
+  max-amount: 1000000.00
+  min-term-months: 1
+  max-term-months: 360
+  account-service-base: http://account
+  customer-service-base: http://customer
+  endpoint-owned: /account/internal/owned
+  endpoint-deposit: /account/internal/deposit
+  endpoint-withdraw: /account/internal/withdraw
+  endpoint-payment: /account/internal/payment
+
+jwt:
+  secret: "testsecret123456789test123456789secret"
+
+eureka:
+  client:
+    enabled: false

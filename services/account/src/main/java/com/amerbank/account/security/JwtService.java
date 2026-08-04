@@ -67,6 +67,22 @@ public class JwtService {
             return false;
         }
     }
+    public boolean validateLoanServiceToken(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+
+            // Check expiration
+            if (isTokenExpired(token)) return false;
+
+            // Check audience
+            Set<String> audience = claims.getAudience();
+            if (audience == null || !audience.contains("account-service")) return false;
+            // Check issuer
+            return "loan-service".equals(claims.getIssuer());
+        } catch (JwtException e) {
+            return false;
+        }
+    }
 
     public Set<Role> extractRoles(String token) {
         Claims claims = extractAllClaims(token);

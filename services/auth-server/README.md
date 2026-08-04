@@ -79,8 +79,7 @@ authentication model.
 - Docker (optional)
 
 ### Environment Variables
-
-Create a `.env` file or set these environment variables:
+Set these environment variables:
 
 ```bash
 DB_USERNAME=your_db_username

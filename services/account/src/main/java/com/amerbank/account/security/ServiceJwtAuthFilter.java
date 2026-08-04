@@ -37,19 +37,18 @@ public class ServiceJwtAuthFilter extends OncePerRequestFilter {
 
         final String token = authHeader.substring(7);
 
-        if (!jwtService.validateTransactionServiceToken(token)) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return;
+       if (jwtService.validateTransactionServiceToken(token) || jwtService.validateLoanServiceToken(token)) {
+           String subject = jwtService.extractSubject(token);
+           SecurityContextHolder.getContext().setAuthentication(
+                   new UsernamePasswordAuthenticationToken(
+                           subject, null, List.of(new SimpleGrantedAuthority("SCOPE_service"))
+                   )
+           );
+           filterChain.doFilter(request, response);
         }
-
-        String subject = jwtService.extractSubject(token);
-        SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken(
-                        subject, null, List.of(new SimpleGrantedAuthority("SCOPE_service"))
-                )
-        );
-        filterChain.doFilter(request, response);
-
+       else{
+           response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+       }
     }
 
 
