@@ -262,7 +262,7 @@ docker compose up --build
 
 #### This section is optional if you are running with Docker compose. docker-compose.yml has preconfigured default values to bootstrap the application.
 
-Create a `.env` file or set these environment variables:
+Set these environment variables:
 
 ```bash
 DB_USERNAME=your_db_username
