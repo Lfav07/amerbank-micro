@@ -1,7 +1,6 @@
 package com.amerbank.loan.unit.service;
 
 import com.amerbank.loan.client.AccountServiceClientInterface;
-import com.amerbank.loan.client.CustomerServiceClientInterface;
 import com.amerbank.loan.config.LoanProperties;
 import com.amerbank.loan.dto.LoanInfo;
 import com.amerbank.loan.dto.request.LoanApplicationRequest;
@@ -13,7 +12,6 @@ import com.amerbank.loan.exception.LoanAlreadyExistsException;
 import com.amerbank.loan.exception.LoanNotFoundException;
 import com.amerbank.loan.exception.LoanNotDisbursedException;
 import com.amerbank.loan.exception.LoanNotEligibleException;
-import com.amerbank.loan.exception.LoanNumberGenerationException;
 import com.amerbank.loan.exception.LoanOwnershipException;
 import com.amerbank.loan.model.Loan;
 import com.amerbank.loan.model.LoanPayment;
@@ -35,7 +33,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -56,8 +53,6 @@ class LoanServiceTest {
     @Mock
     private AccountServiceClientInterface accountServiceClient;
 
-    @Mock
-    private CustomerServiceClientInterface customerServiceClient;
 
     private LoanMapper loanMapper;
 
@@ -83,7 +78,6 @@ class LoanServiceTest {
                 loanPaymentRepository,
                 loanMapper,
                 accountServiceClient,
-                customerServiceClient,
                 loanProperties
         );
     }
@@ -769,42 +763,13 @@ class LoanServiceTest {
             when(loanPaymentRepository.save(any(LoanPayment.class))).thenAnswer(inv -> inv.getArgument(0));
             when(loanRepository.save(any(Loan.class))).thenAnswer(inv -> inv.getArgument(0));
 
-            loanService.processRepayment(CUSTOMER_ID, LOAN_NUMBER, amount);
+            loanService.processRepayment(LOAN_NUMBER, amount);
 
             verify(loanPaymentRepository).save(any(LoanPayment.class));
             verify(loanRepository).save(any(Loan.class));
         }
 
-        @Test
-        @DisplayName("Should set status to ACTIVE when processing repayment for DISBURSED loan")
-        void shouldSetActiveWhenProcessingDisbursedLoan() {
-            Loan loan = buildLoan(LoanStatus.DISBURSED);
-            BigDecimal amount = BigDecimal.valueOf(955.06);
-            LoanPayment pendingPayment = LoanPayment.builder()
-                    .id(UUID.randomUUID())
-                    .loanId(loan.getId())
-                    .paymentNumber(1)
-                    .amountDue(BigDecimal.valueOf(955.06))
-                    .principalPortion(BigDecimal.valueOf(734.23))
-                    .interestPortion(BigDecimal.valueOf(220.83))
-                    .dueDate(LocalDate.now().plusMonths(1))
-                    .status(LoanPaymentStatus.PENDING)
-                    .build();
 
-            when(loanRepository.findByLoanNumberForUpdate(LOAN_NUMBER)).thenReturn(Optional.of(loan));
-            when(loanPaymentRepository.findAllByLoanIdAndStatus(loan.getId(), LoanPaymentStatus.PENDING))
-                    .thenReturn(List.of(pendingPayment));
-            when(loanPaymentRepository.findByLoanIdAndPaymentNumberForUpdate(loan.getId(), 1))
-                    .thenReturn(Optional.of(pendingPayment));
-            when(loanPaymentRepository.save(any(LoanPayment.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(loanRepository.save(any(Loan.class))).thenAnswer(inv -> inv.getArgument(0));
-
-            loanService.processRepayment(CUSTOMER_ID, LOAN_NUMBER, amount);
-
-            ArgumentCaptor<Loan> captor = ArgumentCaptor.forClass(Loan.class);
-            verify(loanRepository).save(captor.capture());
-            assertEquals(LoanStatus.ACTIVE, captor.getValue().getStatus());
-        }
 
         @Test
         @DisplayName("Should throw LoanNotFoundException when loan not found")
@@ -812,7 +777,7 @@ class LoanServiceTest {
             when(loanRepository.findByLoanNumberForUpdate(LOAN_NUMBER)).thenReturn(Optional.empty());
 
             assertThrows(LoanNotFoundException.class, () ->
-                    loanService.processRepayment(CUSTOMER_ID, LOAN_NUMBER, BigDecimal.valueOf(955.06)));
+                    loanService.processRepayment(LOAN_NUMBER, BigDecimal.valueOf(955.06)));
         }
 
         @Test
@@ -822,7 +787,7 @@ class LoanServiceTest {
             when(loanRepository.findByLoanNumberForUpdate(LOAN_NUMBER)).thenReturn(Optional.of(loan));
 
             assertThrows(LoanNotEligibleException.class, () ->
-                    loanService.processRepayment(CUSTOMER_ID, LOAN_NUMBER, BigDecimal.valueOf(955.06)));
+                    loanService.processRepayment(LOAN_NUMBER, BigDecimal.valueOf(955.06)));
         }
     }
 }

@@ -42,4 +42,5 @@ loan:
   customer-service-base: http://customer
   endpoint-owned: /account/internal/owned
   endpoint-deposit: /account/internal/deposit
+  endpoint-withdraw: /account/internal/withdraw
   endpoint-payment: /account/internal/payment

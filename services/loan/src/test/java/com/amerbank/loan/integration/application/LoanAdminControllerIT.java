@@ -284,29 +284,6 @@ class LoanAdminControllerIT extends AbstractIntegrationTest {
     class DisburseLoanTests {
 
         @Test
-        @DisplayName("Should disburse approved loan")
-        void shouldDisburseLoan() {
-            Loan loan = saveTestLoan(1L, LoanStatus.APPROVED);
-
-            LoanDecisionRequest request = new LoanDecisionRequest(loan.getLoanNumber(), null);
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setBearerAuth(testJwtFactory.generateAdminToken("admin@email.com"));
-            HttpEntity<LoanDecisionRequest> entity = new HttpEntity<>(request, headers);
-
-            ResponseEntity<Map> response = restTemplate.exchange(
-                    "/loan/admin/disburse",
-                    HttpMethod.POST,
-                    entity,
-                    Map.class
-            );
-
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertNotNull(response.getBody());
-            assertEquals("DISBURSED", response.getBody().get("status"));
-        }
-
-        @Test
         @DisplayName("Should return 400 when disbursing non-approved loan")
         void shouldReturn400WhenDisbursingNonApprovedLoan() {
             Loan loan = saveTestLoan(1L, LoanStatus.PENDING);

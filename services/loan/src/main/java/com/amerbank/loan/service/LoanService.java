@@ -1,7 +1,6 @@
 package com.amerbank.loan.service;
 
 import com.amerbank.loan.client.AccountServiceClientInterface;
-import com.amerbank.loan.client.CustomerServiceClientInterface;
 import com.amerbank.loan.config.LoanProperties;
 import com.amerbank.loan.dto.LoanInfo;
 import com.amerbank.loan.dto.request.LoanApplicationRequest;
@@ -9,8 +8,6 @@ import com.amerbank.loan.dto.request.LoanRepaymentRequest;
 import com.amerbank.loan.dto.response.LoanPaymentResponse;
 import com.amerbank.loan.dto.response.LoanResponse;
 import com.amerbank.loan.exception.InsufficientRepaymentAmountException;
-import com.amerbank.loan.exception.LoanAlreadyCompletedException;
-import com.amerbank.loan.exception.LoanAlreadyDisbursedException;
 import com.amerbank.loan.exception.LoanAlreadyExistsException;
 import com.amerbank.loan.exception.LoanNotDisbursedException;
 import com.amerbank.loan.exception.LoanNotFoundException;
@@ -29,7 +26,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -46,7 +42,6 @@ public class LoanService {
     private final LoanPaymentRepository loanPaymentRepository;
     private final LoanMapper loanMapper;
     private final AccountServiceClientInterface accountServiceClient;
-    private final CustomerServiceClientInterface customerServiceClient;
     private final LoanProperties loanProperties;
 
     @Transactional
@@ -128,7 +123,7 @@ public class LoanService {
 
         accountServiceClient.withdraw(customerId, loan.getAccountNumber(), request.amount());
 
-        processRepayment(customerId, request.loanNumber(), request.amount());
+        processRepayment(request.loanNumber(), request.amount());
     }
 
     @Transactional
@@ -226,7 +221,7 @@ public class LoanService {
     }
 
     @Transactional
-    public void processRepayment(Long customerId, String loanNumber, BigDecimal amount) {
+    public void processRepayment(String loanNumber, BigDecimal amount) {
         Loan loan = loanRepository.findByLoanNumberForUpdate(loanNumber)
                 .orElseThrow(() -> new LoanNotFoundException("Loan not found: " + loanNumber));
 

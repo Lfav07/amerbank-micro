@@ -7,7 +7,6 @@ import com.amerbank.loan.service.LoanService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -51,7 +50,7 @@ public class InternalLoanController {
     )
     @PostMapping("/repay")
     public ResponseEntity<Void> processRepayment(@RequestBody @Valid ServiceRepaymentRequest request) {
-        loanService.processRepayment(request.customerId(), request.loanNumber(), request.amount());
+        loanService.processRepayment(request.loanNumber(), request.amount());
         return ResponseEntity.ok().build();
     }
 

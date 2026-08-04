@@ -86,3 +86,5 @@ agents
 .plans
 plans
 .agents/*
+skills
+**/skills
