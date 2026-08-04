@@ -39,7 +39,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"email\": \"tester@example.com\",\r\n    \"password\": \"tester1\",\r\n    \"firstName\": \"John\",\r\n    \"lastName\": \"Doe\",\r\n    \"dateOfBirth\": \"2001-02-15\"\r\n}",
+              "raw": "{\r\n    \"email\": \"tester122@example.com\",\r\n    \"password\": \"test12\",\r\n    \"firstName\": \"John\",\r\n    \"lastName\": \"Doe\",\r\n    \"dateOfBirth\": \"2001-02-15\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -71,7 +71,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"email\": \"tester@example.com\",\r\n    \"password\": \"tester1\"\r\n}",
+              "raw": "{\r\n    \"email\": \"tester122@example.com\",\r\n    \"password\": \"test12\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -860,38 +860,6 @@
           "response": []
         },
         {
-          "name": "Get all self accounts info Copy",
-          "protocolProfileBehavior": {
-            "disableBodyPruning": true
-          },
-          "request": {
-            "method": "GET",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "http://localhost:8080/account/me",
-              "protocol": "http",
-              "host": [
-                "localhost"
-              ],
-              "port": "8080",
-              "path": [
-                "account",
-                "me"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
           "name": "Get  self account info by type",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
@@ -1052,7 +1020,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"type\": \"SAVINGS\"\r\n}",
+              "raw": "{\r\n    \"type\": \"CHECKING\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1081,7 +1049,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"accountNumber\": \"ACCT9614021168\"\r\n}",
+              "raw": "{\r\n    \"accountNumber\": \"ACCT2395349561\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1110,7 +1078,7 @@
         "bearer": [
           {
             "key": "token",
-            "value": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoLXNlcnZlciIsInN1YiI6IjMiLCJjdXN0b21lcklkIjoyLCJyb2xlcyI6WyJST0xFX1VTRVIiXSwiaWF0IjoxNzc4MjYzNjU2LCJleHAiOjE3NzgyNjcyNTZ9.XU92heoBIhqgP0NBug761YYU4VshTpuSeJY9SfxD2CU",
+            "value": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoLXNlcnZlciIsInN1YiI6IjEiLCJjdXN0b21lcklkIjoxLCJyb2xlcyI6WyJST0xFX1VTRVIiXSwiaWF0IjoxNzg1ODczNDM2LCJleHAiOjE3ODU4NzcwMzZ9.h00IGmUjvLtI0cd-dJkUA0I0SOP9_uI1d2M6DSyOZu8\"",
             "type": "string"
           }
         ]
@@ -1383,7 +1351,7 @@
               }
             },
             "url": {
-              "raw": "http://localhost:8080/transaction/me?accountNumber=ACCT4317796272",
+              "raw": "http://localhost:8080/transaction/me?accountNumber=ACCT7601334953",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -1396,7 +1364,7 @@
               "query": [
                 {
                   "key": "accountNumber",
-                  "value": "ACCT4317796272"
+                  "value": "ACCT7601334953"
                 }
               ]
             }
@@ -1653,7 +1621,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT9702796384\",\r\n    \"toAccountNumber\": \"ACCT3868408926\"\r\n}",
+              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT7601334953\",\r\n    \"toAccountNumber\": \"ACCT7601334953\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1688,7 +1656,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT4317796272\",\r\n    \"toAccountNumber\": \"ACCT4317796272\"\r\n}",
+              "raw": "{\r\n    \"amount\": 10,\r\n    \"description\": \"test\",\r\n    \"fromAccountNumber\": \"ACCT7601334953\",\r\n    \"toAccountNumber\": \"ACCT7601334953\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1751,7 +1719,7 @@
         "bearer": [
           {
             "key": "token",
-            "value": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoLXNlcnZlciIsInN1YiI6IjMiLCJjdXN0b21lcklkIjoyLCJyb2xlcyI6WyJST0xFX1VTRVIiXSwiaWF0IjoxNzc4MjYzNjU2LCJleHAiOjE3NzgyNjcyNTZ9.XU92heoBIhqgP0NBug761YYU4VshTpuSeJY9SfxD2CU",
+            "value": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoLXNlcnZlciIsInN1YiI6IjEiLCJjdXN0b21lcklkIjoxLCJyb2xlcyI6WyJST0xFX1VTRVIiXSwiaWF0IjoxNzg1ODY1MjA4LCJleHAiOjE3ODU4Njg4MDh9.mmYZgxF7hdR6EGaXniT38vZ8mBc4X8VJna8FYp_XEp4",
             "type": "string"
           }
         ]
@@ -2011,7 +1979,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:8080/audit/63f59d21-76c9-4bd0-a9c9-74ca761570b4",
+              "raw": "http://localhost:8080/audit/fd698a38-7693-4b9b-9f40-37a68d440607",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -2019,7 +1987,7 @@
               "port": "8080",
               "path": [
                 "audit",
-                "63f59d21-76c9-4bd0-a9c9-74ca761570b4"
+                "fd698a38-7693-4b9b-9f40-37a68d440607"
               ]
             }
           },
@@ -2031,7 +1999,7 @@
         "bearer": [
           {
             "key": "token",
-            "value": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoLXNlcnZlciIsInN1YiI6IjEiLCJyb2xlcyI6WyJST0xFX0FETUlOIl0sImlhdCI6MTc3ODQ1MTM4MiwiZXhwIjoxNzc4NDU0OTgyfQ.TwTOx0z1WVjvQwexqmxkvHZ9thhRWAqdJErA9nwhiwc",
+            "value": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoLXNlcnZlciIsInN1YiI6IjIiLCJyb2xlcyI6WyJST0xFX0FETUlOIl0sImlhdCI6MTc4NTg2ODk5OSwiZXhwIjoxNzg1ODcyNTk5fQ.Vw0PdGLNgqXodQsi7IaR9Cg2p8sA_ya-o9juaY21o0A",
             "type": "string"
           }
         ]
@@ -2060,6 +2028,353 @@
           }
         }
       ]
+    },
+    {
+      "name": "Loan",
+      "item": [
+        {
+          "name": "Get All Self Loans",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "http://localhost:8086/loan/me",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8086",
+              "path": [
+                "loan",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get self loan info by number",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8086/loan/me/LN-5608855659/",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8086",
+              "path": [
+                "loan",
+                "me",
+                "LN-5608855659",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get self loan payment schedule info by number",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8086/loan/me/LN-5608855659/payments",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8086",
+              "path": [
+                "loan",
+                "me",
+                "LN-5608855659",
+                "payments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Repay loan",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"loanNumber\": \"LN-3371573434\",\r\n  \"amount\": 500\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8086/loan/repay",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8086",
+              "path": [
+                "loan",
+                "repay"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Apply for loan",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"type\": \"PERSONAL\",\r\n  \"principalAmount\": 5000,\r\n  \"interestRate\": 5.5,\r\n  \"termMonths\": 60,\r\n  \"accountNumber\": \"ACCT2395349561\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8086/loan/apply",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8086",
+              "path": [
+                "loan",
+                "apply"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoLXNlcnZlciIsInN1YiI6IjEiLCJjdXN0b21lcklkIjoxLCJyb2xlcyI6WyJST0xFX1VTRVIiXSwiaWF0IjoxNzg1ODczNDk1LCJleHAiOjE3ODU4NzcwOTV9.Hljb3bytogsDdwCaRhPKftBKg1kqiPQ3J4HbVimdHtw",
+            "type": "string"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Loan (ADMIN)",
+      "item": [
+        {
+          "name": "Reject loan",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"loanNumber\": \"LN-5565466916\",\r\n  \"rejectionReason\": \"Insufficient credit score\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8086/loan/admin/reject",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8086",
+              "path": [
+                "loan",
+                "admin",
+                "reject"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Approve loan",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"loanNumber\": \"LN-1268058728\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8086/loan/admin/approve",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8086",
+              "path": [
+                "loan",
+                "admin",
+                "approve"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Disburse loan",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"loanNumber\": \"LN-1268058728\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8086/loan/admin/disburse",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8086",
+              "path": [
+                "loan",
+                "admin",
+                "disburse"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get loan info by number",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8086/loan/admin/LN-3371573434",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8086",
+              "path": [
+                "loan",
+                "admin",
+                "LN-3371573434"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoLXNlcnZlciIsInN1YiI6IjIiLCJyb2xlcyI6WyJST0xFX0FETUlOIl0sImlhdCI6MTc4NTg3MTQ1MCwiZXhwIjoxNzg1ODc1MDUwfQ.9R7it3s4FxlCNheIVWSA-6lS-Pv9BmN-efmv-zJjdMY",
+            "type": "string"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "secret": true
     }
   ]
 }
