@@ -400,6 +400,46 @@ public class AccountService {
     }
 
     /**
+     * Withdraws a specified amount from the given account if the account belongs to the authenticated user
+     * and has sufficient funds.
+     *
+     * @param customerId the customer's id for the authenticated user.
+     * @param request    contains account number and amount to withdraw.
+     * @throws AccountNotFoundException        if the account does not exist.
+     * @throws InactiveAccountException        if the account is not active.
+     * @throws AccountOwnershipException       if the account does not belong to the customer.
+     * @throws InsufficientFundsAvailableException if the account has insufficient balance.
+     * @throws IllegalArgumentException        if the withdraw amount is negative or zero.
+     */
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "account-by-number", key = "#request.accountNumber()"),
+            @CacheEvict(value = "accounts-by-customer", key = "#customerId")
+    })
+    public void performWithdraw(Long customerId, DepositBalanceRequest request) {
+        if (request.amount() == null || request.amount().signum() <= 0) {
+            throw new IllegalArgumentException("Withdraw amount must be positive");
+        }
+
+        Account account = findAccountEntityForUpdate(request.accountNumber());
+
+        if (!account.getStatus().equals(AccountStatus.ACTIVE)) {
+            throw new InactiveAccountException("Account is not active");
+        }
+
+        if (!account.getCustomerId().equals(customerId)) {
+            throw new AccountOwnershipException("Account does not belong to authenticated customer");
+        }
+
+        if (account.getBalance().compareTo(request.amount()) < 0) {
+            throw new InsufficientFundsAvailableException("Insufficient funds");
+        }
+
+        account.setBalance(account.getBalance().subtract(request.amount()));
+        accountRepository.save(account);
+    }
+
+    /**
      * Transfers a specified amount from one account to another, ensuring that the sender owns the source account
      * and has sufficient funds.
      *

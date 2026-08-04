@@ -19,6 +19,6 @@ public class JwtProperties {
     @NotNull private Long expirationMs;
 
     @Min(10000)
-    @NotNull private  Long serviceExpirationMs;
+    @NotNull private Long serviceExpirationMs;
 
 }

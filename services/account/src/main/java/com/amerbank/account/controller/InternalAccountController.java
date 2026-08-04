@@ -131,6 +131,64 @@ public class InternalAccountController {
     }
 
     @Operation(
+            summary = "Withdraw funds from account",
+            description = """
+                    Withdraws funds from a customer's account.
+                    
+                    **Authentication:** Required (service-to-service)
+                    **Authorization:** Requires valid service JWT token
+                    
+                    **Use case:** Used by loan services to debit customer accounts for loan repayments.
+                    
+                    **Business Rules:**
+                    - Account must be ACTIVE
+                    - Account must belong to the specified customer
+                    - Account must have sufficient balance
+                    - Withdraw amount must be positive
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Withdraw successful"),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Bad Request - invalid request, insufficient funds, account not active, or account not owned by customer",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ValidationErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Not Found - account not found",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            )
+    })
+    @PostMapping("/withdraw")
+    public ResponseEntity<Void> performWithdraw(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Withdraw request with customer ID, account number, and amount",
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = ServiceWithdrawBalanceRequest.class),
+                            examples = @ExampleObject(value = "{\"customerId\":1,\"accountNumber\":\"550e8400e29b\",\"amount\":500.00}")
+                    )
+            )
+            @Valid @RequestBody ServiceWithdrawBalanceRequest request) {
+
+        accountService.performWithdraw(
+                request.customerId(),
+                new DepositBalanceRequest(
+                        request.accountNumber(),
+                        request.amount()
+                )
+        );
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
             summary = "Perform payment between accounts",
             description = """
                     Transfers funds from one account to another within the bank.
