@@ -93,7 +93,7 @@ messages to Kafka topics, and the Audit Service consumes them asynchronously.
 
 ### Environment Variables
 
-Create a `.env` file or set these environment variables (not needed when using Docker Compose, as it provides default values):
+Set these environment variables (not needed when using Docker Compose, as it provides default values):
 
 ```bash
 DB_USERNAME=your_db_username
